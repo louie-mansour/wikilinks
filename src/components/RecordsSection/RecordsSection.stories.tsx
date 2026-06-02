@@ -6,7 +6,7 @@ const DEMO_PERIODS = [
     period: 'All time',
     rows: [
       { key: 'Most paths', value: '300' },
-      { key: 'Most nodes', value: '12,048', badge: '★ record' },
+      { key: 'Most nodes', value: '12,048', badge: true },
       { key: 'Longest path', value: '9 hops' },
     ],
   },

@@ -17,7 +17,7 @@ const SAMPLE_PATHS = [
     id: 1,
     crumbs: [
       { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Physics', tag: 'first' as const },
+      { href: '#', label: 'Physics', tag: 'new' as const },
       { href: '#', label: 'Wave function', tag: 'rare' as const },
       { href: '#', label: 'Quantum mechanics', highlighted: true },
     ],

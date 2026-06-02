@@ -1,39 +1,122 @@
 @import '../../tokens.css';
 
-/* §7.4 Rarity Tag / §7.11 Record Badge */
+/* §7.4 Rarity Tag / §7.11 Record Badge — pale fill, 1px border, coloured text */
 
 .root {
   font-family: var(--font-ui);
   font-size: 9px;
   font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 8px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid;
   display: inline-block;
   vertical-align: middle;
   line-height: 1.6;
 }
 
-/* Rarity variants */
-.first {
-  background: var(--terra);
-  color: var(--white);
+/* new = green, rare = yellow, uncommon = red, record = gray/brown */
+.variantNew {
+  background: var(--sage-pale);
+  color: var(--sage);
+  border-color: var(--sage-light);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--sage) 22%, transparent),
+    0 2px 8px color-mix(in srgb, var(--sage) 20%, transparent);
 }
 
 .rare {
-  background: var(--sage);
-  color: var(--white);
+  background: var(--clay-pale);
+  color: var(--clay);
+  border-color: var(--clay-border);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--clay) 25%, transparent),
+    0 2px 8px color-mix(in srgb, var(--clay) 22%, transparent);
 }
 
 .uncommon {
-  background: var(--sand-mid);
-  color: var(--ink-muted);
+  background: var(--terra-pale);
+  color: var(--terra);
+  border-color: var(--terra-light);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--terra) 25%, transparent),
+    0 2px 8px color-mix(in srgb, var(--terra) 22%, transparent);
 }
 
-/* Record badge — clay palette, 1px border, tighter radius */
 .record {
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: var(--clay-pale);
-  color: var(--clay);
-  border: 1px solid var(--clay-border);
+  background: var(--sand);
+  color: var(--ink-muted);
+  border-color: var(--sand-dark);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--sand-dark) 30%, transparent),
+    0 2px 6px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .variantNew {
+    animation: badge-glow-sage 2s ease-in-out infinite;
+  }
+
+  .rare {
+    animation: badge-glow-clay 2.4s ease-in-out infinite;
+  }
+
+  .uncommon {
+    animation: badge-glow-terra 2.8s ease-in-out infinite;
+  }
+
+  .record {
+    animation: badge-glow-sand 3s ease-in-out infinite;
+  }
+
+  @keyframes badge-glow-clay {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--clay) 25%, transparent),
+        0 2px 8px color-mix(in srgb, var(--clay) 20%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--clay) 45%, transparent),
+        0 2px 14px color-mix(in srgb, var(--clay) 38%, transparent);
+    }
+  }
+
+  @keyframes badge-glow-sage {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--sage) 22%, transparent),
+        0 2px 8px color-mix(in srgb, var(--sage) 18%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--sage) 40%, transparent),
+        0 2px 14px color-mix(in srgb, var(--sage) 32%, transparent);
+    }
+  }
+
+  @keyframes badge-glow-terra {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--terra) 25%, transparent),
+        0 2px 8px color-mix(in srgb, var(--terra) 20%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--terra) 45%, transparent),
+        0 2px 14px color-mix(in srgb, var(--terra) 38%, transparent);
+    }
+  }
+
+  @keyframes badge-glow-sand {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--sand-dark) 30%, transparent),
+        0 2px 6px color-mix(in srgb, var(--ink) 8%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--sand-dark) 45%, transparent),
+        0 2px 12px color-mix(in srgb, var(--ink) 14%, transparent);
+    }
+  }
 }

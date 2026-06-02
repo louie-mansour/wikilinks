@@ -4,7 +4,7 @@ import styles from './RecordsSection.module.css';
 export interface RecordRow {
   key: string;
   value: string;
-  badge?: string;
+  badge?: boolean;
 }
 
 export interface RecordPeriod {
@@ -29,9 +29,7 @@ export function RecordsSection({ periods }: RecordsSectionProps) {
                 <span className={styles.key}>{row.key}</span>
                 <span className={styles.val}>
                   {row.value}
-                  {row.badge && (
-                    <Badge variant="record">{row.badge}</Badge>
-                  )}
+                  {row.badge && <Badge variant="record" />}
                 </span>
               </div>
             ))}

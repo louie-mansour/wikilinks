@@ -19,7 +19,7 @@ export const WithFirstTag: Story = {
     number: 1,
     crumbs: [
       { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Physics', tag: 'first' },
+      { href: '#', label: 'Physics', tag: 'new' },
       { href: '#', label: 'Wave function', tag: 'rare' },
       { href: '#', label: 'Quantum mechanics', highlighted: true },
     ],
@@ -57,7 +57,7 @@ export const MultipleItems: Story = {
         number={1}
         crumbs={[
           { href: '#', label: 'Albert Einstein', highlighted: true },
-          { href: '#', label: 'Physics', tag: 'first' },
+          { href: '#', label: 'Physics', tag: 'new' },
           { href: '#', label: 'Wave function', tag: 'rare' },
           { href: '#', label: 'Quantum mechanics', highlighted: true },
         ]}

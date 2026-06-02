@@ -6,7 +6,7 @@ export interface Crumb {
   href: string;
   label: string;
   highlighted?: boolean;
-  tag?: 'first' | 'rare' | 'uncommon';
+  tag?: 'new' | 'rare' | 'uncommon';
 }
 
 interface PathItemProps {
@@ -36,7 +36,7 @@ export function PathItem({ number, crumbs, onCopy, onLink }: PathItemProps) {
             >
               {crumb.label}
               {crumb.tag && (
-                <Badge variant={crumb.tag}>{crumb.tag}</Badge>
+                <Badge variant={crumb.tag} />
               )}
             </a>
           </span>

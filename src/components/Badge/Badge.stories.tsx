@@ -10,29 +10,29 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const First: Story = {
-  args: { variant: 'first', children: 'first' },
+export const New: Story = {
+  args: { variant: 'new' },
 };
 
 export const Rare: Story = {
-  args: { variant: 'rare', children: 'rare' },
+  args: { variant: 'rare' },
 };
 
 export const Uncommon: Story = {
-  args: { variant: 'uncommon', children: 'uncommon' },
+  args: { variant: 'uncommon' },
 };
 
 export const Record: Story = {
-  args: { variant: 'record', children: '★ record' },
+  args: { variant: 'record' },
 };
 
 export const AllVariants: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-      <Badge variant="first">first</Badge>
-      <Badge variant="rare">rare</Badge>
-      <Badge variant="uncommon">uncommon</Badge>
-      <Badge variant="record">★ record</Badge>
+      <Badge variant="new" />
+      <Badge variant="rare" />
+      <Badge variant="uncommon" />
+      <Badge variant="record" />
     </div>
   ),
 };
