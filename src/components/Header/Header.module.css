@@ -46,14 +46,26 @@
   margin: 0;
 }
 
+/* Form block — width follows inputs row; button stretches to match */
+.searchForm {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  max-width: 100%;
+}
+
+.searchForm .searchButton {
+  max-width: none;
+}
+
 /* Inputs row — wraps on mobile */
 .inputsRow {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
-  width: 100%;
 }
 
 .inputGroup {
@@ -72,12 +84,22 @@
   color: var(--ink-muted);
 }
 
-/* → connector between the two inputs */
+/* → connector between the two inputs — vertically centred in combobox row */
+.labelSpacer {
+  visibility: hidden;
+}
+
 .arrowConnector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 18px;
+  line-height: 1;
   color: var(--sand-dark);
-  padding-bottom: 12px;
   flex-shrink: 0;
+  box-sizing: border-box;
+  /* Match combobox input row: 12px + 14px + 12px padding/font + 3px border */
+  height: 41px;
 }
 
 /* §4 Breakpoints — mobile ≤520px */
@@ -88,8 +110,16 @@
     gap: 8px;
   }
 
+  .arrowGroup {
+    gap: 0;
+  }
+
+  .arrowGroup .labelSpacer {
+    display: none;
+  }
+
   .arrowConnector {
-    padding-bottom: 0;
+    height: auto;
     transform: rotate(90deg);
   }
 }

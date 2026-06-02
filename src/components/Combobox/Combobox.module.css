@@ -29,13 +29,12 @@
   align-items: center;
   background: var(--sand);
   border: 1.5px solid var(--sand-mid);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 
-/* Focus-within state — terracotta ring */
+/* Focus-within state — terracotta border only */
 .inputRow:focus-within {
   border-color: var(--terra);
-  box-shadow: 0 0 0 3px var(--terra-light);
 }
 
 /* Input element */
@@ -52,7 +51,7 @@
   /* Safari cross-browser fix — §11 */
   -webkit-appearance: none;
   appearance: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 
 .input::placeholder {
@@ -87,7 +86,7 @@
   position: absolute;
   top: calc(100% + 5px);
   left: 0;
-  right: 0;
+  width: 100%;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -150,7 +149,7 @@
 ───────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   .inputRow {
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: border-color 0.15s;
   }
 
   .chevron {

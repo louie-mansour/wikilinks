@@ -36,35 +36,40 @@ export function Header({
         Find the shortest route between any two Wikipedia articles
       </p>
 
-      <div className={styles.inputsRow}>
-        <div className={styles.inputGroup}>
-          <span className={styles.inputLabel} aria-hidden="true">Start article</span>
-          <Combobox
-            id="header-start"
-            label="Start article"
-            placeholder="e.g. Albert Einstein"
-            suggestions={startSuggestions}
-            onSelect={onStartSelect}
-          />
+      <div className={styles.searchForm}>
+        <div className={styles.inputsRow}>
+          <div className={styles.inputGroup}>
+            <span className={styles.inputLabel} aria-hidden="true">Start article</span>
+            <Combobox
+              id="header-start"
+              label="Start article"
+              placeholder="e.g. Albert Einstein"
+              suggestions={startSuggestions}
+              onSelect={onStartSelect}
+            />
+          </div>
+
+          <div className={`${styles.inputGroup} ${styles.arrowGroup}`}>
+            <span className={`${styles.inputLabel} ${styles.labelSpacer}`} aria-hidden="true">&nbsp;</span>
+            <span className={styles.arrowConnector} aria-hidden="true">→</span>
+          </div>
+
+          <div className={styles.inputGroup}>
+            <span className={styles.inputLabel} aria-hidden="true">End article</span>
+            <Combobox
+              id="header-end"
+              label="End article"
+              placeholder="e.g. Quantum mechanics"
+              suggestions={endSuggestions}
+              onSelect={onEndSelect}
+            />
+          </div>
         </div>
 
-        <span className={styles.arrowConnector} aria-hidden="true">→</span>
-
-        <div className={styles.inputGroup}>
-          <span className={styles.inputLabel} aria-hidden="true">End article</span>
-          <Combobox
-            id="header-end"
-            label="End article"
-            placeholder="e.g. Quantum mechanics"
-            suggestions={endSuggestions}
-            onSelect={onEndSelect}
-          />
-        </div>
+        <Button variant="primary" className={styles.searchButton} onClick={onSearch}>
+          Find paths
+        </Button>
       </div>
-
-      <Button variant="primary" onClick={onSearch}>
-        Find paths
-      </Button>
     </header>
   );
 }

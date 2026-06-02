@@ -26,6 +26,9 @@ const meta = {
   tags: ['autodocs'],
   parameters: {
     layout: 'centered',
+    docs: {
+      story: { height: '360px' },
+    },
   },
   args: {
     id: 'wiki-search',

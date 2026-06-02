@@ -27,6 +27,9 @@ const meta = {
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    docs: {
+      story: { height: '460px' },
+    },
   },
 } satisfies Meta<typeof Header>;
 
