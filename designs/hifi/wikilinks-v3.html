@@ -1,0 +1,916 @@
+<!--
+  WikiLinks v3
+  - Top bar: centred wordmark + fully responsive/symmetrical mobile layout
+  - Order: header → graph → bento stats → records → permalink → path list
+  - Records stacks vertically on mobile
+  - Path list: horizontal on desktop, vertical with ↓ arrows on mobile
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WikiLinks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sand:         #f5ede0;
+      --sand-mid:     #e8d9c4;
+      --sand-dark:    #d4c0a4;
+      --ink:          #2c2416;
+      --ink-muted:    #7a6a52;
+      --ink-faint:    #b8a888;
+      --terra:        #c4572a;
+      --terra-light:  #f2d5c8;
+      --terra-pale:   #faf0ea;
+      --sage:         #4a7c59;
+      --sage-light:   #c8dece;
+      --sage-pale:    #edf6ef;
+      --clay:         #e8a05a;
+      --clay-pale:    #fdf2e3;
+      --white:        #fefcf8;
+      --radius-sm:    10px;
+      --radius-md:    18px;
+      --radius-lg:    26px;
+      --font-display: 'Sora', system-ui, sans-serif;
+      --font-body:    'Lora', Georgia, serif;
+      --font-ui:      'Sora', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-ui);
+      background: var(--sand);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .page { max-width: 920px; margin: 0 auto; padding: 0 0 40px; }
+
+    /* =====================
+       TOP BAR — fully centred, responsive
+    ===================== */
+    .top-bar {
+      padding: 24px 20px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      background: var(--white);
+      border-bottom: 1.5px solid var(--sand-mid);
+      text-align: center;
+    }
+
+    .wordmark {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .wordmark-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: var(--terra);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .wordmark-icon svg { display: block; }
+
+    .tagline {
+      font-family: var(--font-body);
+      font-style: italic;
+      font-size: 14px;
+      color: var(--ink-muted);
+    }
+
+    /* Inputs row — wraps cleanly on mobile */
+    .inputs-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    .input-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-muted);
+    }
+    input[type="text"] {
+      width: 200px;
+      padding: 12px 16px;
+      background: var(--sand);
+      border: 1.5px solid var(--sand-mid);
+      border-radius: var(--radius-md);
+      color: var(--ink);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+    }
+    input::placeholder { color: var(--ink-faint); font-weight: 400; }
+    input:focus { outline: none; border-color: var(--terra); box-shadow: 0 0 0 3px var(--terra-light); }
+
+    .arrow-connector {
+      font-size: 18px;
+      color: var(--sand-dark);
+      padding-bottom: 12px; /* align with input baseline */
+      flex-shrink: 0;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--terra);
+      color: var(--white);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      width: 100%;
+      max-width: 440px;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .btn { transition: background 0.15s, transform 0.1s; }
+      .btn:hover { background: #a8461f; transform: translateY(-1px); }
+    }
+    .btn:focus-visible { outline: 2px solid var(--terra); outline-offset: 3px; }
+
+    /* On mobile, stack inputs vertically with centred arrow */
+    @media (max-width: 520px) {
+      .inputs-row { flex-direction: column; align-items: center; gap: 8px; }
+      .arrow-connector { padding-bottom: 0; transform: rotate(90deg); }
+      input[type="text"] { width: 260px; }
+    }
+
+    /* =====================
+       GRAPH
+    ===================== */
+    .graph-section {
+      margin: 14px 16px 0;
+      position: relative;
+      height: 440px;
+      overflow: hidden;
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1.5px solid var(--sand-mid);
+    }
+    @media (max-width: 520px) {
+      .graph-section { height: 320px; margin: 10px 10px 0; }
+    }
+    .graph-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .path-dim    { stroke: var(--sand-dark); }
+    .path-active { stroke: var(--terra); stroke-width: 2.5; }
+
+    .node {
+      position: absolute;
+      background: var(--sand);
+      border: 1.5px solid var(--sand-mid);
+      border-radius: var(--radius-sm);
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 500;
+      white-space: nowrap;
+      color: var(--ink-muted);
+    }
+    .node.start {
+      border: 2px solid var(--ink);
+      color: var(--ink);
+      font-weight: 700;
+      background: var(--white);
+      border-radius: var(--radius-md);
+    }
+    .node.end {
+      border: 2px dashed var(--ink-muted);
+      color: var(--ink);
+      font-weight: 700;
+      background: var(--white);
+      border-radius: var(--radius-md);
+    }
+    .node.active {
+      border-color: var(--terra);
+      color: var(--ink);
+      background: var(--terra-pale);
+    }
+
+    .tag { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 6px; margin-left: 4px; vertical-align: middle; border-radius: 8px; }
+    .tag.first    { background: var(--terra); color: #fff; }
+    .tag.rare     { background: var(--sage); color: #fff; }
+    .tag.uncommon { background: var(--sand-mid); color: var(--ink-muted); }
+
+    .node.glow-first    { animation: glow-terra 2s ease-in-out infinite; }
+    .node.glow-rare     { animation: glow-sage 2.4s ease-in-out infinite; }
+    .node.glow-uncommon { animation: glow-sand 2.8s ease-in-out infinite; }
+    @keyframes glow-terra {
+      0%,100% { box-shadow: 0 0 0 2px rgba(196,87,42,0.2), 0 0 10px rgba(196,87,42,0.12); }
+      50%     { box-shadow: 0 0 0 3px rgba(196,87,42,0.35), 0 0 18px rgba(196,87,42,0.22); }
+    }
+    @keyframes glow-sage {
+      0%,100% { box-shadow: 0 0 0 2px rgba(74,124,89,0.2), 0 0 10px rgba(74,124,89,0.12); }
+      50%     { box-shadow: 0 0 0 3px rgba(74,124,89,0.35), 0 0 18px rgba(74,124,89,0.22); }
+    }
+    @keyframes glow-sand {
+      0%,100% { box-shadow: 0 2px 6px rgba(44,36,22,0.06); }
+      50%     { box-shadow: 0 2px 14px rgba(44,36,22,0.12); }
+    }
+
+    .graph-legend {
+      position: absolute;
+      bottom: 16px; left: 16px;
+      background: var(--white);
+      border: 1.5px solid var(--sand-mid);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+    }
+    .legend-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-muted); margin-bottom: 8px; }
+    .legend-row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; font-size: 11px; color: var(--ink-muted); }
+    .legend-row:last-child { margin-bottom: 0; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-dot.first    { background: var(--terra); }
+    .legend-dot.rare     { background: var(--sage); }
+    .legend-dot.uncommon { background: var(--sand-mid); border: 1.5px solid var(--sand-dark); }
+
+    .graph-controls {
+      position: absolute;
+      bottom: 16px; right: 16px;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .ctrl-btn {
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--white);
+      border: 1.5px solid var(--sand-mid);
+      border-radius: var(--radius-sm);
+      font-size: 16px; font-weight: 700;
+      color: var(--ink-muted);
+      cursor: pointer;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .ctrl-btn { transition: border-color 0.12s, color 0.12s; }
+      .ctrl-btn:hover { border-color: var(--terra); color: var(--terra); }
+    }
+
+    /* =====================
+       BENTO STATS GRID
+    ===================== */
+    .bento-section {
+      padding: 14px 16px 0;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 8px;
+    }
+    @media (max-width: 520px) {
+      .bento-section {
+        grid-template-columns: 1fr 1fr;
+        padding: 10px 10px 0;
+      }
+    }
+
+    .bento-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--sand-mid);
+      overflow: hidden;
+    }
+
+    .bento-paths {
+      grid-column: 1;
+      grid-row: 1 / 3;
+      padding: 18px 20px;
+      background: var(--sage-pale);
+      border-color: var(--sage-light);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    @media (max-width: 520px) {
+      .bento-paths {
+        grid-column: 1 / -1;
+        grid-row: auto;
+        flex-direction: row;
+        align-items: center;
+        padding: 14px 16px;
+      }
+    }
+
+    .bento-stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-muted);
+      margin-bottom: 4px;
+    }
+    .bento-stat-big {
+      font-family: var(--font-display);
+      font-size: 60px;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--sage);
+      letter-spacing: -3px;
+    }
+    @media (max-width: 520px) {
+      .bento-paths .bento-stat-big { font-size: 48px; }
+    }
+    .bento-stat-sub {
+      font-family: var(--font-body);
+      font-style: italic;
+      font-size: 13px;
+      color: var(--ink-muted);
+      margin-top: 5px;
+    }
+    .bento-live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      background: var(--sage-light);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--sage);
+      align-self: flex-start;
+      animation: live-pulse 2s ease-in-out infinite;
+    }
+    @keyframes live-pulse {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .live-dot {
+      width: 6px; height: 6px;
+      background: var(--sage);
+      border-radius: 50%;
+    }
+
+    .bento-stat-sm {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .bento-stat-sm .bento-stat-big {
+      font-size: 32px;
+      letter-spacing: -1px;
+    }
+
+    .bento-hops { background: var(--terra-pale); border-color: var(--terra-light); }
+    .bento-hops .bento-stat-big { color: var(--terra); }
+
+    .bento-time { background: var(--clay-pale); border-color: #f5dbb0; }
+    .bento-time .bento-stat-big { color: var(--clay); font-size: 28px; }
+
+    /* =====================
+       RECORDS — standalone card below bento
+       Stacks vertically on mobile
+    ===================== */
+    .records-section {
+      margin: 8px 16px 0;
+      padding: 14px 18px;
+      background: var(--white);
+      border: 1.5px solid var(--sand-mid);
+      border-radius: var(--radius-md);
+    }
+    @media (max-width: 520px) {
+      .records-section { margin: 8px 10px 0; }
+    }
+    .records-header {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-muted);
+      margin-bottom: 12px;
+    }
+    .records-cols {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+    @media (max-width: 600px) {
+      .records-cols {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+    }
+    .rec-col {
+      padding-right: 20px;
+      border-right: 1.5px solid var(--sand-mid);
+      margin-right: 20px;
+    }
+    .rec-col:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+    @media (max-width: 600px) {
+      .rec-col {
+        padding-right: 0;
+        border-right: none;
+        margin-right: 0;
+        padding-bottom: 14px;
+        margin-bottom: 14px;
+        border-bottom: 1.5px solid var(--sand-mid);
+      }
+      .rec-col:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: none; }
+    }
+    .rec-period {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .rec-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--sand-mid);
+    }
+    .rec-row:last-child { border-bottom: none; }
+    .rec-key { font-size: 12px; color: var(--ink-muted); }
+    .rec-val {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .rec-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      background: var(--clay-pale);
+      color: var(--clay);
+      border: 1px solid #f5dbb0;
+      border-radius: 6px;
+    }
+
+    /* =====================
+       PERMALINK
+    ===================== */
+    .permalink-bar {
+      margin: 10px 16px 0;
+      padding: 12px 18px;
+      background: var(--white);
+      border: 1.5px solid var(--sand-mid);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 520px) { .permalink-bar { margin: 10px 10px 0; } }
+    .permalink-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-muted);
+    }
+    .permalink-url { font-size: 13px; color: var(--terra); font-weight: 600; flex: 1; }
+    .permalink-copy {
+      padding: 6px 14px;
+      border: 1.5px solid var(--sand-mid);
+      border-radius: var(--radius-sm);
+      background: var(--sand);
+      color: var(--ink-muted);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .permalink-copy { transition: background 0.12s, border-color 0.12s; }
+      .permalink-copy:hover { background: var(--terra-pale); border-color: var(--terra); color: var(--terra); }
+    }
+
+    /* =====================
+       PATH LIST
+    ===================== */
+    .path-list-section {
+      margin: 10px 16px 0;
+      background: var(--white);
+      border: 1.5px solid var(--sand-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    @media (max-width: 520px) { .path-list-section { margin: 10px 10px 0; } }
+    .path-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1.5px solid var(--sand-mid);
+      flex-wrap: wrap;
+      gap: 10px;
+      background: var(--sand);
+    }
+    .path-list-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .path-list-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+    .path-list-controls select {
+      padding: 6px 10px;
+      border: 1.5px solid var(--sand-mid);
+      border-radius: var(--radius-sm);
+      background: var(--white);
+      color: var(--ink-muted);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .path-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 20px;
+      border-bottom: 1.5px solid var(--sand-mid);
+    }
+    .path-item:last-of-type { border-bottom: none; }
+    @media (prefers-reduced-motion: no-preference) {
+      .path-item { transition: background 0.12s; }
+      .path-item:hover { background: var(--sand); }
+    }
+    .path-num {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--sand-dark);
+      min-width: 24px;
+      padding-top: 1px;
+    }
+    .path-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; flex: 1; }
+    .crumb {
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-muted);
+      padding: 2px 5px;
+      border-radius: 6px;
+    }
+    .crumb:hover { background: var(--terra-pale); color: var(--terra); }
+    .crumb.hl { color: var(--ink); font-weight: 700; }
+    .crumb-sep { color: var(--sand-dark); font-size: 14px; }
+
+    .path-tag { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 6px; margin-left: 3px; border-radius: 8px; vertical-align: middle; }
+    .path-tag.first    { background: var(--terra); color: #fff; }
+    .path-tag.rare     { background: var(--sage); color: #fff; }
+    .path-tag.uncommon { background: var(--sand-mid); color: var(--ink-muted); }
+
+    .path-actions { display: flex; gap: 6px; }
+    .action-btn {
+      padding: 5px 10px;
+      border: 1.5px solid var(--sand-mid);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--ink-faint);
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .action-btn { transition: all 0.12s; }
+      .action-btn:hover { background: var(--terra-pale); border-color: var(--terra); color: var(--terra); }
+    }
+
+    .load-more { padding: 18px; text-align: center; background: var(--sand); }
+    .load-more-btn {
+      padding: 12px 28px;
+      border: 1.5px solid var(--sand-mid);
+      border-radius: var(--radius-md);
+      background: var(--white);
+      color: var(--ink-muted);
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .load-more-btn { transition: all 0.12s; }
+      .load-more-btn:hover { background: var(--terra-pale); border-color: var(--terra); color: var(--terra); }
+    }
+
+    /* =====================
+       PATH LIST — mobile adaptive
+    ===================== */
+    @media (max-width: 600px) {
+      .path-list-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .path-item {
+        flex-direction: column;
+        gap: 0;
+        padding: 14px 16px;
+      }
+      .path-num {
+        margin-bottom: 8px;
+      }
+      .path-crumbs {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        width: 100%;
+      }
+      /* hide desktop › separators on mobile */
+      .crumb-sep { display: none; }
+      /* each crumb becomes a full-width block */
+      .crumb {
+        display: block;
+        width: 100%;
+        padding: 6px 0;
+        font-size: 13px;
+      }
+      /* down-arrow row between crumbs */
+      .crumb-arrow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px 0;
+        color: var(--sand-dark);
+        font-size: 14px;
+        line-height: 1;
+      }
+      .path-actions {
+        margin-top: 10px;
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .action-btn { flex: 1; text-align: center; }
+    }
+    /* hide down-arrow on desktop */
+    .crumb-arrow { display: none; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ① TOP BAR — centred wordmark + responsive inputs -->
+  <header class="top-bar">
+    <div class="wordmark">
+      <span class="wordmark-icon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="3" r="2" fill="white"/>
+          <circle cx="3" cy="13" r="2" fill="white"/>
+          <circle cx="13" cy="13" r="2" fill="white"/>
+          <line x1="8" y1="5" x2="3" y2="11" stroke="white" stroke-width="1.5"/>
+          <line x1="8" y1="5" x2="13" y2="11" stroke="white" stroke-width="1.5"/>
+        </svg>
+      </span>
+      WikiLinks
+    </div>
+    <p class="tagline">Find the shortest route between any two Wikipedia articles</p>
+    <div class="inputs-row">
+      <div class="input-group">
+        <label class="input-label" for="start">Start article</label>
+        <input type="text" id="start" placeholder="Albert Einstein" value="Albert Einstein">
+      </div>
+      <span class="arrow-connector" aria-hidden="true">→</span>
+      <div class="input-group">
+        <label class="input-label" for="end">End article</label>
+        <input type="text" id="end" placeholder="Quantum mechanics" value="Quantum mechanics">
+      </div>
+    </div>
+    <button class="btn">Find paths</button>
+  </header>
+
+  <!-- ② GRAPH -->
+  <section class="graph-section" aria-label="Path visualization">
+    <svg class="graph-svg" xmlns="http://www.w3.org/2000/svg">
+      <line x1="50%" y1="8%"  x2="18%" y2="30%" class="path-dim" stroke-width="1.5"/>
+      <line x1="50%" y1="8%"  x2="28%" y2="28%" class="path-dim" stroke-width="1.5"/>
+      <line x1="50%" y1="8%"  x2="38%" y2="25%" class="path-dim" stroke-width="1.5"/>
+      <line x1="50%" y1="8%"  x2="62%" y2="25%" class="path-dim" stroke-width="1.5"/>
+      <line x1="50%" y1="8%"  x2="72%" y2="28%" class="path-dim" stroke-width="1.5"/>
+      <line x1="50%" y1="8%"  x2="80%" y2="32%" class="path-dim" stroke-width="1.5"/>
+      <line x1="18%" y1="30%" x2="14%" y2="55%" class="path-dim" stroke-width="1.5"/>
+      <line x1="28%" y1="28%" x2="22%" y2="52%" class="path-dim" stroke-width="1.5"/>
+      <line x1="28%" y1="28%" x2="35%" y2="50%" class="path-dim" stroke-width="1.5"/>
+      <line x1="38%" y1="25%" x2="35%" y2="50%" class="path-dim" stroke-width="1.5"/>
+      <line x1="38%" y1="25%" x2="44%" y2="48%" class="path-dim" stroke-width="1.5"/>
+      <line x1="62%" y1="25%" x2="56%" y2="50%" class="path-dim" stroke-width="1.5"/>
+      <line x1="62%" y1="25%" x2="65%" y2="48%" class="path-dim" stroke-width="1.5"/>
+      <line x1="72%" y1="28%" x2="65%" y2="48%" class="path-dim" stroke-width="1.5"/>
+      <line x1="72%" y1="28%" x2="74%" y2="52%" class="path-dim" stroke-width="1.5"/>
+      <line x1="80%" y1="32%" x2="74%" y2="52%" class="path-dim" stroke-width="1.5"/>
+      <line x1="80%" y1="32%" x2="82%" y2="54%" class="path-dim" stroke-width="1.5"/>
+      <line x1="14%" y1="55%" x2="50%" y2="82%" class="path-dim" stroke-width="1.5"/>
+      <line x1="22%" y1="52%" x2="50%" y2="82%" class="path-dim" stroke-width="1.5"/>
+      <line x1="35%" y1="50%" x2="50%" y2="82%" class="path-dim" stroke-width="1.5"/>
+      <line x1="44%" y1="48%" x2="50%" y2="82%" class="path-dim" stroke-width="1.5"/>
+      <line x1="56%" y1="50%" x2="50%" y2="82%" class="path-dim" stroke-width="1.5"/>
+      <line x1="65%" y1="48%" x2="50%" y2="82%" class="path-dim" stroke-width="1.5"/>
+      <line x1="74%" y1="52%" x2="50%" y2="82%" class="path-dim" stroke-width="1.5"/>
+      <line x1="82%" y1="54%" x2="50%" y2="82%" class="path-dim" stroke-width="1.5"/>
+      <line x1="50%" y1="8%"  x2="62%" y2="25%" class="path-active"/>
+      <line x1="62%" y1="25%" x2="65%" y2="48%" class="path-active"/>
+      <line x1="65%" y1="48%" x2="50%" y2="82%" class="path-active"/>
+    </svg>
+
+    <div class="node start"              style="top:4%;  left:43%">Albert Einstein</div>
+    <div class="node"                    style="top:22%; left:10%">History of physics</div>
+    <div class="node"                    style="top:20%; left:30%">Special Relativity</div>
+    <div class="node glow-uncommon"      style="top:18%; left:47%">Nobel Prize in Physics <span class="tag uncommon">uncommon</span></div>
+    <div class="node active glow-first"  style="top:20%; left:55%">Physics <span class="tag first">first</span></div>
+    <div class="node"                    style="top:22%; left:69%">Germany</div>
+    <div class="node"                    style="top:24%; left:77%">Science</div>
+    <div class="node"                    style="top:46%; left:6%">Classical mechanics</div>
+    <div class="node"                    style="top:44%; left:27%">Lorentz transform</div>
+    <div class="node"                    style="top:43%; left:38%">Thermodynamics</div>
+    <div class="node active glow-rare"   style="top:44%; left:57%">Wave function <span class="tag rare">rare</span></div>
+    <div class="node glow-uncommon"      style="top:46%; left:68%">Max Planck <span class="tag uncommon">uncommon</span></div>
+    <div class="node"                    style="top:47%; left:77%">Niels Bohr</div>
+    <div class="node end"                style="top:78%; left:43%">Quantum mechanics</div>
+
+    <div class="graph-legend">
+      <div class="legend-title">Node rarity</div>
+      <div class="legend-row"><div class="legend-dot first"></div> First discovered</div>
+      <div class="legend-row"><div class="legend-dot rare"></div> Rare path</div>
+      <div class="legend-row"><div class="legend-dot uncommon"></div> Uncommon</div>
+    </div>
+    <div class="graph-controls">
+      <button class="ctrl-btn" aria-label="Zoom in">+</button>
+      <button class="ctrl-btn" aria-label="Zoom out">−</button>
+      <button class="ctrl-btn" style="font-size:10px; font-weight:700;" aria-label="Fit">fit</button>
+    </div>
+  </section>
+
+  <!-- ③ BENTO STATS -->
+  <div class="bento-section" role="region" aria-label="Search statistics">
+
+    <div class="bento-card bento-paths">
+      <div>
+        <div class="bento-stat-label">Paths found</div>
+        <div class="bento-stat-big">247</div>
+        <div class="bento-stat-sub">4 hops each — shortest possible</div>
+      </div>
+      <div class="bento-live-pill">
+        <div class="live-dot" aria-hidden="true"></div>
+        Live result
+      </div>
+    </div>
+
+    <div class="bento-card bento-stat-sm bento-hops">
+      <div class="bento-stat-label">Min hops</div>
+      <div class="bento-stat-big">4</div>
+      <div class="bento-stat-sub" style="font-family: var(--font-ui); font-style: normal; font-size:11px; color: var(--ink-muted); margin-top:3px;">fewest possible</div>
+    </div>
+
+    <div class="bento-card bento-stat-sm" style="background: var(--sand); border-color: var(--sand-dark);">
+      <div class="bento-stat-label">Nodes explored</div>
+      <div class="bento-stat-big" style="font-size:26px; letter-spacing:-1px; color: var(--ink);">8,241</div>
+    </div>
+
+    <div class="bento-card bento-stat-sm bento-time">
+      <div class="bento-stat-label">Search time</div>
+      <div class="bento-stat-big">1.2s</div>
+    </div>
+
+    <div class="bento-card bento-stat-sm" style="background: var(--white);">
+      <div class="bento-stat-label">Unique articles</div>
+      <div class="bento-stat-big" style="font-size:26px; letter-spacing:-0.5px; color: var(--ink-muted);">14</div>
+    </div>
+
+  </div>
+
+  <!-- ④ RECORDS — standalone, stacks vertically on mobile -->
+  <div class="records-section" role="region" aria-label="Records">
+    <div class="records-header">Records — this pair</div>
+    <div class="records-cols">
+      <div class="rec-col">
+        <div class="rec-period">All time</div>
+        <div class="rec-row"><span class="rec-key">Most paths</span><span class="rec-val">300</span></div>
+        <div class="rec-row"><span class="rec-key">Most nodes</span><span class="rec-val">12,048 <span class="rec-badge">★ record</span></span></div>
+        <div class="rec-row"><span class="rec-key">Longest path</span><span class="rec-val">9 hops</span></div>
+      </div>
+      <div class="rec-col">
+        <div class="rec-period">Past day</div>
+        <div class="rec-row"><span class="rec-key">Most paths</span><span class="rec-val">300</span></div>
+        <div class="rec-row"><span class="rec-key">Most nodes</span><span class="rec-val">3,892</span></div>
+        <div class="rec-row"><span class="rec-key">Longest path</span><span class="rec-val">7 hops</span></div>
+      </div>
+      <div class="rec-col">
+        <div class="rec-period">Past week</div>
+        <div class="rec-row"><span class="rec-key">Most paths</span><span class="rec-val">300</span></div>
+        <div class="rec-row"><span class="rec-key">Most nodes</span><span class="rec-val">5,211</span></div>
+        <div class="rec-row"><span class="rec-key">Longest path</span><span class="rec-val">8 hops</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑤ PERMALINK -->
+  <div class="permalink-bar">
+    <span class="permalink-label">Share</span>
+    <span class="permalink-url">wikilinks.app/s/<strong>aE3f9k</strong></span>
+    <button class="permalink-copy">Copy link</button>
+  </div>
+
+  <!-- ⑥ PATH LIST -->
+  <section class="path-list-section">
+    <div class="path-list-header">
+      <h2 class="path-list-title">247 shortest paths — 4 hops each</h2>
+      <div class="path-list-controls">
+        <select aria-label="Sort order"><option>Sort: most interesting</option><option>Sort: alphabetical</option></select>
+        <select aria-label="Max paths"><option>Max: 300</option><option>Max: 100</option><option>Max: 500</option></select>
+      </div>
+    </div>
+
+    <article class="path-item">
+      <div class="path-num">#1</div>
+      <div class="path-crumbs">
+        <a class="crumb hl" href="#">Albert Einstein</a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb" href="#">Physics <span class="path-tag first">first</span></a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb" href="#">Wave function <span class="path-tag rare">rare</span></a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb hl" href="#">Quantum mechanics</a>
+      </div>
+      <div class="path-actions"><button class="action-btn">Copy</button><button class="action-btn">Link ↗</button></div>
+    </article>
+    <article class="path-item">
+      <div class="path-num">#2</div>
+      <div class="path-crumbs">
+        <a class="crumb hl" href="#">Albert Einstein</a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb" href="#">Nobel Prize in Physics <span class="path-tag uncommon">uncommon</span></a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb" href="#">Niels Bohr</a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb hl" href="#">Quantum mechanics</a>
+      </div>
+      <div class="path-actions"><button class="action-btn">Copy</button><button class="action-btn">Link ↗</button></div>
+    </article>
+    <article class="path-item">
+      <div class="path-num">#3</div>
+      <div class="path-crumbs">
+        <a class="crumb hl" href="#">Albert Einstein</a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb" href="#">Special Relativity</a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb" href="#">Max Planck <span class="path-tag uncommon">uncommon</span></a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb hl" href="#">Quantum mechanics</a>
+      </div>
+      <div class="path-actions"><button class="action-btn">Copy</button><button class="action-btn">Link ↗</button></div>
+    </article>
+    <article class="path-item">
+      <div class="path-num">#4</div>
+      <div class="path-crumbs">
+        <a class="crumb hl" href="#">Albert Einstein</a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb" href="#">Germany</a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb" href="#">Max Planck <span class="path-tag uncommon">uncommon</span></a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb hl" href="#">Quantum mechanics</a>
+      </div>
+      <div class="path-actions"><button class="action-btn">Copy</button><button class="action-btn">Link ↗</button></div>
+    </article>
+    <article class="path-item">
+      <div class="path-num">#5</div>
+      <div class="path-crumbs">
+        <a class="crumb hl" href="#">Albert Einstein</a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb" href="#">Science</a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb" href="#">Niels Bohr</a>
+        <span class="crumb-sep">›</span><span class="crumb-arrow">↓</span>
+        <a class="crumb hl" href="#">Quantum mechanics</a>
+      </div>
+      <div class="path-actions"><button class="action-btn">Copy</button><button class="action-btn">Link ↗</button></div>
+    </article>
+
+    <div class="load-more">
+      <button class="load-more-btn">Load 242 more paths</button>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

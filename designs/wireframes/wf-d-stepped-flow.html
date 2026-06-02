@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WF-D — Stepped Flow</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f5;
+      color: #212121;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Page wrapper — simulates a narrow mobile viewport as the primary design */
+    .page-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #fff;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid #e0e0e0;
+      border-right: 1px solid #e0e0e0;
+    }
+
+    /* Desktop expansion note */
+    .desktop-note {
+      display: none;
+    }
+    @media (min-width: 640px) {
+      body { padding: 24px; background: #f0f0f0; }
+      .desktop-note { display: block; text-align: center; font-size: 12px; color: #9e9e9e; padding: 8px; border-bottom: 1px solid #e0e0e0; }
+    }
+
+    header {
+      padding: 14px 20px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .wordmark { font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
+    .history-btn { font-size: 13px; color: #616161; cursor: pointer; text-decoration: underline; }
+
+    /* Step indicator */
+    .steps {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px 0;
+      gap: 0;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #9e9e9e;
+    }
+    .step.done  { color: #212121; }
+    .step.active { color: #212121; font-weight: 600; }
+    .step-num {
+      width: 22px; height: 22px;
+      border: 1px solid #bdbdbd;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .step.done .step-num  { background: #212121; color: #fff; border-color: #212121; }
+    .step.active .step-num { border-color: #212121; }
+    .step-div { flex: 1; height: 1px; background: #e0e0e0; margin: 0 6px; }
+
+    /* ─── STEP 1: Input ─── */
+    .step1 {
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .step-heading { font-size: 18px; font-weight: 700; }
+    .step-sub     { font-size: 13px; color: #616161; margin-top: 2px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #616161; }
+    input[type="text"] {
+      padding: 12px 14px;
+      border: 1px solid #bdbdbd;
+      font-family: inherit;
+      font-size: 15px;
+      width: 100%;
+    }
+    input:focus { outline: none; border-color: #212121; }
+
+    .swap-row {
+      display: flex;
+      justify-content: center;
+      padding: 4px 0;
+    }
+    .swap-btn {
+      padding: 6px 14px;
+      border: 1px solid #e0e0e0;
+      background: #f5f5f5;
+      font-size: 12px;
+      color: #616161;
+      cursor: pointer;
+    }
+
+    .btn {
+      padding: 14px;
+      border: 1px solid #212121;
+      background: #fff;
+      font-family: inherit;
+      font-size: 15px;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+    }
+    .btn-primary { background: #212121; color: #fff; }
+
+    /* Recent searches */
+    .recents-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: #9e9e9e; margin-bottom: 8px; }
+    .recent-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 13px;
+    }
+    .recent-route { color: #212121; }
+    .recent-meta  { font-size: 11px; color: #9e9e9e; }
+
+    /* ─── STEP 2: Searching ─── */
+    .step2 {
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .search-heading { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+    .search-sub     { font-size: 13px; color: #616161; margin-bottom: 20px; }
+
+    /* Animated progress */
+    .big-progress-wrap {
+      height: 6px;
+      background: #e0e0e0;
+      margin-bottom: 6px;
+    }
+    .big-progress-fill { height: 100%; background: #212121; width: 55%; }
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #9e9e9e;
+      margin-bottom: 20px;
+    }
+
+    /* Depth indicator */
+    .depth-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .depth-chip {
+      padding: 6px 12px;
+      border: 1px solid #e0e0e0;
+      font-size: 12px;
+      background: #f5f5f5;
+      color: #9e9e9e;
+    }
+    .depth-chip.active { border-color: #212121; background: #212121; color: #fff; }
+    .depth-chip.done   { border-color: #616161; color: #616161; background: #fff; }
+
+    /* Live node stream */
+    .node-stream {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 240px;
+      overflow: hidden;
+    }
+    .stream-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      font-size: 13px;
+      opacity: 1;
+    }
+    .stream-item.faded { opacity: 0.35; }
+    .stream-item.new   { border-color: #212121; background: #fff; }
+    .stream-dot {
+      width: 8px; height: 8px;
+      background: #bdbdbd;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .stream-dot.new { background: #212121; }
+    .stream-name { flex: 1; font-weight: 500; }
+    .stream-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border: 1px solid #bdbdbd;
+      color: #9e9e9e;
+    }
+    .stream-badge.first { border-color: #212121; color: #212121; font-weight: 600; }
+    .stream-via { font-size: 11px; color: #9e9e9e; }
+
+    .cancel-btn { margin-top: 16px; }
+
+    /* ─── STEP 3: Result ─── */
+    .step3 {
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .result-heading { font-size: 17px; font-weight: 700; }
+    .result-sub     { font-size: 13px; color: #616161; margin-top: 2px; }
+
+    /* Path chain */
+    .path-chain {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .chain-node {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-bottom: none;
+    }
+    .chain-node:last-child { border-bottom: 1px solid #e0e0e0; }
+    .chain-node.hl { background: #212121; color: #fff; border-color: #212121; }
+    .chain-idx {
+      width: 24px; height: 24px;
+      border: 1px solid #e0e0e0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600;
+      flex-shrink: 0;
+    }
+    .chain-node.hl .chain-idx { border-color: #616161; color: #bdbdbd; }
+    .chain-name { flex: 1; font-weight: 500; }
+    .chain-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border: 1px solid #bdbdbd;
+      color: #9e9e9e;
+    }
+    .chain-node.hl .chain-badge { border-color: #616161; color: #bdbdbd; }
+    .chain-badge.first { border-color: #fff; color: #fff; }
+    .chain-arrow {
+      text-align: center;
+      padding: 4px 0;
+      color: #9e9e9e;
+      font-size: 12px;
+      border-left: 1px solid #e0e0e0;
+      border-right: 1px solid #e0e0e0;
+      background: #fafafa;
+    }
+
+    /* Graph (result state — compact) */
+    .graph-card {
+      border: 1px solid #e0e0e0;
+      overflow: hidden;
+    }
+    .graph-card-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+    }
+    .graph-card-body {
+      position: relative;
+      height: 200px;
+      background: #fafafa;
+    }
+    .r-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .r-node {
+      position: absolute;
+      background: #fff;
+      border: 1px solid #bdbdbd;
+      padding: 5px 9px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .r-node.s { border: 2px solid #212121; font-weight: 700; }
+    .r-node.e { border: 2px dashed #212121; font-weight: 700; }
+    .r-node.d { opacity: 0.35; }
+
+    /* Actions */
+    .action-row { display: flex; flex-direction: column; gap: 8px; }
+    .result-meta { font-size: 12px; color: #9e9e9e; text-align: center; }
+
+    /* Divider between states */
+    .state-divider {
+      height: 8px;
+      background: #f0f0f0;
+      border-top: 1px solid #e0e0e0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .state-label {
+      padding: 8px 20px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #bdbdbd;
+      background: #fafafa;
+      border-bottom: 1px solid #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- WF-D: Stepped Flow — 3 distinct states on one scrollable page
+  MODE: Generate
+  DECISIONS:
+    - Mobile-first: max-width 480px, designed as a phone screen first
+    - Three states shown stacked for wireframe review — in production only one state visible at a time
+    - State 1: Input + recent history
+    - State 2: Live search — node stream replaces graph during active search; graph appears on result
+    - State 3: Result — vertical path chain (readable on narrow screens) + compact graph
+    - No persistent sidebar — all navigation is contextual within the flow
+    - CONFIRM: Is the stepped/stateful approach (one screen at a time) what you want, or should all info be visible simultaneously?
+    - CONFIRM: Node stream in State 2 — does showing incoming nodes as a list work, or must the graph animate during search?
+    - CONFIRM: Vertical path chain in result — preferred over horizontal breadcrumb on mobile?
+-->
+
+<div class="page-wrap">
+  <div class="desktop-note">↑ Mobile layout (480px) — scales to full width on desktop</div>
+
+  <header>
+    <div class="wordmark">WikiPath</div>
+    <div class="history-btn">History</div>
+  </header>
+
+  <!-- ── STATE 1: INPUT ── -->
+  <div class="state-label">State 1 — Input</div>
+  <div class="steps">
+    <div class="step active"><div class="step-num">1</div> Search</div>
+    <div class="step-div"></div>
+    <div class="step"><div class="step-num">2</div> Finding</div>
+    <div class="step-div"></div>
+    <div class="step"><div class="step-num">3</div> Result</div>
+  </div>
+
+  <div class="step1">
+    <div>
+      <div class="step-heading">Find the path</div>
+      <div class="step-sub">Enter two Wikipedia pages to find the shortest route between them.</div>
+    </div>
+
+    <div class="field">
+      <label>From</label>
+      <input type="text" value="Albert Einstein" placeholder="Start page…">
+    </div>
+    <div class="swap-row"><button class="swap-btn">⇅ Swap</button></div>
+    <div class="field">
+      <label>To</label>
+      <input type="text" value="Quantum mechanics" placeholder="End page…">
+    </div>
+
+    <button class="btn btn-primary">Find Shortest Path →</button>
+
+    <div>
+      <div class="recents-label">Recent searches</div>
+      <div class="recent-item">
+        <div>
+          <div class="recent-route">Napoleon → Eiffel Tower</div>
+          <div class="recent-meta">3 hops · cached</div>
+        </div>
+        <div class="recent-meta">Yesterday</div>
+      </div>
+      <div class="recent-item">
+        <div>
+          <div class="recent-route">DNA → World War II</div>
+          <div class="recent-meta">5 hops</div>
+        </div>
+        <div class="recent-meta">2 days ago</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="state-divider"></div>
+
+  <!-- ── STATE 2: SEARCHING ── -->
+  <div class="state-label">State 2 — Searching</div>
+  <div class="steps" style="padding-top:16px">
+    <div class="step done"><div class="step-num">✓</div> Search</div>
+    <div class="step-div"></div>
+    <div class="step active"><div class="step-num">2</div> Finding</div>
+    <div class="step-div"></div>
+    <div class="step"><div class="step-num">3</div> Result</div>
+  </div>
+
+  <div class="step2">
+    <div class="search-heading">Searching…</div>
+    <div class="search-sub">Albert Einstein → Quantum mechanics</div>
+
+    <div class="big-progress-wrap"><div class="big-progress-fill"></div></div>
+    <div class="progress-labels"><span>55% complete</span><span>142 nodes visited</span></div>
+
+    <div class="depth-row">
+      <div class="depth-chip done">Depth 1</div>
+      <div class="depth-chip done">Depth 2</div>
+      <div class="depth-chip active">Depth 3</div>
+      <div class="depth-chip">Depth 4</div>
+    </div>
+
+    <div class="node-stream">
+      <div class="stream-item new">
+        <div class="stream-dot new"></div>
+        <div class="stream-name">Wave function</div>
+        <span class="stream-badge first">first</span>
+        <div class="stream-via">via Physics</div>
+      </div>
+      <div class="stream-item">
+        <div class="stream-dot"></div>
+        <div class="stream-name">Max Planck</div>
+        <span class="stream-badge">common</span>
+        <div class="stream-via">via Physics</div>
+      </div>
+      <div class="stream-item">
+        <div class="stream-dot"></div>
+        <div class="stream-name">Classical mechanics</div>
+        <span class="stream-badge">common</span>
+        <div class="stream-via">via Physics</div>
+      </div>
+      <div class="stream-item faded">
+        <div class="stream-dot"></div>
+        <div class="stream-name">Physics</div>
+        <span class="stream-badge first">first</span>
+        <div class="stream-via">via Einstein</div>
+      </div>
+      <div class="stream-item faded">
+        <div class="stream-dot"></div>
+        <div class="stream-name">Special Relativity</div>
+        <span class="stream-badge">uncommon</span>
+        <div class="stream-via">via Einstein</div>
+      </div>
+    </div>
+
+    <button class="btn cancel-btn">Cancel search</button>
+  </div>
+
+  <div class="state-divider"></div>
+
+  <!-- ── STATE 3: RESULT ── -->
+  <div class="state-label">State 3 — Result</div>
+  <div class="steps" style="padding-top:16px">
+    <div class="step done"><div class="step-num">✓</div> Search</div>
+    <div class="step-div"></div>
+    <div class="step done"><div class="step-num">✓</div> Finding</div>
+    <div class="step-div"></div>
+    <div class="step active"><div class="step-num">3</div> Result</div>
+  </div>
+
+  <div class="step3">
+    <div>
+      <div class="result-heading">Path found — 4 hops</div>
+      <div class="result-sub">Shortest route from Albert Einstein to Quantum mechanics</div>
+    </div>
+
+    <div class="path-chain">
+      <div class="chain-node hl">
+        <div class="chain-idx">1</div>
+        <div class="chain-name">Albert Einstein</div>
+        <span class="chain-badge">Start</span>
+      </div>
+      <div class="chain-arrow">↓</div>
+      <div class="chain-node">
+        <div class="chain-idx">2</div>
+        <div class="chain-name">Physics</div>
+        <span class="chain-badge first">first</span>
+      </div>
+      <div class="chain-arrow">↓</div>
+      <div class="chain-node">
+        <div class="chain-idx">3</div>
+        <div class="chain-name">Wave function</div>
+        <span class="chain-badge">rare</span>
+      </div>
+      <div class="chain-arrow">↓</div>
+      <div class="chain-node hl">
+        <div class="chain-idx">4</div>
+        <div class="chain-name">Quantum mechanics</div>
+        <span class="chain-badge">End</span>
+      </div>
+    </div>
+
+    <div class="graph-card">
+      <div class="graph-card-header">
+        <span>Graph view</span>
+        <span style="font-size:12px; color:#9e9e9e; font-weight:400; cursor:pointer">Expand ↗</span>
+      </div>
+      <div class="graph-card-body">
+        <svg class="r-svg" xmlns="http://www.w3.org/2000/svg">
+          <line x1="50%" y1="10%" x2="30%" y2="38%" stroke="#e0e0e0" stroke-width="1"/>
+          <line x1="50%" y1="10%" x2="62%" y2="36%" stroke="#212121" stroke-width="2"/>
+          <line x1="62%" y1="36%" x2="55%" y2="63%" stroke="#212121" stroke-width="2"/>
+          <line x1="62%" y1="36%" x2="72%" y2="60%" stroke="#e0e0e0" stroke-width="1"/>
+          <line x1="55%" y1="63%" x2="50%" y2="86%" stroke="#212121" stroke-width="2"/>
+        </svg>
+        <div class="r-node s" style="top:5%;  left:38%">Albert Einstein</div>
+        <div class="r-node d" style="top:33%; left:20%">Special Relativity</div>
+        <div class="r-node"   style="top:31%; left:53%">Physics</div>
+        <div class="r-node"   style="top:57%; left:45%">Wave function</div>
+        <div class="r-node d" style="top:55%; left:63%">Max Planck</div>
+        <div class="r-node e" style="top:80%; left:38%">Quantum mechanics</div>
+      </div>
+    </div>
+
+    <div class="result-meta">Search completed in 1.4s · 142 nodes explored · Path cached</div>
+
+    <div class="action-row">
+      <button class="btn btn-primary">Search again</button>
+      <button class="btn">Share this path</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

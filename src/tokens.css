@@ -1,0 +1,56 @@
+/* src/tokens.css — WikiLinks design system tokens. Only file that may contain raw values. */
+:root {
+  /* Surfaces */
+  --sand:        #f5ede0;
+  --sand-mid:    #e8d9c4;
+  --sand-dark:   #d4c0a4;
+
+  /* Text */
+  --ink:         #2c2416;
+  --ink-muted:   #7a6a52;
+  --ink-faint:   #b8a888;
+
+  /* Primary — Terracotta */
+  --terra:       #c4572a;
+  --terra-dark:  #a8461f;
+  --terra-light: #f2d5c8;
+  --terra-pale:  #faf0ea;
+
+  /* Secondary — Sage */
+  --sage:        #4a7c59;
+  --sage-light:  #c8dece;
+  --sage-pale:   #edf6ef;
+
+  /* Accent — Clay */
+  --clay:        #e8a05a;
+  --clay-border: #f5dbb0;
+  --clay-pale:   #fdf2e3;
+
+  /* Base */
+  --white:       #fefcf8;
+
+  /* Border radius */
+  --radius-sm:   10px;
+  --radius-md:   18px;
+  --radius-lg:   26px;
+
+  /* Typography */
+  --font-display: 'Figtree', system-ui, sans-serif;
+  --font-body:    'Figtree', system-ui, sans-serif;
+  --font-ui:      'Figtree', system-ui, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--sand);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}

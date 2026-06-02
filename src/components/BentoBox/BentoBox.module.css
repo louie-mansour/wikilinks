@@ -1,0 +1,209 @@
+@import '../../tokens.css';
+
+/* ────────────────────────────────────────
+   Bento grid container
+   §7.5 Bento Stat Cards
+──────────────────────────────────────── */
+.bentoGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 8px;
+  padding: 14px 16px 0;
+}
+
+/* ────────────────────────────────────────
+   Shared card base
+──────────────────────────────────────── */
+.bentoCard {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--sand-mid);
+  /* Safari fix: prevent border-radius clipping of child content */
+  isolation: isolate;
+}
+
+/* ────────────────────────────────────────
+   Shared stat label pattern
+──────────────────────────────────────── */
+.statLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-muted);
+  margin-bottom: 4px;
+  font-family: var(--font-ui);
+}
+
+/* ────────────────────────────────────────
+   Card 1 — Paths Found (large, sage)
+──────────────────────────────────────── */
+.cardPaths {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  background: var(--sage-pale);
+  border-color: var(--sage-light);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.statPaths {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 60px;
+  font-weight: 800;
+  letter-spacing: -3px;
+  color: var(--sage);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.statSub {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+/* ────────────────────────────────────────
+   Small cards (cards 2–5) — shared layout
+──────────────────────────────────────── */
+.cardHops,
+.cardNodes,
+.cardTime,
+.cardArticles {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ────────────────────────────────────────
+   Card 2 — Min Hops (terra)
+──────────────────────────────────────── */
+.cardHops {
+  background: var(--terra-pale);
+  border-color: var(--terra-light);
+}
+
+.statHops {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--terra);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.statNote {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  font-style: normal;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+/* ────────────────────────────────────────
+   Card 3 — Nodes Explored (sand)
+──────────────────────────────────────── */
+.cardNodes {
+  background: var(--sand);
+  border-color: var(--sand-dark);
+}
+
+.statNodes {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--ink);
+  line-height: 1;
+}
+
+/* ────────────────────────────────────────
+   Card 4 — Search Time (clay)
+──────────────────────────────────────── */
+.cardTime {
+  background: var(--clay-pale);
+  border-color: var(--clay-border);
+}
+
+.statTime {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--clay);
+  line-height: 1;
+}
+
+/* ────────────────────────────────────────
+   Card 5 — Unique Articles (white)
+──────────────────────────────────────── */
+.cardArticles {
+  background: var(--white);
+  border-color: var(--sand-mid);
+}
+
+.statArticles {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--ink-muted);
+  line-height: 1;
+}
+
+/* ────────────────────────────────────────
+   Motion
+   All transitions / animations inside prefers-reduced-motion: no-preference
+──────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .bentoCard {
+    transition: box-shadow 0.12s;
+  }
+}
+
+/* ────────────────────────────────────────
+   Mobile — ≤520px
+──────────────────────────────────────── */
+@media (max-width: 520px) {
+  .bentoGrid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    padding: 10px 10px 0;
+  }
+
+  /* Paths card spans full width on mobile */
+  .cardPaths {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    flex-direction: row;
+    align-items: center;
+    padding: 14px 16px;
+    gap: 16px;
+  }
+
+  .statPaths {
+    font-size: 48px;
+    margin-bottom: 0;
+  }
+
+  /* Stack label and subtitle vertically within the row layout */
+  .cardPaths .statLabel {
+    margin-bottom: 2px;
+  }
+}

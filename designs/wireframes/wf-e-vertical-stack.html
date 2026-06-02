@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WF-E — Vertical Stack</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #212121;
+      color: #f5f5f5;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ── Top: inputs ── */
+    .top-bar {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid #424242;
+    }
+
+    .wordmark {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 14px;
+    }
+
+    .input-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-label {
+      font-size: 12px;
+      color: #9e9e9e;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 14px;
+      background: #2e2e2e;
+      border: 1px solid #616161;
+      color: #f5f5f5;
+      font-family: inherit;
+      font-size: 15px;
+    }
+    input::placeholder { color: #616161; }
+    input:focus { outline: none; border-color: #f5f5f5; }
+
+    .btn {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #f5f5f5;
+      background: transparent;
+      color: #f5f5f5;
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 4px;
+      text-align: center;
+    }
+    .btn-primary { background: #f5f5f5; color: #212121; font-weight: 600; }
+
+    /* ── Stats strip ── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid #424242;
+    }
+
+    .stat {
+      padding: 14px 16px;
+      border-right: 1px solid #424242;
+      text-align: center;
+    }
+    .stat:last-child { border-right: none; }
+    .stat-val { font-size: 22px; font-weight: 700; }
+    .stat-lbl { font-size: 11px; color: #9e9e9e; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+    .stat-sub { font-size: 11px; color: #616161; margin-top: 2px; }
+
+    /* ── Records strip ── */
+    .records-strip {
+      border-bottom: 1px solid #424242;
+      padding: 12px 20px;
+      display: flex;
+      gap: 0;
+      flex-wrap: wrap;
+    }
+
+    .records-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #9e9e9e;
+      margin-bottom: 8px;
+      width: 100%;
+    }
+
+    .record-group {
+      flex: 1;
+      min-width: 160px;
+      padding-right: 24px;
+    }
+
+    .record-period {
+      font-size: 11px;
+      color: #616161;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .record-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 3px;
+    }
+
+    .record-metric {
+      font-size: 12px;
+      color: #9e9e9e;
+    }
+
+    .record-val {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .record-val.highlight {
+      color: #f5f5f5;
+    }
+
+    /* ── Graph ── */
+    .graph-section {
+      position: relative;
+      height: 420px;
+      border-bottom: 1px solid #424242;
+      overflow: hidden;
+      background: #1a1a1a;
+    }
+
+    .graph-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Paths: most greyed out, some darker to suggest hover state */
+    .path-dim    { stroke: #383838; }
+    .path-mid    { stroke: #4a4a4a; } /* simulates a "near hover" */
+    .path-active { stroke: #e0e0e0; stroke-width: 2; }
+
+    /* Nodes */
+    .node {
+      position: absolute;
+      background: #2a2a2a;
+      border: 1px solid #424242;
+      padding: 5px 10px;
+      font-size: 11px;
+      white-space: nowrap;
+      color: #9e9e9e;
+    }
+    .node.start  { border: 2px solid #f5f5f5; color: #f5f5f5; font-weight: 700; background: #333; font-size: 12px; }
+    .node.end    { border: 2px dashed #bdbdbd; color: #f5f5f5; font-weight: 700; background: #2a2a2a; font-size: 12px; }
+    .node.active { border-color: #9e9e9e; color: #e0e0e0; background: #303030; }
+
+    /* Frequency tags — always high visibility */
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 5px;
+      margin-left: 4px;
+      vertical-align: middle;
+      font-weight: 600;
+    }
+    .tag.first    { border: 1px solid #f5f5f5; color: #f5f5f5; background: #333; }
+    .tag.rare     { border: 1px solid #bdbdbd; color: #bdbdbd; }
+    .tag.uncommon { border: 1px solid #9e9e9e; color: #9e9e9e; }
+
+    /* Graph controls */
+    .graph-controls {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .ctrl-btn {
+      width: 30px; height: 30px;
+      background: #2e2e2e;
+      border: 1px solid #424242;
+      color: #9e9e9e;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    /* Graph legend */
+    .graph-legend {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: #2a2a2a;
+      border: 1px solid #424242;
+      padding: 10px 14px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .legend-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: #616161; margin-bottom: 2px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; color: #9e9e9e; }
+    .legend-line { width: 20px; height: 2px; }
+    .l-dim    { background: #383838; }
+    .l-hover  { background: #9e9e9e; }
+    .l-active { background: #e0e0e0; }
+
+    /* Path count overlay */
+    .path-count-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: #2a2a2a;
+      border: 1px solid #424242;
+      padding: 8px 14px;
+      font-size: 12px;
+      color: #9e9e9e;
+    }
+    .path-count-overlay strong { color: #f5f5f5; font-size: 15px; }
+
+    /* ── Path list ── */
+    .path-list-section {
+      padding: 0 0 40px;
+    }
+
+    .path-list-header {
+      padding: 14px 20px 10px;
+      border-bottom: 1px solid #424242;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .path-list-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #9e9e9e;
+    }
+
+    .path-list-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    select {
+      padding: 5px 10px;
+      background: #2e2e2e;
+      border: 1px solid #424242;
+      color: #9e9e9e;
+      font-family: inherit;
+      font-size: 12px;
+    }
+
+    .path-item {
+      padding: 14px 20px;
+      border-bottom: 1px solid #2e2e2e;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .path-item:hover { background: #2a2a2a; }
+
+    .path-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .path-num {
+      font-size: 11px;
+      color: #616161;
+      width: 28px;
+      flex-shrink: 0;
+    }
+
+    .path-crumbs {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .crumb {
+      font-size: 12px;
+      color: #9e9e9e;
+      text-decoration: none;
+    }
+    .crumb:hover { color: #f5f5f5; text-decoration: underline; }
+    .crumb.hl { color: #f5f5f5; font-weight: 600; }
+
+    .crumb-sep { color: #424242; font-size: 14px; }
+
+    .path-tags {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .path-hops {
+      font-size: 11px;
+      color: #616161;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .load-more {
+      margin: 16px 20px 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- WF-E: Vertical Stack (based on WF-A dark canvas)
+  MODE: Iterate
+  PARENT: WF-A
+  CHANGES:
+    - Top nav replaced with stacked vertical input section
+    - Status bar replaced with a stats strip (nodes, paths, depth, time)
+    - Added records strip below stats (hourly / daily / weekly bests for nodes + paths)
+    - Graph: multi-path rendering — most paths greyed out, visible on hover; frequency tags always high-contrast
+    - Path count overlay added to graph canvas
+    - Live feed removed; replaced by scrollable path list below the graph
+    - Path list includes sort/filter controls, Wikipedia links, and inline frequency tags
+  DECISIONS:
+    - Max paths config control: placed in path list header as a select — CONFIRM if this belongs elsewhere (settings page?)
+    - Records: hourly / daily / weekly — CONFIRM which time windows you want
+    - Path list sorted by "interest" by default (paths with first/rare nodes ranked higher) — CONFIRM sort default
+    - CONFIRM: Should the graph highlight the hovered path in the list, and vice versa?
+-->
+
+<div class="page">
+
+  <!-- ── Inputs ── -->
+  <div class="top-bar">
+    <div class="wordmark">WikiPath</div>
+    <div class="input-stack">
+      <div class="input-label">Find the shortest paths from</div>
+      <input type="text" value="Albert Einstein">
+      <div class="input-label">to</div>
+      <input type="text" value="Quantum mechanics">
+      <button class="btn btn-primary">Find Paths</button>
+    </div>
+  </div>
+
+  <!-- ── Stats strip ── -->
+  <div class="stats-strip">
+    <div class="stat">
+      <div class="stat-val">247</div>
+      <div class="stat-lbl">Paths found</div>
+      <div class="stat-sub">max 300</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">1,840</div>
+      <div class="stat-lbl">Nodes visited</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">4</div>
+      <div class="stat-lbl">Hops</div>
+      <div class="stat-sub">all paths</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">2.1s</div>
+      <div class="stat-lbl">Search time</div>
+    </div>
+  </div>
+
+  <!-- ── Records ── -->
+  <div class="records-strip">
+    <div class="records-label">Records</div>
+    <div class="record-group">
+      <div class="record-period">Past hour</div>
+      <div class="record-row">
+        <span class="record-metric">Most paths</span>
+        <span class="record-val highlight">298</span>
+      </div>
+      <div class="record-row">
+        <span class="record-metric">Most nodes</span>
+        <span class="record-val highlight">2,140</span>
+      </div>
+    </div>
+    <div class="record-group">
+      <div class="record-period">Past day</div>
+      <div class="record-row">
+        <span class="record-metric">Most paths</span>
+        <span class="record-val highlight">300</span>
+      </div>
+      <div class="record-row">
+        <span class="record-metric">Most nodes</span>
+        <span class="record-val highlight">3,892</span>
+      </div>
+    </div>
+    <div class="record-group">
+      <div class="record-period">Past week</div>
+      <div class="record-row">
+        <span class="record-metric">Most paths</span>
+        <span class="record-val highlight">300</span>
+      </div>
+      <div class="record-row">
+        <span class="record-metric">Most nodes</span>
+        <span class="record-val highlight">5,211</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Graph ── -->
+  <div class="graph-section">
+    <svg class="graph-svg" xmlns="http://www.w3.org/2000/svg">
+
+      <!-- Many dimmed paths suggesting density -->
+      <line x1="50%" y1="8%"  x2="18%" y2="30%" class="path-dim" stroke-width="1"/>
+      <line x1="50%" y1="8%"  x2="28%" y2="28%" class="path-dim" stroke-width="1"/>
+      <line x1="50%" y1="8%"  x2="38%" y2="25%" class="path-dim" stroke-width="1"/>
+      <line x1="50%" y1="8%"  x2="62%" y2="25%" class="path-dim" stroke-width="1"/>
+      <line x1="50%" y1="8%"  x2="72%" y2="28%" class="path-dim" stroke-width="1"/>
+      <line x1="50%" y1="8%"  x2="80%" y2="32%" class="path-dim" stroke-width="1"/>
+
+      <line x1="18%" y1="30%" x2="14%" y2="55%" class="path-dim" stroke-width="1"/>
+      <line x1="28%" y1="28%" x2="22%" y2="52%" class="path-dim" stroke-width="1"/>
+      <line x1="28%" y1="28%" x2="35%" y2="50%" class="path-dim" stroke-width="1"/>
+      <line x1="38%" y1="25%" x2="35%" y2="50%" class="path-dim" stroke-width="1"/>
+      <line x1="38%" y1="25%" x2="44%" y2="48%" class="path-dim" stroke-width="1"/>
+      <line x1="62%" y1="25%" x2="56%" y2="50%" class="path-dim" stroke-width="1"/>
+      <line x1="62%" y1="25%" x2="65%" y2="48%" class="path-dim" stroke-width="1"/>
+      <line x1="72%" y1="28%" x2="65%" y2="48%" class="path-dim" stroke-width="1"/>
+      <line x1="72%" y1="28%" x2="74%" y2="52%" class="path-dim" stroke-width="1"/>
+      <line x1="80%" y1="32%" x2="74%" y2="52%" class="path-dim" stroke-width="1"/>
+      <line x1="80%" y1="32%" x2="82%" y2="54%" class="path-dim" stroke-width="1"/>
+
+      <!-- Mid-dim (simulates hoverable paths) -->
+      <line x1="50%" y1="8%"  x2="56%" y2="25%" class="path-mid" stroke-width="1"/>
+      <line x1="56%" y1="25%" x2="56%" y2="50%" class="path-mid" stroke-width="1"/>
+      <line x1="56%" y1="50%" x2="50%" y2="82%" class="path-mid" stroke-width="1"/>
+
+      <!-- Lower convergences to end node -->
+      <line x1="14%" y1="55%" x2="50%" y2="82%" class="path-dim" stroke-width="1"/>
+      <line x1="22%" y1="52%" x2="50%" y2="82%" class="path-dim" stroke-width="1"/>
+      <line x1="35%" y1="50%" x2="50%" y2="82%" class="path-dim" stroke-width="1"/>
+      <line x1="44%" y1="48%" x2="50%" y2="82%" class="path-dim" stroke-width="1"/>
+      <line x1="65%" y1="48%" x2="50%" y2="82%" class="path-dim" stroke-width="1"/>
+      <line x1="74%" y1="52%" x2="50%" y2="82%" class="path-dim" stroke-width="1"/>
+      <line x1="82%" y1="54%" x2="50%" y2="82%" class="path-dim" stroke-width="1"/>
+
+      <!-- Active / highlighted path -->
+      <line x1="50%" y1="8%"  x2="62%" y2="25%" class="path-active"/>
+      <line x1="62%" y1="25%" x2="65%" y2="48%" class="path-active"/>
+      <line x1="65%" y1="48%" x2="50%" y2="82%" class="path-active"/>
+    </svg>
+
+    <!-- Key nodes -->
+    <div class="node start"  style="top:4%;  left:43%">Albert Einstein</div>
+
+    <div class="node"        style="top:22%; left:10%">History of physics</div>
+    <div class="node"        style="top:20%; left:30%">Special Relativity</div>
+    <div class="node"        style="top:18%; left:48%">Nobel Prize in Physics <span class="tag uncommon">uncommon</span></div>
+    <div class="node active" style="top:20%; left:55%">Physics <span class="tag first">first</span></div>
+    <div class="node"        style="top:22%; left:69%">Germany</div>
+    <div class="node"        style="top:24%; left:77%">Science</div>
+
+    <div class="node"        style="top:46%; left:6%">Classical mechanics</div>
+    <div class="node"        style="top:44%; left:27%">Lorentz transform</div>
+    <div class="node"        style="top:43%; left:38%">Thermodynamics</div>
+    <div class="node active" style="top:44%; left:57%">Wave function <span class="tag rare">rare</span></div>
+    <div class="node"        style="top:46%; left:68%">Max Planck <span class="tag uncommon">uncommon</span></div>
+    <div class="node"        style="top:47%; left:77%">Niels Bohr</div>
+
+    <div class="node end"    style="top:78%; left:43%">Quantum mechanics</div>
+
+    <!-- Overlays -->
+    <div class="path-count-overlay"><strong>247</strong> paths · hover to explore</div>
+
+    <div class="graph-legend">
+      <div class="legend-title">Paths</div>
+      <div class="legend-row"><div class="legend-line l-dim"></div> Unselected</div>
+      <div class="legend-row"><div class="legend-line l-hover"></div> Hovered</div>
+      <div class="legend-row"><div class="legend-line l-active"></div> Selected</div>
+      <div class="legend-row" style="margin-top:4px"><span class="tag first" style="margin:0">first</span> First seen</div>
+      <div class="legend-row"><span class="tag rare" style="margin:0">rare</span> Rare node</div>
+      <div class="legend-row"><span class="tag uncommon" style="margin:0">uncommon</span> Uncommon</div>
+    </div>
+
+    <div class="graph-controls">
+      <div class="ctrl-btn">+</div>
+      <div class="ctrl-btn">−</div>
+      <div class="ctrl-btn" style="font-size:10px">fit</div>
+    </div>
+  </div>
+
+  <!-- ── Path list ── -->
+  <div class="path-list-section">
+    <div class="path-list-header">
+      <div class="path-list-title">247 shortest paths — 4 hops each</div>
+      <div class="path-list-controls">
+        <select>
+          <option>Sort: most interesting</option>
+          <option>Sort: alphabetical</option>
+          <option>Sort: fewest common nodes</option>
+        </select>
+        <select>
+          <option>Max paths: 300</option>
+          <option>Max paths: 100</option>
+          <option>Max paths: 500</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="path-item">
+      <div class="path-meta-row">
+        <div class="path-num">#1</div>
+        <div class="path-crumbs">
+          <a class="crumb hl" href="#">Albert Einstein</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">Physics</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">Wave function</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb hl" href="#">Quantum mechanics</a>
+        </div>
+        <div class="path-tags">
+          <span class="tag first">first</span>
+          <span class="tag rare">rare</span>
+        </div>
+        <div class="path-hops">4 hops</div>
+      </div>
+    </div>
+
+    <div class="path-item">
+      <div class="path-meta-row">
+        <div class="path-num">#2</div>
+        <div class="path-crumbs">
+          <a class="crumb hl" href="#">Albert Einstein</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">Nobel Prize in Physics</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">Niels Bohr</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb hl" href="#">Quantum mechanics</a>
+        </div>
+        <div class="path-tags">
+          <span class="tag uncommon">uncommon</span>
+        </div>
+        <div class="path-hops">4 hops</div>
+      </div>
+    </div>
+
+    <div class="path-item">
+      <div class="path-meta-row">
+        <div class="path-num">#3</div>
+        <div class="path-crumbs">
+          <a class="crumb hl" href="#">Albert Einstein</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">Special Relativity</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">Max Planck</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb hl" href="#">Quantum mechanics</a>
+        </div>
+        <div class="path-tags">
+          <span class="tag uncommon">uncommon</span>
+        </div>
+        <div class="path-hops">4 hops</div>
+      </div>
+    </div>
+
+    <div class="path-item">
+      <div class="path-meta-row">
+        <div class="path-num">#4</div>
+        <div class="path-crumbs">
+          <a class="crumb hl" href="#">Albert Einstein</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">Germany</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">Max Planck</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb hl" href="#">Quantum mechanics</a>
+        </div>
+        <div class="path-tags"></div>
+        <div class="path-hops">4 hops</div>
+      </div>
+    </div>
+
+    <div class="path-item">
+      <div class="path-meta-row">
+        <div class="path-num">#5</div>
+        <div class="path-crumbs">
+          <a class="crumb hl" href="#">Albert Einstein</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">Science</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">Niels Bohr</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb hl" href="#">Quantum mechanics</a>
+        </div>
+        <div class="path-tags"></div>
+        <div class="path-hops">4 hops</div>
+      </div>
+    </div>
+
+    <div class="path-item" style="opacity:0.5">
+      <div class="path-meta-row">
+        <div class="path-num">#6</div>
+        <div class="path-crumbs">
+          <a class="crumb hl" href="#">Albert Einstein</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">History of physics</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb" href="#">Classical mechanics</a>
+          <span class="crumb-sep">›</span>
+          <a class="crumb hl" href="#">Quantum mechanics</a>
+        </div>
+        <div class="path-tags"></div>
+        <div class="path-hops">4 hops</div>
+      </div>
+    </div>
+
+    <div class="load-more">
+      <button class="btn">Load more paths (241 remaining)</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

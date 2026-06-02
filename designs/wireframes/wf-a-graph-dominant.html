@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WF-A — Graph Dominant</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #212121;
+      color: #f5f5f5;
+      font-size: 14px;
+      line-height: 1.5;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top bar */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #616161;
+      flex-shrink: 0;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .wordmark { font-weight: 700; font-size: 15px; letter-spacing: -0.5px; white-space: nowrap; }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex: 1;
+      min-width: 260px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 8px 12px;
+      background: #424242;
+      border: 1px solid #616161;
+      color: #f5f5f5;
+      font-family: inherit;
+      font-size: 13px;
+      min-width: 0;
+    }
+    input::placeholder { color: #9e9e9e; }
+    .arrow { color: #9e9e9e; font-size: 18px; flex-shrink: 0; }
+    .btn {
+      padding: 8px 16px;
+      border: 1px solid #f5f5f5;
+      background: transparent;
+      color: #f5f5f5;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-primary { background: #f5f5f5; color: #212121; }
+
+    /* Status bar */
+    .status-bar {
+      padding: 6px 16px;
+      background: #2e2e2e;
+      border-bottom: 1px solid #424242;
+      font-size: 12px;
+      color: #9e9e9e;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      background: #9e9e9e;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.active { background: #e0e0e0; }
+    .status-text { flex: 1; }
+    .depth-badge {
+      padding: 2px 8px;
+      border: 1px solid #616161;
+      font-size: 11px;
+    }
+
+    /* Graph canvas */
+    .graph-canvas {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    .graph-placeholder {
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #424242;
+      font-size: 13px;
+      border: none;
+    }
+
+    /* Simulated graph nodes */
+    .graph-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+    }
+    .node-label {
+      position: absolute;
+      background: #424242;
+      border: 1px solid #616161;
+      padding: 6px 10px;
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .node-label.start  { border-color: #f5f5f5; background: #f5f5f5; color: #212121; font-weight: 700; }
+    .node-label.end    { border-color: #bdbdbd; background: #212121; color: #f5f5f5; font-weight: 700; border-style: dashed; }
+    .node-label.active { border-color: #e0e0e0; background: #333; }
+    .node-tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 5px;
+      border: 1px solid #616161;
+      color: #9e9e9e;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .node-tag.first    { border-color: #f5f5f5; color: #f5f5f5; }
+    .node-tag.rare     { border-color: #bdbdbd; color: #bdbdbd; }
+    .node-tag.uncommon { border-color: #9e9e9e; color: #9e9e9e; }
+
+    /* Legend overlay */
+    .legend {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      background: #2e2e2e;
+      border: 1px solid #424242;
+      padding: 12px 14px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .legend-title { font-size: 11px; color: #9e9e9e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; }
+    .legend-chip {
+      width: 28px; height: 2px; background: #616161;
+    }
+    .legend-chip.path { background: #f5f5f5; }
+
+    /* Zoom controls */
+    .zoom-controls {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .zoom-btn {
+      width: 32px; height: 32px;
+      background: #2e2e2e;
+      border: 1px solid #424242;
+      color: #f5f5f5;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Path result drawer — slides up from bottom */
+    .result-drawer {
+      border-top: 1px solid #424242;
+      background: #2e2e2e;
+      padding: 12px 16px;
+      flex-shrink: 0;
+    }
+    .drawer-label { font-size: 11px; color: #9e9e9e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .path-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+    .path-crumb {
+      padding: 4px 10px;
+      background: #424242;
+      border: 1px solid #616161;
+    }
+    .path-crumb.highlight { background: #f5f5f5; color: #212121; border-color: #f5f5f5; font-weight: 600; }
+    .path-arrow { color: #616161; }
+    .drawer-meta { font-size: 12px; color: #9e9e9e; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<!-- WF-A: Graph Dominant — Dark Canvas
+  MODE: Generate
+  DECISIONS:
+    - Dark background chosen to make the graph feel like a "live" exploration space
+    - Graph fills the full viewport — it's the primary content
+    - Inputs live in the top bar, always accessible without leaving the graph view
+    - Status bar shows live search state between inputs and canvas
+    - Result path shown in a slim bottom drawer so it doesn't obscure the graph
+    - Node frequency tags (first/rare/uncommon) shown inline on node labels
+    - CONFIRM: Is a dark UI appropriate for your context, or prefer light?
+    - CONFIRM: Should the result drawer be persistent or dismissible?
+-->
+
+<header>
+  <div class="wordmark">WikiPath</div>
+  <div class="search-row">
+    <input type="text" value="Albert Einstein" placeholder="Start page…">
+    <span class="arrow">→</span>
+    <input type="text" value="Quantum mechanics" placeholder="End page…">
+    <button class="btn btn-primary">Find Path</button>
+    <button class="btn">Clear</button>
+  </div>
+</header>
+
+<div class="status-bar">
+  <div class="status-dot active"></div>
+  <div class="status-text">Searching… exploring depth 3 — 142 nodes visited</div>
+  <div class="depth-badge">Depth 3</div>
+  <div class="depth-badge">142 nodes</div>
+</div>
+
+<div class="graph-canvas">
+  <!-- Simulated graph using absolute-positioned nodes + SVG edges -->
+  <svg class="graph-svg" xmlns="http://www.w3.org/2000/svg">
+    <!-- Edges (drawn behind nodes) -->
+    <line x1="50%" y1="15%" x2="30%" y2="38%" stroke="#424242" stroke-width="1"/>
+    <line x1="50%" y1="15%" x2="62%" y2="35%" stroke="#424242" stroke-width="1"/>
+    <line x1="30%" y1="38%" x2="22%" y2="60%" stroke="#424242" stroke-width="1"/>
+    <line x1="62%" y1="35%" x2="55%" y2="58%" stroke="#424242" stroke-width="1"/>
+    <line x1="62%" y1="35%" x2="72%" y2="57%" stroke="#424242" stroke-width="1"/>
+    <!-- Active path highlighted -->
+    <line x1="50%" y1="15%" x2="62%" y2="35%" stroke="#e0e0e0" stroke-width="2"/>
+    <line x1="62%" y1="35%" x2="55%" y2="58%" stroke="#e0e0e0" stroke-width="2"/>
+    <line x1="55%" y1="58%" x2="50%" y2="80%" stroke="#bdbdbd" stroke-width="1.5" stroke-dasharray="4,3"/>
+  </svg>
+
+  <!-- Nodes -->
+  <div class="node-label start"  style="top:10%; left:44%">Albert Einstein</div>
+  <div class="node-label active" style="top:32%; left:24%">Special Relativity <span class="node-tag uncommon">uncommon</span></div>
+  <div class="node-label active" style="top:32%; left:55%">Physics <span class="node-tag first">first</span></div>
+  <div class="node-label"        style="top:54%; left:16%">Lorentz transform <span class="node-tag rare">rare</span></div>
+  <div class="node-label active" style="top:54%; left:48%">Wave function <span class="node-tag uncommon">uncommon</span></div>
+  <div class="node-label"        style="top:54%; left:66%">Max Planck <span class="node-tag rare">rare</span></div>
+  <div class="node-label end"    style="top:75%; left:43%">Quantum mechanics</div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-title">Legend</div>
+    <div class="legend-row"><div class="legend-chip path"></div> Active path</div>
+    <div class="legend-row"><div class="legend-chip"></div> Explored</div>
+    <div class="legend-row"><span class="node-tag first" style="margin:0">first</span> First time seen</div>
+    <div class="legend-row"><span class="node-tag rare" style="margin:0">rare</span> Seen &lt; 5 times</div>
+    <div class="legend-row"><span class="node-tag uncommon" style="margin:0">uncommon</span> Seen &lt; 20 times</div>
+  </div>
+
+  <!-- Zoom -->
+  <div class="zoom-controls">
+    <div class="zoom-btn">+</div>
+    <div class="zoom-btn">−</div>
+    <div class="zoom-btn" style="font-size:11px">fit</div>
+  </div>
+</div>
+
+<!-- Result drawer -->
+<div class="result-drawer">
+  <div class="drawer-label">Shortest path found — 4 hops</div>
+  <div class="path-breadcrumb">
+    <span class="path-crumb highlight">Albert Einstein</span>
+    <span class="path-arrow">›</span>
+    <span class="path-crumb">Physics</span>
+    <span class="path-arrow">›</span>
+    <span class="path-crumb">Wave function</span>
+    <span class="path-arrow">›</span>
+    <span class="path-crumb highlight">Quantum mechanics</span>
+  </div>
+  <div class="drawer-meta">Search completed in 1.4s · 142 nodes explored · Path cached</div>
+</div>
+
+</body>
+</html>

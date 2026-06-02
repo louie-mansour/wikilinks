@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WF-B — Split Panel</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f5;
+      color: #212121;
+      font-size: 14px;
+      line-height: 1.5;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 12px 20px;
+      border-bottom: 2px solid #212121;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .wordmark { font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
+    .header-meta { font-size: 12px; color: #9e9e9e; }
+
+    /* Body split */
+    .body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Left panel ── */
+    .left-panel {
+      width: 300px;
+      flex-shrink: 0;
+      border-right: 1px solid #e0e0e0;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .panel-section {
+      padding: 20px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .panel-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #9e9e9e;
+      margin-bottom: 10px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #bdbdbd;
+      font-family: inherit;
+      font-size: 13px;
+      background: #fff;
+      margin-bottom: 8px;
+      display: block;
+    }
+    input:focus { outline: none; border-color: #212121; }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #212121;
+      background: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .btn-primary { background: #212121; color: #fff; }
+
+    /* Live feed */
+    .feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+    .feed-item {
+      display: flex;
+      gap: 10px;
+      padding: 10px 20px;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 12px;
+      align-items: flex-start;
+    }
+    .feed-item:hover { background: #fafafa; }
+    .feed-icon {
+      width: 20px; height: 20px;
+      background: #e0e0e0;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #616161;
+    }
+    .feed-icon.new  { background: #212121; color: #fff; }
+    .feed-icon.path { background: #616161; color: #fff; }
+    .feed-text { flex: 1; }
+    .feed-page { font-weight: 600; }
+    .feed-tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 5px;
+      border: 1px solid #bdbdbd;
+      color: #616161;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .feed-tag.first { border-color: #212121; color: #212121; }
+    .feed-time { color: #9e9e9e; font-size: 11px; margin-top: 1px; }
+
+    /* Stats row */
+    .stats-row {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .stat {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      border-right: 1px solid #e0e0e0;
+    }
+    .stat:last-child { border-right: none; }
+    .stat-val { font-size: 20px; font-weight: 700; }
+    .stat-lbl { font-size: 11px; color: #9e9e9e; }
+
+    /* ── Right panel: graph ── */
+    .right-panel {
+      flex: 1;
+      background: #fafafa;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .graph-svg {
+      position: absolute;
+      inset: 0; width: 100%; height: 100%;
+    }
+
+    .node {
+      position: absolute;
+      background: #fff;
+      border: 1px solid #bdbdbd;
+      padding: 7px 12px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .node.start  { border: 2px solid #212121; font-weight: 700; }
+    .node.end    { border: 2px dashed #212121; font-weight: 700; }
+    .node.active { border-color: #616161; background: #f5f5f5; }
+    .node.dim    { opacity: 0.45; }
+
+    .node-tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 4px;
+      border: 1px solid #bdbdbd;
+      color: #9e9e9e;
+      margin-left: 4px;
+    }
+    .node-tag.first { border-color: #212121; color: #212121; }
+    .node-tag.rare  { border-color: #616161; color: #616161; }
+
+    .graph-toolbar {
+      position: absolute;
+      top: 16px; right: 16px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .tool-btn {
+      width: 32px; height: 32px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; cursor: pointer;
+    }
+
+    .graph-legend {
+      position: absolute;
+      bottom: 16px; right: 16px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      padding: 12px 14px;
+      font-size: 12px;
+    }
+    .legend-title { font-size: 11px; color: #9e9e9e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .legend-line { width: 24px; height: 2px; background: #bdbdbd; }
+    .legend-line.active { background: #212121; }
+    .legend-line.found  { background: #212121; }
+
+    /* Mobile stacked */
+    @media (max-width: 640px) {
+      .body { flex-direction: column; }
+      .left-panel { width: 100%; height: 50%; border-right: none; border-bottom: 1px solid #e0e0e0; }
+      .right-panel { height: 50%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- WF-B: Split Panel — Control Left, Graph Right
+  MODE: Generate
+  DECISIONS:
+    - Light theme; split panel more familiar/approachable than dark canvas
+    - Left panel: inputs at top, live update feed below — scrollable independently
+    - Right panel: graph fills remaining space
+    - Mobile: panels stack vertically (50/50 split) — CONFIRM if this ratio works, or prefer graph-dominant on mobile
+    - Live feed doubles as search log AND as a way to track frequency labels without reading the graph
+    - CONFIRM: Should the feed auto-scroll to latest, or stay put so user can read history?
+-->
+
+<header>
+  <div class="wordmark">WikiPath</div>
+  <div class="header-meta">Shortest path explorer</div>
+</header>
+
+<div class="body">
+
+  <!-- Left: controls + live feed -->
+  <div class="left-panel">
+    <div class="panel-section">
+      <div class="panel-label">Find a path</div>
+      <input type="text" value="Albert Einstein" placeholder="Start page…">
+      <input type="text" value="Quantum mechanics" placeholder="End page…">
+      <button class="btn btn-primary">Find Shortest Path</button>
+      <button class="btn">Clear</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val">142</div><div class="stat-lbl">Visited</div></div>
+      <div class="stat"><div class="stat-val">3</div><div class="stat-lbl">Depth</div></div>
+      <div class="stat"><div class="stat-val">4</div><div class="stat-lbl">Hops</div></div>
+    </div>
+
+    <div class="panel-section" style="padding-bottom: 10px;">
+      <div class="panel-label">Live updates</div>
+    </div>
+
+    <div class="feed">
+      <div class="feed-item">
+        <div class="feed-icon path">✓</div>
+        <div class="feed-text">
+          <div class="feed-page">Path found!</div>
+          <div class="feed-time">Einstein → Physics → Wave function → Quantum mechanics</div>
+        </div>
+      </div>
+      <div class="feed-item">
+        <div class="feed-icon new">★</div>
+        <div class="feed-text">
+          <div class="feed-page">Quantum mechanics <span class="feed-tag first">first</span></div>
+          <div class="feed-time">Target reached · depth 3</div>
+        </div>
+      </div>
+      <div class="feed-item">
+        <div class="feed-icon">→</div>
+        <div class="feed-text">
+          <div class="feed-page">Wave function <span class="feed-tag rare">rare</span></div>
+          <div class="feed-time">Via Physics · depth 2</div>
+        </div>
+      </div>
+      <div class="feed-item">
+        <div class="feed-icon">→</div>
+        <div class="feed-text">
+          <div class="feed-page">Max Planck</div>
+          <div class="feed-time">Via Physics · depth 2</div>
+        </div>
+      </div>
+      <div class="feed-item">
+        <div class="feed-icon new">★</div>
+        <div class="feed-text">
+          <div class="feed-page">Physics <span class="feed-tag first">first</span></div>
+          <div class="feed-time">Via Albert Einstein · depth 1</div>
+        </div>
+      </div>
+      <div class="feed-item">
+        <div class="feed-icon">→</div>
+        <div class="feed-text">
+          <div class="feed-page">Special Relativity</div>
+          <div class="feed-time">Via Albert Einstein · depth 1</div>
+        </div>
+      </div>
+      <div class="feed-item">
+        <div class="feed-icon">◉</div>
+        <div class="feed-text">
+          <div class="feed-page">Albert Einstein</div>
+          <div class="feed-time">Start node · depth 0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: graph -->
+  <div class="right-panel">
+    <svg class="graph-svg" xmlns="http://www.w3.org/2000/svg">
+      <line x1="50%" y1="12%" x2="32%" y2="35%" stroke="#e0e0e0" stroke-width="1"/>
+      <line x1="50%" y1="12%" x2="60%" y2="33%" stroke="#212121" stroke-width="2"/>
+      <line x1="32%" y1="35%" x2="25%" y2="58%" stroke="#e0e0e0" stroke-width="1"/>
+      <line x1="60%" y1="33%" x2="52%" y2="56%" stroke="#212121" stroke-width="2"/>
+      <line x1="60%" y1="33%" x2="70%" y2="55%" stroke="#e0e0e0" stroke-width="1"/>
+      <line x1="52%" y1="56%" x2="50%" y2="78%" stroke="#212121" stroke-width="2"/>
+    </svg>
+
+    <div class="node start"  style="top:8%;  left:42%">Albert Einstein</div>
+    <div class="node dim"    style="top:30%; left:24%">Special Relativity</div>
+    <div class="node active" style="top:29%; left:52%">Physics <span class="node-tag first">first</span></div>
+    <div class="node dim"    style="top:52%; left:18%">Lorentz transform</div>
+    <div class="node active" style="top:51%; left:44%">Wave function <span class="node-tag rare">rare</span></div>
+    <div class="node dim"    style="top:51%; left:63%">Max Planck</div>
+    <div class="node end"    style="top:73%; left:42%">Quantum mechanics</div>
+
+    <div class="graph-toolbar">
+      <div class="tool-btn">+</div>
+      <div class="tool-btn">−</div>
+      <div class="tool-btn" style="font-size:11px">fit</div>
+    </div>
+
+    <div class="graph-legend">
+      <div class="legend-title">Legend</div>
+      <div class="legend-row"><div class="legend-line active"></div> Shortest path</div>
+      <div class="legend-row"><div class="legend-line"></div> Explored</div>
+      <div class="legend-row"><span class="feed-tag first" style="margin:0">first</span> First time seen</div>
+      <div class="legend-row"><span class="feed-tag rare" style="margin:0">rare</span> Seen &lt; 5×</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

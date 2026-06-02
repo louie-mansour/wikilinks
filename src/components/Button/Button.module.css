@@ -1,0 +1,225 @@
+@import '../../tokens.css';
+
+/* ── Shared base ── */
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  background: none;
+  text-decoration: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* ────────────────────────────────────────
+   PRIMARY & SECONDARY — shared dimensions (§7.1, load-more)
+──────────────────────────────────────── */
+.primary,
+.secondary {
+  padding: 12px 28px;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+}
+
+/* ────────────────────────────────────────
+   PRIMARY — terracotta CTA
+   §7.1 Primary Button
+──────────────────────────────────────── */
+.primary {
+  background: var(--terra);
+  color: var(--white);
+  font-weight: 700;
+  width: 100%;
+  max-width: 440px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Label + arrow — primary only */
+.buttonLabel {
+  position: relative;
+  z-index: 1;
+}
+
+.primary::after {
+  content: '→';
+  position: relative;
+  z-index: 1;
+  font-size: 16px;
+  line-height: 1;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-left: 0;
+  pointer-events: none;
+}
+
+/* Shine sweep overlay — starts offscreen left, sweeps right on hover */
+.primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+
+/* Focus ring — keyboard only */
+.primary:focus-visible {
+  outline: 2px solid var(--terra);
+  outline-offset: 3px;
+}
+/* Fallback for browsers without :focus-visible (Safari ≤15.3) */
+.primary:focus {
+  outline: 2px solid var(--terra);
+  outline-offset: 3px;
+}
+.primary:focus:not(:focus-visible) {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .primary {
+    transition: background 0.18s, transform 0.12s ease;
+  }
+
+  .buttonLabel {
+    transition: transform 0.18s ease;
+  }
+
+  .primary::after {
+    transition: max-width 0.18s ease, opacity 0.18s ease, margin-left 0.18s ease;
+  }
+
+  .primary::before {
+    /* No transition by default — shine resets instantly on mouse-out */
+    transition: transform 0s;
+  }
+
+  .primary:hover {
+    background: var(--terra-dark);
+  }
+
+  .primary:hover .buttonLabel {
+    transform: translateX(-6px);
+  }
+
+  .primary:hover::after {
+    max-width: 1.5em;
+    opacity: 0.85;
+    margin-left: 6px;
+  }
+
+  /* Sweep shine on hover */
+  .primary:hover::before {
+    transform: translateX(100%);
+    transition: transform 0.45s ease;
+  }
+
+  .primary:active {
+    transform: translateY(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary:hover .buttonLabel {
+    transform: translateX(-6px);
+  }
+
+  .primary:hover::after {
+    max-width: 1.5em;
+    opacity: 0.85;
+    margin-left: 6px;
+  }
+
+  .primary:active {
+    transform: translateY(2px);
+  }
+}
+
+/* ────────────────────────────────────────
+   GHOST VARIANTS — shared hover pattern
+   §7.9 Secondary / Ghost Buttons
+──────────────────────────────────────── */
+
+/* Action button — permalink bar */
+.action {
+  padding: 6px 14px;
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-sm);
+  background: var(--sand);
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Secondary button — bottom of path list */
+.secondary {
+  border-color: var(--sand-mid);
+  background: var(--white);
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .action {
+    transition: all 0.12s;
+  }
+
+  .secondary {
+    transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.12s ease;
+  }
+
+  .action:hover {
+    background: var(--terra-pale);
+    border-color: var(--terra);
+    color: var(--terra);
+  }
+
+  .secondary:hover {
+    background: var(--terra-pale);
+    border-color: var(--terra);
+    color: var(--terra);
+  }
+
+  .action:active {
+    background: var(--terra-pale);
+    border-color: var(--terra-dark);
+    color: var(--terra-dark);
+  }
+
+  .secondary:active {
+    background: var(--terra-pale);
+    border-color: var(--terra-dark);
+    color: var(--terra-dark);
+    transform: translateY(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secondary:hover {
+    background: var(--terra-pale);
+    border-color: var(--terra);
+    color: var(--terra);
+  }
+
+  .secondary:active {
+    background: var(--terra-pale);
+    border-color: var(--terra-dark);
+    color: var(--terra-dark);
+    transform: translateY(2px);
+  }
+}
