@@ -155,8 +155,25 @@
    §7.9 Secondary / Ghost Buttons
 ──────────────────────────────────────── */
 
-/* Action button — permalink bar */
+/* Action button — path item inline actions (§7.9 .action-btn) */
 .action {
+  padding: 5px 10px;
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--terra);
+  outline-offset: 3px;
+}
+
+/* Permalink button — share bar (§7.9 .permalink-copy) */
+.permalink {
   padding: 6px 14px;
   border: 1.5px solid var(--sand-mid);
   border-radius: var(--radius-sm);
@@ -175,7 +192,8 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .action {
+  .action,
+  .permalink {
     transition: all 0.12s;
   }
 
@@ -183,7 +201,8 @@
     transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.12s ease;
   }
 
-  .action:hover {
+  .action:hover,
+  .permalink:hover {
     background: var(--terra-pale);
     border-color: var(--terra);
     color: var(--terra);
@@ -195,7 +214,7 @@
     color: var(--terra);
   }
 
-  .action:active {
+  .permalink:active {
     background: var(--terra-pale);
     border-color: var(--terra-dark);
     color: var(--terra-dark);
@@ -210,6 +229,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .action:hover,
+  .permalink:hover {
+    background: var(--terra-pale);
+    border-color: var(--terra);
+    color: var(--terra);
+  }
+
   .secondary:hover {
     background: var(--terra-pale);
     border-color: var(--terra);

@@ -1,6 +1,6 @@
 import styles from './Button.module.css';
 
-export type ButtonVariant = 'primary' | 'action' | 'secondary';
+export type ButtonVariant = 'primary' | 'action' | 'permalink' | 'secondary';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -9,6 +9,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const variantClass: Record<ButtonVariant, string> = {
   primary: styles.primary,
   action: styles.action,
+  permalink: styles.permalink,
   secondary: styles.secondary,
 };
 

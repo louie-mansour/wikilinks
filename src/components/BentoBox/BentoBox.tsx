@@ -1,13 +1,33 @@
 import styles from './BentoBox.module.css';
 
+interface SmallStatCardProps {
+  label: string;
+  value: React.ReactNode;
+  note?: string;
+  cardClassName: string;
+}
+
+function SmallStatCard({ label, value, note, cardClassName }: SmallStatCardProps) {
+  return (
+    <article className={`${styles.bentoCard} ${styles.smallCard} ${cardClassName}`}>
+      <span className={styles.statLabel}>{label}</span>
+      <span className={styles.statSmallValue}>{value}</span>
+      <span className={styles.statNote}>{note ?? ''}</span>
+    </article>
+  );
+}
+
 export interface BentoBoxProps {
   pathsFound: number | string;
   pathsSub?: string;
   minHops: number | string;
   hopsNote?: string;
   nodesExplored: number | string;
+  nodesNote?: string;
   searchTime: string;
+  timeNote?: string;
   uniqueArticles: number | string;
+  articlesNote?: string;
   className?: string;
 }
 
@@ -17,8 +37,11 @@ export function BentoBox({
   minHops,
   hopsNote,
   nodesExplored,
+  nodesNote,
   searchTime,
+  timeNote,
   uniqueArticles,
+  articlesNote,
   className = '',
 }: BentoBoxProps) {
   return (
@@ -31,37 +54,36 @@ export function BentoBox({
       <article className={`${styles.bentoCard} ${styles.cardPaths}`}>
         <span className={styles.statLabel}>Paths found</span>
         <span className={styles.statPaths}>{pathsFound}</span>
-        {pathsSub && (
-          <span className={styles.statSub}>{pathsSub}</span>
-        )}
+        {pathsSub && <span className={styles.statSub}>{pathsSub}</span>}
       </article>
 
-      {/* Card 2 — Min Hops (terra) */}
-      <article className={`${styles.bentoCard} ${styles.cardHops}`}>
-        <span className={styles.statLabel}>Min hops</span>
-        <span className={styles.statHops}>{minHops}</span>
-        {hopsNote && (
-          <span className={styles.statNote}>{hopsNote}</span>
-        )}
-      </article>
+      <SmallStatCard
+        label="Min hops"
+        value={minHops}
+        note={hopsNote}
+        cardClassName={styles.cardHops}
+      />
 
-      {/* Card 3 — Nodes Explored (sand) */}
-      <article className={`${styles.bentoCard} ${styles.cardNodes}`}>
-        <span className={styles.statLabel}>Nodes explored</span>
-        <span className={styles.statNodes}>{nodesExplored}</span>
-      </article>
+      <SmallStatCard
+        label="Nodes explored"
+        value={nodesExplored}
+        note={nodesNote}
+        cardClassName={styles.cardNodes}
+      />
 
-      {/* Card 4 — Search Time (clay) */}
-      <article className={`${styles.bentoCard} ${styles.cardTime}`}>
-        <span className={styles.statLabel}>Search time</span>
-        <span className={styles.statTime}>{searchTime}</span>
-      </article>
+      <SmallStatCard
+        label="Search time"
+        value={searchTime}
+        note={timeNote}
+        cardClassName={styles.cardTime}
+      />
 
-      {/* Card 5 — Unique Articles (white) */}
-      <article className={`${styles.bentoCard} ${styles.cardArticles}`}>
-        <span className={styles.statLabel}>Unique articles</span>
-        <span className={styles.statArticles}>{uniqueArticles}</span>
-      </article>
+      <SmallStatCard
+        label="Unique articles"
+        value={uniqueArticles}
+        note={articlesNote}
+        cardClassName={styles.cardArticles}
+      />
     </section>
   );
 }

@@ -73,35 +73,31 @@
 }
 
 /* ────────────────────────────────────────
-   Small cards (cards 2–5) — shared layout
+   Small cards (cards 2–5) — 3-row inner grid
+   Row 1 (auto): label — always top-aligned
+   Row 2 (1fr):  value — bottom-aligned into its row via align-self
+   Row 3 (auto): note — always at the same bottom position
+   Cards in the same outer grid row share equal height, so all
+   three items land at identical vertical positions across cards.
 ──────────────────────────────────────── */
-.cardHops,
-.cardNodes,
-.cardTime,
-.cardArticles {
+.smallCard {
   padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
 }
 
-/* ────────────────────────────────────────
-   Card 2 — Min Hops (terra)
-──────────────────────────────────────── */
-.cardHops {
-  background: var(--terra-pale);
-  border-color: var(--terra-light);
-}
-
-.statHops {
+/* Single value style shared by all small cards.
+   Color is driven by --card-value-color set on each card class. */
+.statSmallValue {
   display: block;
   font-family: var(--font-display);
   font-size: 32px;
   font-weight: 800;
   letter-spacing: -1px;
-  color: var(--terra);
   line-height: 1;
-  margin-bottom: 4px;
+  color: var(--card-value-color, var(--ink));
+  align-self: end;
+  padding-bottom: 4px;
 }
 
 .statNote {
@@ -109,62 +105,35 @@
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 400;
-  font-style: normal;
   color: var(--ink-muted);
   line-height: 1.4;
 }
 
 /* ────────────────────────────────────────
-   Card 3 — Nodes Explored (sand)
+   Small card themes — background, border, value color
 ──────────────────────────────────────── */
+.cardHops {
+  background: var(--terra-pale);
+  border-color: var(--terra-light);
+  --card-value-color: var(--terra);
+}
+
 .cardNodes {
   background: var(--sand);
   border-color: var(--sand-dark);
+  --card-value-color: var(--ink);
 }
 
-.statNodes {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -1px;
-  color: var(--ink);
-  line-height: 1;
-}
-
-/* ────────────────────────────────────────
-   Card 4 — Search Time (clay)
-──────────────────────────────────────── */
 .cardTime {
   background: var(--clay-pale);
   border-color: var(--clay-border);
+  --card-value-color: var(--clay);
 }
 
-.statTime {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--clay);
-  line-height: 1;
-}
-
-/* ────────────────────────────────────────
-   Card 5 — Unique Articles (white)
-──────────────────────────────────────── */
 .cardArticles {
   background: var(--white);
   border-color: var(--sand-mid);
-}
-
-.statArticles {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  color: var(--ink-muted);
-  line-height: 1;
+  --card-value-color: var(--ink-muted);
 }
 
 /* ────────────────────────────────────────

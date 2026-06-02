@@ -26,7 +26,7 @@ export function ShareBar({ urlPrefix, urlCode, onCopy }: ShareBarProps) {
         {urlPrefix}<strong>{urlCode}</strong>
       </span>
       <Button
-        variant="action"
+        variant="permalink"
         onClick={handleCopy}
         className={copied ? styles.copied : ''}
       >

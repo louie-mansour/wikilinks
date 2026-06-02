@@ -24,8 +24,11 @@ export const Default: Story = {
     minHops: 4,
     hopsNote: 'fewest possible',
     nodesExplored: '8,241',
+    nodesNote: 'across 3 BFS layers',
     searchTime: '1.2s',
+    timeNote: 'bidirectional BFS',
     uniqueArticles: 14,
+    articlesNote: 'in shortest paths',
   },
 };
 
@@ -37,6 +40,7 @@ export const FewPaths: Story = {
     pathsFound: 3,
     pathsSub: '3 hops each',
     minHops: 3,
+    hopsNote: 'fewest possible',
     nodesExplored: '412',
     searchTime: '0.3s',
     uniqueArticles: 5,
@@ -51,8 +55,25 @@ export const ManyPaths: Story = {
     pathsFound: '1,024',
     pathsSub: '5 hops each',
     minHops: 5,
+    hopsNote: 'fewest possible',
     nodesExplored: '24,831',
+    nodesNote: 'across 5 BFS layers',
     searchTime: '4.7s',
+    timeNote: 'bidirectional BFS',
     uniqueArticles: 38,
+    articlesNote: 'in shortest paths',
+  },
+};
+
+/* ────────────────────────────────────────
+   NoNotes — all sub-text omitted
+──────────────────────────────────────── */
+export const NoNotes: Story = {
+  args: {
+    pathsFound: 247,
+    minHops: 4,
+    nodesExplored: '8,241',
+    searchTime: '1.2s',
+    uniqueArticles: 14,
   },
 };

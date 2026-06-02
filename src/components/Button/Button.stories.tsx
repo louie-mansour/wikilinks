@@ -64,14 +64,14 @@ export const PrimaryFocused: Story = {
 };
 
 /* ────────────────────────────────────────
-   ACTION — §7.9 permalink bar
+   ACTION — §7.9 path item inline buttons
 ──────────────────────────────────────── */
 
 export const Action: Story = {
   name: 'Action / Default',
   args: {
     variant: 'action',
-    children: 'Copy link',
+    children: 'Copy',
   },
   parameters: {
     backgrounds: { default: 'white' },
@@ -82,6 +82,60 @@ export const ActionHover: Story = {
   name: 'Action / Hover',
   args: {
     variant: 'action',
+    children: 'Copy',
+  },
+  parameters: {
+    backgrounds: { default: 'white' },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.hover(canvas.getByRole('button'));
+  },
+};
+
+export const ActionLink: Story = {
+  name: 'Action / Link',
+  args: {
+    variant: 'action',
+    children: 'Link ↗',
+  },
+  parameters: {
+    backgrounds: { default: 'white' },
+  },
+};
+
+export const ActionPair: Story = {
+  name: 'Action / Pair',
+  render: () => (
+    <div style={{ display: 'flex', gap: '6px' }}>
+      <Button variant="action">Copy</Button>
+      <Button variant="action">Link ↗</Button>
+    </div>
+  ),
+  parameters: {
+    backgrounds: { default: 'white' },
+  },
+};
+
+/* ────────────────────────────────────────
+   PERMALINK — §7.9 share bar
+──────────────────────────────────────── */
+
+export const Permalink: Story = {
+  name: 'Permalink / Default',
+  args: {
+    variant: 'permalink',
+    children: 'Copy link',
+  },
+  parameters: {
+    backgrounds: { default: 'white' },
+  },
+};
+
+export const PermalinkHover: Story = {
+  name: 'Permalink / Hover',
+  args: {
+    variant: 'permalink',
     children: 'Copy link',
   },
   parameters: {
@@ -93,10 +147,10 @@ export const ActionHover: Story = {
   },
 };
 
-export const ActionCopied: Story = {
-  name: 'Action / Copied state',
+export const PermalinkCopied: Story = {
+  name: 'Permalink / Copied state',
   args: {
-    variant: 'action',
+    variant: 'permalink',
     children: 'Copied!',
   },
   parameters: {
@@ -152,7 +206,11 @@ export const AllVariants: Story = {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Action</span>
-        <Button variant="action">Copy link</Button>
+        <Button variant="action">Copy</Button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Permalink</span>
+        <Button variant="permalink">Copy link</Button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Secondary</span>

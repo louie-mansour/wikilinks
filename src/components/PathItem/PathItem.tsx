@@ -1,5 +1,5 @@
 import { Badge } from '../Badge/Badge';
-import { ActionButton } from '../ActionButton/ActionButton';
+import { Button } from '../Button/Button';
 import styles from './PathItem.module.css';
 
 export interface Crumb {
@@ -44,8 +44,8 @@ export function PathItem({ number, crumbs, onCopy, onLink }: PathItemProps) {
       </div>
 
       <div className={styles.actions}>
-        <ActionButton onClick={onCopy}>Copy</ActionButton>
-        <ActionButton onClick={onLink}>Link ↗</ActionButton>
+        <Button variant="action" onClick={onCopy}>Copy</Button>
+        <Button variant="action" onClick={onLink}>Link ↗</Button>
       </div>
     </article>
   );
