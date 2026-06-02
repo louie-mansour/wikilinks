@@ -1,0 +1,95 @@
+@import '../../tokens.css';
+
+/* §top-bar — §7.1 Primary Button integrated, §7.2 Combobox integrated */
+
+.topBar {
+  padding: 24px 20px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  background: var(--white);
+  border-bottom: 1.5px solid var(--sand-mid);
+  text-align: center;
+}
+
+/* Wordmark — §9 Iconography */
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.wordmarkIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--terra);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Tagline — §3 Typography (italic body) */
+.tagline {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+/* Inputs row — wraps on mobile */
+.inputsRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Visible label above each combobox — §3 Type Scale (input label) */
+.inputLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-muted);
+}
+
+/* → connector between the two inputs */
+.arrowConnector {
+  font-size: 18px;
+  color: var(--sand-dark);
+  padding-bottom: 12px;
+  flex-shrink: 0;
+}
+
+/* §4 Breakpoints — mobile ≤520px */
+@media (max-width: 520px) {
+  .inputsRow {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .arrowConnector {
+    padding-bottom: 0;
+    transform: rotate(90deg);
+  }
+}

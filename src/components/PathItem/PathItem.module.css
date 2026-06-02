@@ -1,0 +1,147 @@
+@import '../../tokens.css';
+
+/* §7.8 Path Item */
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1.5px solid var(--sand-mid);
+}
+
+.item:last-of-type {
+  border-bottom: none;
+}
+
+/* Path number — #1, #2, … */
+.num {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sand-dark);
+  min-width: 24px;
+  padding-top: 1px;
+  flex-shrink: 0;
+}
+
+/* Crumbs container */
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+/* Wrapper around (sep + arrow + crumb) to keep them together */
+.crumbGroup {
+  display: contents;
+}
+
+/* Desktop › separator */
+.sep {
+  color: var(--sand-dark);
+  font-size: 14px;
+}
+
+/* Mobile ↓ arrow — hidden on desktop, shown on mobile */
+.arrow {
+  display: none;
+  color: var(--sand-dark);
+  font-size: 14px;
+}
+
+/* Crumb link */
+.crumb {
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  padding: 2px 5px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.crumb:hover {
+  background: var(--terra-pale);
+  color: var(--terra);
+}
+
+/* Highlighted crumb (start/end articles) */
+.crumbHl {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* Action buttons cluster */
+.actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* §4 Breakpoints — mobile ≤600px: stack vertically */
+@media (max-width: 600px) {
+  .item {
+    flex-direction: column;
+    gap: 0;
+    padding: 14px 16px;
+  }
+
+  .num {
+    margin-bottom: 8px;
+  }
+
+  .crumbs {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    width: 100%;
+  }
+
+  .crumbGroup {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  /* Hide › on mobile */
+  .sep {
+    display: none;
+  }
+
+  /* Show ↓ on mobile */
+  .arrow {
+    display: block;
+    padding: 2px 0;
+  }
+
+  .crumb {
+    display: block;
+    width: 100%;
+    padding: 6px 0;
+  }
+
+  .actions {
+    margin-top: 10px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .item {
+    transition: background 0.12s;
+  }
+
+  .item:hover {
+    background: var(--sand);
+  }
+
+  .crumb {
+    transition: background 0.1s, color 0.1s;
+  }
+}

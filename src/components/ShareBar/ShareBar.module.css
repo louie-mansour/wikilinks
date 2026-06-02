@@ -1,0 +1,43 @@
+@import '../../tokens.css';
+
+/* §permalink-bar */
+
+.bar {
+  padding: 12px 18px;
+  background: var(--white);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* "SHARE" label */
+.label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+
+/* URL display — terra color, bold code segment */
+.url {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--terra);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Copied state overrides — sage coloring */
+.copied {
+  background: var(--sage-pale) !important;
+  border-color: var(--sage) !important;
+  color: var(--sage) !important;
+}

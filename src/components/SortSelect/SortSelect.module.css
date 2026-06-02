@@ -1,0 +1,39 @@
+@import '../../tokens.css';
+
+/* §7.10 Select — custom-styled native select */
+
+.select {
+  padding: 6px 28px 6px 10px;
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-sm);
+  background-color: var(--white);
+  /* Custom chevron — ink-muted (#7a6a52) encoded for SVG data URI */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%237a6a52' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px 10px;
+  color: var(--ink-muted);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  /* §11 cross-browser: suppress platform native styling */
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.select:hover {
+  border-color: var(--terra);
+  color: var(--terra);
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--terra);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .select {
+    transition: border-color 0.12s, color 0.12s;
+  }
+}

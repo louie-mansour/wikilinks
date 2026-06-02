@@ -1,0 +1,100 @@
+@import '../../tokens.css';
+
+/* §records-section */
+
+.section {
+  padding: 14px 18px;
+  background: var(--white);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-md);
+  /* §11 Safari border-radius clip fix */
+  isolation: isolate;
+}
+
+/* "RECORDS — THIS PAIR" label */
+.header {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
+}
+
+/* Three-column grid — collapses to 1 col on mobile */
+.cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+
+.col {
+  padding-right: 20px;
+  border-right: 1.5px solid var(--sand-mid);
+  margin-right: 20px;
+}
+
+.col:last-child {
+  border-right: none;
+  margin-right: 0;
+  padding-right: 0;
+}
+
+/* Period label — "All time", "Past day", "Past week" */
+.period {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+/* Key–value row */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--sand-mid);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.key {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.val {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* §4 Breakpoints — mobile ≤600px: stack columns vertically */
+@media (max-width: 600px) {
+  .cols {
+    grid-template-columns: 1fr;
+  }
+
+  .col {
+    padding-right: 0;
+    border-right: none;
+    margin-right: 0;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1.5px solid var(--sand-mid);
+  }
+
+  .col:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+  }
+}

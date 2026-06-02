@@ -1,0 +1,56 @@
+@import '../../tokens.css';
+
+/* §path-list-section */
+
+.section {
+  background: var(--white);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  /* §11 Safari border-radius clip fix */
+  isolation: isolate;
+}
+
+/* Header row — title + controls */
+.listHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1.5px solid var(--sand-mid);
+  flex-wrap: wrap;
+  gap: 10px;
+  background: var(--sand);
+}
+
+/* "247 shortest paths — 4 hops each" */
+.title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* SortSelect pair */
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Load more footer */
+.loadMore {
+  padding: 18px;
+  text-align: center;
+  background: var(--sand);
+  border-top: 1.5px solid var(--sand-mid);
+}
+
+/* §4 Breakpoints — mobile ≤600px */
+@media (max-width: 600px) {
+  .listHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
