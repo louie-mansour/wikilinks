@@ -1,0 +1,212 @@
+@import '../../tokens.css';
+
+/* ────────────────────────────────────────
+   Graph section container
+   §7 graph-section, §4 border-radius, §5 borders
+──────────────────────────────────────── */
+.graphSection {
+  margin: 14px 16px 0;
+  position: relative;
+  height: 440px;
+  overflow: hidden;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--sand-mid);
+  /* Safari fix: prevent border-radius clipping */
+  isolation: isolate;
+}
+
+@media (max-width: 520px) {
+  .graphSection {
+    height: 320px;
+    margin: 10px 10px 0;
+  }
+}
+
+/* ────────────────────────────────────────
+   SVG edge layer
+──────────────────────────────────────── */
+.graphSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.edgeDim {
+  stroke: var(--sand-dark);
+}
+
+.edgeActive {
+  stroke: var(--terra);
+}
+
+/* ────────────────────────────────────────
+   Nodes — §7.3
+──────────────────────────────────────── */
+.node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: var(--sand);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--ink-muted);
+  font-family: var(--font-ui);
+}
+
+.start {
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  font-weight: 700;
+  background: var(--white);
+  border-radius: var(--radius-md);
+}
+
+.end {
+  border: 2px dashed var(--ink-muted);
+  color: var(--ink);
+  font-weight: 700;
+  background: var(--white);
+  border-radius: var(--radius-md);
+}
+
+.active {
+  border-color: var(--terra);
+  color: var(--ink);
+  background: var(--terra-pale);
+}
+
+/* Rarity tags — §7.4 */
+.nodeTag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  margin-left: 4px;
+  vertical-align: middle;
+  border-radius: 8px;
+  font-family: var(--font-ui);
+}
+
+.tag-first    { background: var(--terra);     color: #fff; }
+.tag-rare     { background: var(--sage);      color: #fff; }
+.tag-uncommon { background: var(--sand-mid);  color: var(--ink-muted); }
+
+/* ────────────────────────────────────────
+   Node glow states — §8 animations
+──────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .glow-first    { animation: glow-terra 2s ease-in-out infinite; }
+  .glow-rare     { animation: glow-sage 2.4s ease-in-out infinite; }
+  .glow-uncommon { animation: glow-sand 2.8s ease-in-out infinite; }
+
+  @keyframes glow-terra {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(196, 87, 42, 0.2), 0 0 10px rgba(196, 87, 42, 0.12); }
+    50%      { box-shadow: 0 0 0 3px rgba(196, 87, 42, 0.35), 0 0 18px rgba(196, 87, 42, 0.22); }
+  }
+
+  @keyframes glow-sage {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(74, 124, 89, 0.2), 0 0 10px rgba(74, 124, 89, 0.12); }
+    50%      { box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.35), 0 0 18px rgba(74, 124, 89, 0.22); }
+  }
+
+  @keyframes glow-sand {
+    0%, 100% { box-shadow: 0 2px 6px rgba(44, 36, 22, 0.06); }
+    50%      { box-shadow: 0 2px 14px rgba(44, 36, 22, 0.12); }
+  }
+}
+
+/* ────────────────────────────────────────
+   Legend — §7 graph-legend
+──────────────────────────────────────── */
+.legend {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  background: var(--white);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+}
+
+.legendTitle {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+  font-family: var(--font-ui);
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+  font-size: 11px;
+  color: var(--ink-muted);
+  font-family: var(--font-ui);
+}
+
+.legendRow:last-child {
+  margin-bottom: 0;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendDotFirst    { background: var(--terra); }
+.legendDotRare     { background: var(--sage); }
+.legendDotUncommon { background: var(--sand-mid); border: 1.5px solid var(--sand-dark); }
+
+/* ────────────────────────────────────────
+   Controls — §7.7 ctrl-btn
+──────────────────────────────────────── */
+.controls {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ctrlBtn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+
+.ctrlBtnFit {
+  font-size: 10px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ctrlBtn {
+    transition: border-color 0.12s, color 0.12s;
+  }
+
+  .ctrlBtn:hover {
+    border-color: var(--terra);
+    color: var(--terra);
+  }
+}
