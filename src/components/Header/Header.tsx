@@ -5,6 +5,8 @@ import styles from './Header.module.css';
 interface HeaderProps {
   startSuggestions: Suggestion[];
   endSuggestions: Suggestion[];
+  startDefaultValue?: string;
+  endDefaultValue?: string;
   onStartSelect?: (title: string) => void;
   onEndSelect?: (title: string) => void;
   onSearch?: () => void;
@@ -13,6 +15,8 @@ interface HeaderProps {
 export function Header({
   startSuggestions,
   endSuggestions,
+  startDefaultValue,
+  endDefaultValue,
   onStartSelect,
   onEndSelect,
   onSearch,
@@ -44,8 +48,10 @@ export function Header({
               id="header-start"
               label="Start article"
               placeholder="e.g. Albert Einstein"
+              defaultValue={startDefaultValue}
               suggestions={startSuggestions}
               onSelect={onStartSelect}
+              className={styles.combobox}
             />
           </div>
 
@@ -60,8 +66,10 @@ export function Header({
               id="header-end"
               label="End article"
               placeholder="e.g. Quantum mechanics"
+              defaultValue={endDefaultValue}
               suggestions={endSuggestions}
               onSelect={onEndSelect}
+              className={styles.combobox}
             />
           </div>
         </div>

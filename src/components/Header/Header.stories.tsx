@@ -44,13 +44,21 @@ export const Default: Story = {
 };
 
 export const WithValues: Story = {
-  render: () => (
-    <Header
-      startSuggestions={SUGGESTIONS}
-      endSuggestions={SUGGESTIONS}
-      onStartSelect={(v) => console.log('start:', v)}
-      onEndSelect={(v) => console.log('end:', v)}
-      onSearch={() => console.log('search')}
-    />
-  ),
+  args: {
+    startSuggestions: SUGGESTIONS,
+    endSuggestions: SUGGESTIONS,
+    startDefaultValue: 'Albert Einstein',
+    endDefaultValue: 'Quantum mechanics',
+  },
+};
+
+export const LongInputs: Story = {
+  args: {
+    startSuggestions: SUGGESTIONS,
+    endSuggestions: SUGGESTIONS,
+    startDefaultValue:
+      'International Union of Pure and Applied Physics',
+    endDefaultValue:
+      'United Nations Educational, Scientific and Cultural Organization',
+  },
 };

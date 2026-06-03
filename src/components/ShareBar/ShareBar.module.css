@@ -23,16 +23,34 @@
   flex-shrink: 0;
 }
 
-/* URL display — terra color, bold code segment */
-.url {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--terra);
+/* Layout slot for URL — not clickable; link sizes to its text */
+.urlWrap {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+}
+
+.url {
+  display: inline-block;
+  max-width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--terra);
+  text-decoration: none;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.url:hover {
+  text-decoration: underline;
+}
+
+.url:focus-visible {
+  outline: 2px solid var(--terra);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Copied state overrides — sage coloring */

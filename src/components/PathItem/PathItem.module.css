@@ -69,13 +69,6 @@
   font-weight: 700;
 }
 
-/* Action buttons cluster */
-.actions {
-  display: flex;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
 /* §4 Breakpoints — mobile ≤600px: stack vertically */
 @media (max-width: 600px) {
   .item {
@@ -104,12 +97,6 @@
     width: 100%;
     padding: 0;
     gap: var(--space-3);
-  }
-
-  .actions {
-    margin-top: 10px;
-    width: 100%;
-    justify-content: flex-start;
   }
 }
 

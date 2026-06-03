@@ -50,6 +50,21 @@ export const NoTags: Story = {
   },
 };
 
+export const SevenHops: Story = {
+  args: {
+    number: 1,
+    crumbs: [
+      { href: '#', label: 'Albert Einstein', highlighted: true },
+      { href: '#', label: 'Theory of relativity' },
+      { href: '#', label: 'Spacetime', tag: 'new' },
+      { href: '#', label: 'General relativity' },
+      { href: '#', label: 'Gravitational wave', tag: 'rare' },
+      { href: '#', label: 'LIGO Scientific Collaboration' },
+      { href: '#', label: 'Quantum mechanics', highlighted: true },
+    ],
+  },
+};
+
 export const MultipleItems: Story = {
   render: () => (
     <div style={{ background: 'var(--white)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1.5px solid var(--sand-mid)' }}>

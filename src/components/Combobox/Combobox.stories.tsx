@@ -59,6 +59,14 @@ export const WithValue: Story = {
   },
 };
 
+export const LongValue: Story = {
+  name: 'Long Value',
+  args: {
+    id: 'wiki-search-long',
+    defaultValue: 'United Nations Educational, Scientific and Cultural Organization',
+  },
+};
+
 /* ────────────────────────────────────────
    MOBILE — constrained container
 ──────────────────────────────────────── */

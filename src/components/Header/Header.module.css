@@ -46,26 +46,30 @@
   margin: 0;
 }
 
-/* Form block — width follows inputs row; button stretches to match */
+/* Form block — grows with inputs; button stretches to match */
 .searchForm {
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 14px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 720px;
+  padding: 0 var(--space-1);
+  box-sizing: border-box;
 }
 
 .searchForm .searchButton {
   max-width: none;
 }
 
-/* Inputs row — wraps on mobile */
+/* Inputs row — wraps on mobile; comboboxes share remaining width */
 .inputsRow {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: flex-end;
+  gap: var(--space-2);
   flex-wrap: wrap;
   justify-content: center;
+  width: 100%;
 }
 
 .inputGroup {
@@ -73,6 +77,15 @@
   flex-direction: column;
   align-items: center;
   gap: 5px;
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 340px;
+}
+
+.combobox {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
 }
 
 /* Visible label above each combobox — §3 Type Scale (input label) */
@@ -82,6 +95,11 @@
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--ink-muted);
+}
+
+.arrowGroup {
+  flex: 0 0 auto;
+  max-width: none;
 }
 
 /* → connector between the two inputs — vertically centred in combobox row */
@@ -107,10 +125,17 @@
   .inputsRow {
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-3);
+  }
+
+  .inputGroup {
+    flex: 0 1 auto;
+    width: 100%;
+    max-width: 260px;
   }
 
   .arrowGroup {
+    flex: 0 0 auto;
     gap: 0;
   }
 

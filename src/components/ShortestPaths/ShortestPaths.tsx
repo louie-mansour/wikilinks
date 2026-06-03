@@ -12,11 +12,8 @@ interface ShortestPathsProps {
   title: string;
   paths: PathData[];
   sortOptions: Array<{ value: string; label: string }>;
-  maxOptions: Array<{ value: string; label: string }>;
   sortValue?: string;
-  maxValue?: string;
   onSortChange?: (value: string) => void;
-  onMaxChange?: (value: string) => void;
   remainingCount?: number;
   onLoadMore?: () => void;
 }
@@ -25,11 +22,8 @@ export function ShortestPaths({
   title,
   paths,
   sortOptions,
-  maxOptions,
   sortValue,
-  maxValue,
   onSortChange,
-  onMaxChange,
   remainingCount,
   onLoadMore,
 }: ShortestPathsProps) {
@@ -43,12 +37,6 @@ export function ShortestPaths({
             options={sortOptions}
             value={sortValue}
             onChange={onSortChange}
-          />
-          <SortSelect
-            label="Max paths"
-            options={maxOptions}
-            value={maxValue}
-            onChange={onMaxChange}
           />
         </div>
       </div>

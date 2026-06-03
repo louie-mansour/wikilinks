@@ -10,9 +10,9 @@ interface ShareBarProps {
 
 export function ShareBar({ urlPrefix, urlCode, onCopy }: ShareBarProps) {
   const [copied, setCopied] = useState(false);
+  const fullUrl = `https://${urlPrefix}${urlCode}`;
 
   function handleCopy() {
-    const fullUrl = `https://${urlPrefix}${urlCode}`;
     navigator.clipboard?.writeText(fullUrl).catch(() => {});
     setCopied(true);
     onCopy?.();
@@ -22,8 +22,15 @@ export function ShareBar({ urlPrefix, urlCode, onCopy }: ShareBarProps) {
   return (
     <div className={styles.bar}>
       <span className={styles.label}>Share</span>
-      <span className={styles.url}>
-        {urlPrefix}<strong>{urlCode}</strong>
+      <span className={styles.urlWrap}>
+        <a
+          href={fullUrl}
+          className={styles.url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {urlPrefix}<strong>{urlCode}</strong>
+        </a>
       </span>
       <Button
         variant="permalink"
