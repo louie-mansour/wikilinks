@@ -19,7 +19,7 @@ interface RecordsSectionProps {
 export function RecordsSection({ periods }: RecordsSectionProps) {
   return (
     <div className={styles.section} role="region" aria-label="Records">
-      <div className={styles.header}>Records — this pair</div>
+      <div className={styles.header}>Records</div>
       <div className={styles.cols}>
         {periods.map((p) => (
           <div key={p.period} className={styles.col}>
@@ -28,8 +28,14 @@ export function RecordsSection({ periods }: RecordsSectionProps) {
               <div key={row.key} className={styles.row}>
                 <span className={styles.key}>{row.key}</span>
                 <span className={styles.val}>
-                  {row.value}
-                  {row.badge && <Badge variant="record" />}
+                  <span className={styles.badgeSlot}>
+                    {row.badge && <Badge variant="record" />}
+                  </span>
+                  <span
+                    className={`${styles.value} ${row.badge ? styles.valueRecord : ''}`}
+                  >
+                    {row.value}
+                  </span>
                 </span>
               </div>
             ))}

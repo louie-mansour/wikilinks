@@ -34,6 +34,15 @@
   --radius-md:   18px;
   --radius-lg:   26px;
 
+  /* Spacing */
+  --space-1:     4px;
+  --space-2:     6px;
+  --space-3:     8px;
+  --space-4:     10px;
+  --space-5:     14px;
+  --space-6:     16px;
+  --space-7:     20px;
+
   /* Typography */
   --font-display: 'Figtree', system-ui, sans-serif;
   --font-body:    'Figtree', system-ui, sans-serif;

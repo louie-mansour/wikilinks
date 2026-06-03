@@ -30,24 +30,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   flex: 1;
 }
 
-/* Wrapper around (sep + arrow + crumb) to keep them together */
+/* Wrapper around (sep + crumb) to keep them together */
 .crumbGroup {
   display: contents;
 }
 
 /* Desktop › separator */
 .sep {
-  color: var(--sand-dark);
-  font-size: 14px;
-}
-
-/* Mobile ↓ arrow — hidden on desktop, shown on mobile */
-.arrow {
-  display: none;
   color: var(--sand-dark);
   font-size: 14px;
 }
@@ -62,7 +55,7 @@
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-2);
 }
 
 .crumb:hover {
@@ -98,13 +91,7 @@
   .crumbs {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0;
-    width: 100%;
-  }
-
-  .crumbGroup {
-    display: flex;
-    flex-direction: column;
+    gap: var(--space-2);
     width: 100%;
   }
 
@@ -113,16 +100,10 @@
     display: none;
   }
 
-  /* Show ↓ on mobile */
-  .arrow {
-    display: block;
-    padding: 2px 0;
-  }
-
   .crumb {
-    display: block;
     width: 100%;
-    padding: 6px 0;
+    padding: 0;
+    gap: var(--space-3);
   }
 
   .actions {

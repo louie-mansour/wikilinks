@@ -11,7 +11,7 @@
   isolation: isolate;
 }
 
-/* "RECORDS — THIS PAIR" label */
+/* "RECORDS" label */
 .header {
   font-size: 10px;
   font-weight: 700;
@@ -68,13 +68,33 @@
 }
 
 .val {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* Fixed-width slot so values align when only some rows have a record badge */
+.badgeSlot {
+  width: 5.75rem;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.value {
   font-family: var(--font-display);
   font-size: 13px;
   font-weight: 700;
   color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  text-align: right;
+  min-width: 3ch;
+}
+
+.valueRecord {
+  color: var(--sage);
+  font-weight: 800;
+  font-style: italic;
 }
 
 /* §4 Breakpoints — mobile ≤600px: stack columns vertically */

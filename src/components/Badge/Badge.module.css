@@ -14,7 +14,7 @@
   line-height: 1.6;
 }
 
-/* new = green, rare = yellow, uncommon = red, record = gray/brown */
+/* new = green, rare = yellow, uncommon = red, record = green */
 .variantNew {
   background: var(--sage-pale);
   color: var(--sage);
@@ -43,12 +43,12 @@
 }
 
 .record {
-  background: var(--sand);
-  color: var(--ink-muted);
-  border-color: var(--sand-dark);
+  background: var(--sage-pale);
+  color: var(--sage);
+  border-color: var(--sage-light);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--sand-dark) 30%, transparent),
-    0 2px 6px color-mix(in srgb, var(--ink) 8%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--sage) 22%, transparent),
+    0 2px 8px color-mix(in srgb, var(--sage) 20%, transparent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -65,7 +65,7 @@
   }
 
   .record {
-    animation: badge-glow-sand 3s ease-in-out infinite;
+    animation: badge-glow-sage 2s ease-in-out infinite;
   }
 
   @keyframes badge-glow-clay {
@@ -107,16 +107,4 @@
     }
   }
 
-  @keyframes badge-glow-sand {
-    0%, 100% {
-      box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--sand-dark) 30%, transparent),
-        0 2px 6px color-mix(in srgb, var(--ink) 8%, transparent);
-    }
-    50% {
-      box-shadow:
-        0 0 0 2px color-mix(in srgb, var(--sand-dark) 45%, transparent),
-        0 2px 12px color-mix(in srgb, var(--ink) 14%, transparent);
-    }
-  }
 }

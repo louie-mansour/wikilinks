@@ -25,10 +25,7 @@ export function PathItem({ number, crumbs, onCopy, onLink }: PathItemProps) {
         {crumbs.map((crumb, i) => (
           <span key={i} className={styles.crumbGroup}>
             {i > 0 && (
-              <>
-                <span className={styles.sep} aria-hidden="true">›</span>
-                <span className={styles.arrow} aria-hidden="true">↓</span>
-              </>
+              <span className={styles.sep} aria-hidden="true">›</span>
             )}
             <a
               href={crumb.href}
