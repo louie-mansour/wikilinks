@@ -11,8 +11,10 @@ export interface ComboboxProps {
   label: string;
   placeholder?: string;
   defaultValue?: string;
+  value?: string;
   suggestions: Suggestion[];
   onSelect?: (title: string) => void;
+  onChange?: (value: string) => void;
   className?: string;
 }
 
@@ -36,11 +38,23 @@ export function Combobox({
   label,
   placeholder = 'Search…',
   defaultValue = '',
+  value: controlledValue,
   suggestions,
   onSelect,
+  onChange,
   className = '',
 }: ComboboxProps) {
-  const [value, setValue] = useState(defaultValue);
+  const isControlled = controlledValue !== undefined;
+  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
+  const value = isControlled ? controlledValue : uncontrolledValue;
+
+  const updateValue = useCallback(
+    (next: string) => {
+      if (!isControlled) setUncontrolledValue(next);
+      onChange?.(next);
+    },
+    [isControlled, onChange],
+  );
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
 
@@ -70,16 +84,16 @@ export function Combobox({
 
   const select = useCallback(
     (title: string) => {
-      setValue(title);
+      updateValue(title);
       setOpen(false);
       setActiveIndex(-1);
       onSelect?.(title);
     },
-    [onSelect]
+    [onSelect, updateValue]
   );
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setValue(e.target.value);
+    updateValue(e.target.value);
     setOpen(true);
     setActiveIndex(-1);
   }

@@ -27,10 +27,24 @@ const meta = {
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    backgrounds: { default: 'sand' },
     docs: {
       story: { height: '460px' },
     },
   },
+  decorators: [
+    (Story) => (
+      <div
+        style={{
+          maxWidth: 920,
+          margin: '0 auto',
+          padding: '14px 16px 0',
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
 } satisfies Meta<typeof Header>;
 
 export default meta;
@@ -47,8 +61,8 @@ export const WithValues: Story = {
   args: {
     startSuggestions: SUGGESTIONS,
     endSuggestions: SUGGESTIONS,
-    startDefaultValue: 'Albert Einstein',
-    endDefaultValue: 'Quantum mechanics',
+    startValue: 'Albert Einstein',
+    endValue: 'Quantum mechanics',
   },
 };
 
@@ -56,9 +70,8 @@ export const LongInputs: Story = {
   args: {
     startSuggestions: SUGGESTIONS,
     endSuggestions: SUGGESTIONS,
-    startDefaultValue:
-      'International Union of Pure and Applied Physics',
-    endDefaultValue:
+    startValue: 'International Union of Pure and Applied Physics',
+    endValue:
       'United Nations Educational, Scientific and Cultural Organization',
   },
 };

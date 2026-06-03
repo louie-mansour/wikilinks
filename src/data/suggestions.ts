@@ -37,3 +37,67 @@ export const SUGGESTIONS: Suggestion[] = [
   { title: 'Climate change' },
   { title: 'Roman Empire' },
 ];
+
+const ARTICLE_TITLES = SUGGESTIONS.map((s) => s.title);
+
+export function pickRandomArticle(exclude?: string): string {
+  const pool = exclude
+    ? ARTICLE_TITLES.filter((title) => title !== exclude)
+    : ARTICLE_TITLES;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/** Fills empty start/end with random distinct articles from suggestions. */
+export function resolveSearchArticles(
+  start: string,
+  end: string,
+): { start: string; end: string } {
+  const resolvedStart = start.trim() || pickRandomArticle();
+  let resolvedEnd = end.trim() || pickRandomArticle(resolvedStart);
+  if (resolvedEnd === resolvedStart) {
+    resolvedEnd = pickRandomArticle(resolvedStart);
+  }
+  return { start: resolvedStart, end: resolvedEnd };
+}
+
+const ROULETTE_DURATION_MS = 1000;
+const ROULETTE_MIN_TICK_MS = 35;
+const ROULETTE_MAX_TICK_MS = 200;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function pickRouletteFrame(pool: string[], finalTitle: string, progress: number): string {
+  if (progress >= 0.88) return finalTitle;
+  let pick = pool[Math.floor(Math.random() * pool.length)];
+  while (pick === finalTitle && pool.length > 1 && progress < 0.7) {
+    pick = pool[Math.floor(Math.random() * pool.length)];
+  }
+  return pick;
+}
+
+/** Cycles random article titles in `onTick`, easing to a stop on `finalTitle`. */
+export async function animateRoulette(
+  finalTitle: string,
+  onTick: (value: string) => void,
+): Promise<void> {
+  const pool = ARTICLE_TITLES.filter((title) => title !== finalTitle);
+  const frames = pool.length > 0 ? pool : ARTICLE_TITLES;
+
+  let elapsed = 0;
+  onTick(pickRouletteFrame(frames, finalTitle, 0));
+
+  while (elapsed < ROULETTE_DURATION_MS) {
+    const progress = elapsed / ROULETTE_DURATION_MS;
+    const delay =
+      ROULETTE_MIN_TICK_MS +
+      (ROULETTE_MAX_TICK_MS - ROULETTE_MIN_TICK_MS) * progress * progress;
+    await sleep(delay);
+    elapsed += delay;
+    const nextProgress = Math.min(elapsed / ROULETTE_DURATION_MS, 1);
+    onTick(pickRouletteFrame(frames, finalTitle, nextProgress));
+  }
+
+  onTick(finalTitle);
+}

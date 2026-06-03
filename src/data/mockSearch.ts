@@ -415,6 +415,18 @@ export function runMockSearch(start: string, end: string): SearchResult {
   return buildGenericResult(start, end);
 }
 
+const SEARCH_DELAY_MS = 5000;
+
+/** Simulates a network request before returning mock search results. */
+export function searchPaths(start: string, end: string): Promise<SearchResult> {
+  return new Promise((resolve) => {
+    window.setTimeout(
+      () => resolve(runMockSearch(start, end)),
+      SEARCH_DELAY_MS,
+    );
+  });
+}
+
 export function formatSearchTime(ms: number): string {
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
 }

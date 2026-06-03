@@ -5,8 +5,12 @@ import { BentoBox } from './components/BentoBox/BentoBox';
 import { RecordsSection } from './components/RecordsSection/RecordsSection';
 import { ShareBar } from './components/ShareBar/ShareBar';
 import { ShortestPaths } from './components/ShortestPaths/ShortestPaths';
-import { SUGGESTIONS } from './data/suggestions';
-import { runMockSearch, formatSearchTime, formatNumber, type SearchResult } from './data/mockSearch';
+import {
+  SUGGESTIONS,
+  resolveSearchArticles,
+  animateRoulette,
+} from './data/suggestions';
+import { searchPaths, formatSearchTime, formatNumber, type SearchResult } from './data/mockSearch';
 import styles from './App.module.css';
 
 const SORT_OPTIONS = [
@@ -17,24 +21,51 @@ const SORT_OPTIONS = [
 
 const PAGE_SIZE = 5;
 
-const DEFAULT_START = 'Albert Einstein';
-const DEFAULT_END = 'Quantum mechanics';
-
 export function App() {
-  const [startArticle, setStartArticle] = useState(DEFAULT_START);
-  const [endArticle, setEndArticle] = useState(DEFAULT_END);
-  const [result, setResult] = useState<SearchResult | null>(
-    () => runMockSearch(DEFAULT_START, DEFAULT_END),
-  );
+  const [startArticle, setStartArticle] = useState('');
+  const [endArticle, setEndArticle] = useState('');
+  const [result, setResult] = useState<SearchResult | null>(null);
+  const [isRouletting, setIsRouletting] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [sortOrder, setSortOrder] = useState('interesting');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const handleSearch = useCallback(() => {
-    if (!startArticle.trim() || !endArticle.trim()) return;
-    setResult(runMockSearch(startArticle.trim(), endArticle.trim()));
-    setVisibleCount(PAGE_SIZE);
-    setSortOrder('interesting');
-  }, [startArticle, endArticle]);
+  const handleSearch = useCallback(async () => {
+    if (isRouletting || isSearching) return;
+
+    const needsStartRandom = !startArticle.trim();
+    const needsEndRandom = !endArticle.trim();
+    const { start, end } = resolveSearchArticles(startArticle, endArticle);
+
+    try {
+      const rouletteTasks: Promise<void>[] = [];
+      if (needsStartRandom) {
+        rouletteTasks.push(animateRoulette(start, setStartArticle));
+      } else {
+        setStartArticle(start);
+      }
+      if (needsEndRandom) {
+        rouletteTasks.push(animateRoulette(end, setEndArticle));
+      } else {
+        setEndArticle(end);
+      }
+
+      if (rouletteTasks.length > 0) {
+        setIsRouletting(true);
+        await Promise.all(rouletteTasks);
+        setIsRouletting(false);
+      }
+
+      setIsSearching(true);
+      const data = await searchPaths(start, end);
+      setResult(data);
+      setVisibleCount(PAGE_SIZE);
+      setSortOrder('interesting');
+    } finally {
+      setIsRouletting(false);
+      setIsSearching(false);
+    }
+  }, [startArticle, endArticle, isRouletting, isSearching]);
 
   const sortedPaths = result
     ? [...result.paths].sort((a, b) => {
@@ -53,17 +84,33 @@ export function App() {
 
   return (
     <div className={styles.page}>
-      <Header
-        startSuggestions={SUGGESTIONS}
-        endSuggestions={SUGGESTIONS}
-        startDefaultValue={DEFAULT_START}
-        endDefaultValue={DEFAULT_END}
-        onStartSelect={setStartArticle}
-        onEndSelect={setEndArticle}
-        onSearch={handleSearch}
-      />
+      <div className={styles.pageHeader}>
+        <Header
+          startSuggestions={SUGGESTIONS}
+          endSuggestions={SUGGESTIONS}
+          startValue={startArticle}
+          endValue={endArticle}
+          onStartSelect={setStartArticle}
+          onEndSelect={setEndArticle}
+          onStartChange={setStartArticle}
+          onEndChange={setEndArticle}
+          onSearch={handleSearch}
+          isSearching={isRouletting || isSearching}
+          searchLabel={
+            isRouletting
+              ? 'Picking articles…'
+              : isSearching
+                ? 'Finding paths…'
+                : 'Find paths'
+          }
+        />
+      </div>
 
-      {result ? (
+      {isSearching && !isRouletting ? (
+        <div className={styles.loading} role="status" aria-live="polite">
+          <p className={styles.loadingText}>Finding paths…</p>
+        </div>
+      ) : result ? (
         <div className={styles.sections} key={`${result.start}|${result.end}`}>
           <Graph
             nodes={result.graphNodes}
@@ -99,7 +146,9 @@ export function App() {
         </div>
       ) : (
         <div className={styles.empty}>
-          <p className={styles.emptyHint}>Enter two articles and click Find paths to get started.</p>
+          <p className={styles.emptyHint}>
+            Enter two articles, or leave blank and click Find paths — we&apos;ll pick a pair at random.
+          </p>
         </div>
       )}
     </div>

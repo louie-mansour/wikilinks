@@ -5,21 +5,29 @@ import styles from './Header.module.css';
 interface HeaderProps {
   startSuggestions: Suggestion[];
   endSuggestions: Suggestion[];
-  startDefaultValue?: string;
-  endDefaultValue?: string;
+  startValue?: string;
+  endValue?: string;
   onStartSelect?: (title: string) => void;
   onEndSelect?: (title: string) => void;
+  onStartChange?: (value: string) => void;
+  onEndChange?: (value: string) => void;
   onSearch?: () => void;
+  isSearching?: boolean;
+  searchLabel?: string;
 }
 
 export function Header({
   startSuggestions,
   endSuggestions,
-  startDefaultValue,
-  endDefaultValue,
+  startValue = '',
+  endValue = '',
   onStartSelect,
   onEndSelect,
+  onStartChange,
+  onEndChange,
   onSearch,
+  isSearching = false,
+  searchLabel = 'Find paths',
 }: HeaderProps) {
   return (
     <header className={styles.topBar}>
@@ -47,10 +55,11 @@ export function Header({
             <Combobox
               id="header-start"
               label="Start article"
-              placeholder="e.g. Albert Einstein"
-              defaultValue={startDefaultValue}
+              placeholder="I'm feeling lucky"
+              value={startValue}
               suggestions={startSuggestions}
               onSelect={onStartSelect}
+              onChange={onStartChange}
               className={styles.combobox}
             />
           </div>
@@ -65,17 +74,24 @@ export function Header({
             <Combobox
               id="header-end"
               label="End article"
-              placeholder="e.g. Quantum mechanics"
-              defaultValue={endDefaultValue}
+              placeholder="I'm feeling lucky"
+              value={endValue}
               suggestions={endSuggestions}
               onSelect={onEndSelect}
+              onChange={onEndChange}
               className={styles.combobox}
             />
           </div>
         </div>
 
-        <Button variant="primary" className={styles.searchButton} onClick={onSearch}>
-          Find paths
+        <Button
+          variant="primary"
+          className={styles.searchButton}
+          onClick={onSearch}
+          disabled={isSearching}
+          aria-busy={isSearching}
+        >
+          {searchLabel}
         </Button>
       </div>
     </header>

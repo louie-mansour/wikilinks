@@ -9,8 +9,11 @@
   align-items: center;
   gap: 14px;
   background: var(--white);
-  border-bottom: 1.5px solid var(--sand-mid);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-md);
   text-align: center;
+  /* §11 Safari border-radius clip fix */
+  isolation: isolate;
 }
 
 /* Wordmark — §9 Iconography */

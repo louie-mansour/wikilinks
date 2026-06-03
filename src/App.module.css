@@ -6,6 +6,17 @@
   padding: 0 0 60px;
 }
 
+/* Same horizontal inset as .sections so the header aligns with cards below */
+.pageHeader {
+  padding: 14px 16px 0;
+}
+
+@media (max-width: 520px) {
+  .pageHeader {
+    padding: 10px 10px 0;
+  }
+}
+
 /* All result sections sit inside this wrapper.
    It owns all horizontal padding and vertical rhythm so every
    section gets the same inset and consistent spacing. */
@@ -44,4 +55,20 @@
 .emptyHint {
   font-style: italic;
   font-size: 13px;
+}
+
+/* Shown while the mock API request is in flight */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 20px;
+}
+
+.loadingText {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-muted);
 }
