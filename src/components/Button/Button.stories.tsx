@@ -2,12 +2,24 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { userEvent, within } from '@storybook/test';
 import { Button } from './Button';
 
+const primaryWidthDecorator = (Story: () => React.JSX.Element) => (
+  <div style={{ width: '100%', maxWidth: 440 }}>
+    <Story />
+  </div>
+);
+
 const meta = {
   title: 'WikiLinks/Button',
   component: Button,
   tags: ['autodocs'],
   parameters: {
     layout: 'centered',
+  },
+  argTypes: {
+    loading: {
+      control: 'boolean',
+      description: 'Primary only — three-dot march animation',
+    },
   },
 } satisfies Meta<typeof Button>;
 
@@ -60,6 +72,34 @@ export const PrimaryFocused: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     canvas.getByRole('button').focus();
+  },
+};
+
+export const PrimaryLoading: Story = {
+  name: 'Primary / Loading',
+  decorators: [primaryWidthDecorator],
+  args: {
+    variant: 'primary',
+    children: 'Finding paths…',
+    loading: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Busy state for the search CTA — label stays for screen readers; three dots march right while `aria-busy` is set.',
+      },
+    },
+  },
+};
+
+export const PrimaryLoadingRoulette: Story = {
+  name: 'Primary / Loading (picking articles)',
+  decorators: [primaryWidthDecorator],
+  args: {
+    variant: 'primary',
+    children: 'Picking articles…',
+    loading: true,
   },
 };
 
@@ -200,9 +240,15 @@ export const AllVariants: Story = {
   },
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '20px', padding: '24px' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', maxWidth: 440 }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Primary</span>
         <Button variant="primary">Find paths</Button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', maxWidth: 440 }}>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Primary / Loading</span>
+        <Button variant="primary" loading>
+          Finding paths…
+        </Button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Action</span>

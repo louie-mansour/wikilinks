@@ -4,6 +4,8 @@ export type ButtonVariant = 'primary' | 'action' | 'permalink' | 'secondary';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  /** Primary only — three-dot loader; disables the button and sets aria-busy */
+  loading?: boolean;
 }
 
 const variantClass: Record<ButtonVariant, string> = {
@@ -13,14 +15,36 @@ const variantClass: Record<ButtonVariant, string> = {
   secondary: styles.secondary,
 };
 
-export function Button({ variant = 'primary', className = '', children, ...props }: ButtonProps) {
+export function Button({
+  variant = 'primary',
+  className = '',
+  loading = false,
+  children,
+  disabled,
+  ...props
+}: ButtonProps) {
+  const isPrimaryLoading = variant === 'primary' && loading;
+
   return (
     <button
-      className={`${styles.root} ${variantClass[variant]} ${className}`}
+      className={`${styles.root} ${variantClass[variant]}${isPrimaryLoading ? ` ${styles.loading}` : ''} ${className}`.trim()}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
     >
       {variant === 'primary' ? (
-        <span className={styles.buttonLabel}>{children}</span>
+        <>
+          <span className={isPrimaryLoading ? styles.visuallyHidden : styles.buttonLabel}>
+            {children}
+          </span>
+          {isPrimaryLoading ? (
+            <span className={styles.loadingDots} aria-hidden="true">
+              <span className={styles.dot} />
+              <span className={styles.dot} />
+              <span className={styles.dot} />
+            </span>
+          ) : null}
+        </>
       ) : (
         children
       )}

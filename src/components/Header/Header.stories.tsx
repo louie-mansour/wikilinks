@@ -72,6 +72,28 @@ export const WithValues: Story = {
   },
 };
 
+export const Searching: Story = {
+  name: 'Searching (loading button)',
+  args: {
+    startSuggestions: SUGGESTIONS,
+    endSuggestions: SUGGESTIONS,
+    startValue: 'Albert Einstein',
+    endValue: 'Quantum mechanics',
+    isSearching: true,
+    searchLabel: 'Finding paths…',
+  },
+};
+
+export const PickingArticles: Story = {
+  name: 'Picking articles (loading button)',
+  args: {
+    startSuggestions: SUGGESTIONS,
+    endSuggestions: SUGGESTIONS,
+    isSearching: true,
+    searchLabel: 'Picking articles…',
+  },
+};
+
 export const LongInputs: Story = {
   args: {
     startSuggestions: SUGGESTIONS,

@@ -156,6 +156,7 @@ export function Combobox({
     <div
       ref={wrapperRef}
       className={`${styles.wrap} ${className}`}
+      data-open={open ? '' : undefined}
     >
       {/* Visually-hidden label — always present for accessibility */}
       <label htmlFor={id} className={styles.label}>

@@ -88,8 +88,7 @@ export function Header({
           variant="primary"
           className={styles.searchButton}
           onClick={onSearch}
-          disabled={isSearching}
-          aria-busy={isSearching}
+          loading={isSearching}
         >
           {searchLabel}
         </Button>

@@ -5,6 +5,8 @@ import { BentoBox } from './components/BentoBox/BentoBox';
 import { RecordsSection } from './components/RecordsSection/RecordsSection';
 import { ShareBar } from './components/ShareBar/ShareBar';
 import { ShortestPaths } from './components/ShortestPaths/ShortestPaths';
+import { EmptyState } from './components/EmptyState/EmptyState';
+import { LoadingState } from './components/LoadingState/LoadingState';
 import {
   SUGGESTIONS,
   resolveSearchArticles,
@@ -106,10 +108,8 @@ export function App() {
         />
       </div>
 
-      {isSearching && !isRouletting ? (
-        <div className={styles.loading} role="status" aria-live="polite">
-          <p className={styles.loadingText}>Finding paths…</p>
-        </div>
+      {isRouletting || isSearching ? (
+        <LoadingState phase={isRouletting ? 'articles' : 'paths'} />
       ) : result ? (
         <div className={styles.sections} key={`${result.start}|${result.end}`}>
           <Graph
@@ -145,11 +145,7 @@ export function App() {
           />
         </div>
       ) : (
-        <div className={styles.empty}>
-          <p className={styles.emptyHint}>
-            Enter two articles, or leave blank and click Find paths — we&apos;ll pick a pair at random.
-          </p>
-        </div>
+        <EmptyState />
       )}
     </div>
   );
