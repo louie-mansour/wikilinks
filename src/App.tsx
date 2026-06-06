@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Header } from './components/Header/Header';
-import { Graph } from './components/Graph/Graph';
+import { GraphWiki } from './components/GraphWiki/GraphWiki';
 import { BentoBox } from './components/BentoBox/BentoBox';
 import { RecordsSection } from './components/RecordsSection/RecordsSection';
 import { ShareBar } from './components/ShareBar/ShareBar';
@@ -112,10 +112,7 @@ export function App() {
         <LoadingState phase={isRouletting ? 'articles' : 'paths'} />
       ) : result ? (
         <div className={styles.sections} key={`${result.start}|${result.end}`}>
-          <Graph
-            nodes={result.graphNodes}
-            edges={result.graphEdges}
-          />
+          <GraphWiki graphData={result.graphData} />
 
           <BentoBox
             pathsFound={formatNumber(result.pathsFound)}

@@ -1,6 +1,7 @@
-import type { GraphNode, GraphEdge } from '../components/Graph/Graph';
+import type { GraphData } from '../components/GraphWiki/GraphWiki';
 import type { PathData } from '../components/ShortestPaths/ShortestPaths';
 import type { RecordPeriod } from '../components/RecordsSection/RecordsSection';
+import { buildGraphForDegrees } from './buildGraphData';
 
 export interface SearchResult {
   start: string;
@@ -11,8 +12,7 @@ export interface SearchResult {
   searchTimeMs: number;
   uniqueArticles: number;
   paths: PathData[];
-  graphNodes: GraphNode[];
-  graphEdges: GraphEdge[];
+  graphData: GraphData;
   records: RecordPeriod[];
   shareCode: string;
 }
@@ -28,45 +28,7 @@ const EINSTEIN_QUANTUM: SearchResult = {
   searchTimeMs: 1200,
   uniqueArticles: 14,
   shareCode: 'aE3f9k',
-  graphNodes: [
-    { id: 'einstein',   label: 'Albert Einstein',        top: 8,  left: 50, variant: 'start' },
-    { id: 'history',    label: 'History of physics',     top: 26, left: 13 },
-    { id: 'relativity', label: 'Special Relativity',     top: 24, left: 31 },
-    { id: 'nobel',      label: 'Nobel Prize in Physics', top: 22, left: 49, rarity: 'uncommon' },
-    { id: 'physics',    label: 'Physics',                top: 24, left: 62, variant: 'active', rarity: 'first' },
-    { id: 'germany',    label: 'Germany',                top: 26, left: 73 },
-    { id: 'science',    label: 'Science',                top: 28, left: 83 },
-    { id: 'classical',  label: 'Classical mechanics',    top: 54, left: 9 },
-    { id: 'lorentz',    label: 'Lorentz transform',      top: 52, left: 25 },
-    { id: 'thermo',     label: 'Thermodynamics',         top: 51, left: 41 },
-    { id: 'wave',       label: 'Wave function',          top: 52, left: 60, variant: 'active', rarity: 'rare' },
-    { id: 'planck',     label: 'Max Planck',             top: 54, left: 72, rarity: 'uncommon' },
-    { id: 'bohr',       label: 'Niels Bohr',             top: 56, left: 82 },
-    { id: 'quantum',    label: 'Quantum mechanics',      top: 82, left: 50, variant: 'end' },
-  ],
-  graphEdges: [
-    // dim edges
-    { x1: 50, y1: 8,  x2: 13, y2: 26 },
-    { x1: 50, y1: 8,  x2: 31, y2: 24 },
-    { x1: 50, y1: 8,  x2: 49, y2: 22 },
-    { x1: 50, y1: 8,  x2: 73, y2: 26 },
-    { x1: 50, y1: 8,  x2: 83, y2: 28 },
-    { x1: 13, y1: 26, x2: 9,  y2: 54 },
-    { x1: 31, y1: 24, x2: 25, y2: 52 },
-    { x1: 31, y1: 24, x2: 41, y2: 51 },
-    { x1: 49, y1: 22, x2: 41, y2: 51 },
-    { x1: 73, y1: 26, x2: 72, y2: 54 },
-    { x1: 83, y1: 28, x2: 82, y2: 56 },
-    { x1: 9,  y1: 54, x2: 50, y2: 82 },
-    { x1: 25, y1: 52, x2: 50, y2: 82 },
-    { x1: 41, y1: 51, x2: 50, y2: 82 },
-    { x1: 72, y1: 54, x2: 50, y2: 82 },
-    { x1: 82, y1: 56, x2: 50, y2: 82 },
-    // active path: Einstein → Physics → Wave function → Quantum
-    { x1: 50, y1: 8,  x2: 62, y2: 24, active: true },
-    { x1: 62, y1: 24, x2: 60, y2: 52, active: true },
-    { x1: 60, y1: 52, x2: 50, y2: 82, active: true },
-  ],
+  graphData: buildGraphForDegrees(4, 8),
   paths: [
     {
       id: 1,
@@ -289,59 +251,7 @@ function buildGenericResult(start: string, end: string): SearchResult {
   const searchTimeMs = (s(4) % 2800) + 200;
   const uniqueArticles = intermediates.length + 2 + (s(5) % 4);
 
-  // ── Graph layout ──────────────────────────────────────────────────────────
-  // Layers: start (top) → intermediates (middle) → end (bottom)
-  const layers = [
-    [{ id: 'start', label: start, top: 8, left: 50, variant: 'start' as const }],
-    intermediates.map((label, i) => ({
-      id: `inter-${i}`,
-      label,
-      top: hops === 3 ? 46 : 28,
-      left: intermCount === 1 ? 50 : 20 + (i * 60) / (intermCount - 1),
-      rarity: i === 0 ? ('first' as const) : i === 1 ? ('rare' as const) : null,
-      variant: i === 0 ? ('active' as const) : ('default' as const),
-    })),
-    [{ id: 'end', label: end, top: 82, left: 50, variant: 'end' as const }],
-  ];
-
-  if (hops === 4) {
-    // Add a second intermediate layer
-    const bridge = seededPick(
-      INTERMEDIATES.filter((t) => !intermediates.includes(t) && t !== start && t !== end),
-      seed + 1,
-      intermCount,
-    );
-    layers.splice(2, 0,
-      bridge.map((label, i) => ({
-        id: `bridge-${i}`,
-        label,
-        top: 60,
-        left: intermCount === 1 ? 50 : 20 + (i * 60) / (intermCount - 1),
-        rarity: null as const,
-        variant: 'default' as const,
-      })),
-    );
-  }
-
-  const graphNodes: GraphNode[] = layers.flat() as GraphNode[];
-
-  const graphEdges: GraphEdge[] = [];
-  for (let li = 0; li < layers.length - 1; li++) {
-    for (const from of layers[li]) {
-      for (const to of layers[li + 1]) {
-        graphEdges.push({ x1: from.left, y1: from.top, x2: to.left, y2: to.top });
-      }
-    }
-  }
-  // Highlight first path's edges as active
-  for (let li = 0; li < layers.length - 1; li++) {
-    const from = layers[li][0];
-    const to = layers[li + 1][0];
-    const edge = graphEdges.find(
-      (e) => e.x1 === from.left && e.y1 === from.top && e.x2 === to.left && e.y2 === to.top,
-    );
-    if (edge) edge.active = true;
-  }
+  const graphData = buildGraphForDegrees(hops, 8);
 
   // ── Paths ─────────────────────────────────────────────────────────────────
   const paths: PathData[] = [];
@@ -400,8 +310,7 @@ function buildGenericResult(start: string, end: string): SearchResult {
     searchTimeMs,
     uniqueArticles,
     paths,
-    graphNodes,
-    graphEdges,
+    graphData,
     records,
     shareCode: generateShareCode(start + end),
   };
