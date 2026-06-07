@@ -1,16 +1,18 @@
+WEB := web
+
 .PHONY: install dev build storybook build-storybook
 
 install:
-	npm install
+	cd $(WEB) && npm install
 
 dev:
-	npm run dev
+	cd $(WEB) && npm run dev
 
 build:
-	npm run build
+	cd $(WEB) && npm run build
 
 storybook:
-	npm run storybook
+	cd $(WEB) && npm run storybook
 
 build-storybook:
-	npm run build-storybook
+	cd $(WEB) && npm run build-storybook

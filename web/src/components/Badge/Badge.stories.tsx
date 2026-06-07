@@ -27,6 +27,7 @@ export const Record: Story = {
 };
 
 export const AllVariants: Story = {
+  args: { variant: 'new' },
   render: () => (
     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
       <Badge variant="new" />

@@ -32,6 +32,10 @@ export const MaxPaths: Story = {
 };
 
 export const Pair: Story = {
+  args: {
+    label: 'Sort order',
+    options: [{ value: 'interesting', label: 'Sort: most interesting' }],
+  },
   render: () => (
     <div style={{ display: 'flex', gap: '8px' }}>
       <SortSelect

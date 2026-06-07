@@ -66,6 +66,10 @@ export const SevenHops: Story = {
 };
 
 export const MultipleItems: Story = {
+  args: {
+    number: 1,
+    crumbs: [{ href: '#', label: 'Example' }],
+  },
   render: () => (
     <div style={{ background: 'var(--white)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1.5px solid var(--sand-mid)' }}>
       <PathItem
