@@ -1,5 +1,6 @@
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d';
+import { forceLink, forceManyBody, forceX as d3ForceX, forceY as d3ForceY } from 'd3-force-3d';
 import styles from './GraphWiki.module.css';
 
 // Canvas can't read CSS custom properties — mirror values from tokens.css.
@@ -149,8 +150,8 @@ function computeLayeredPositions(
   return positions;
 }
 
-/** Pin every node so the physics simulation cannot move it. */
-function pinAllNodes(
+/** Set initial positions without pinning — physics can move them freely after. */
+function setInitialPositions(
   nodes: WikiNode[],
   positions: Map<string, { x: number; y: number }>,
 ): void {
@@ -158,18 +159,38 @@ function pinAllNodes(
     const sim = node as SimNode;
     const pos = positions.get(node.id);
     if (pos) {
-      sim.fx = pos.x;
-      sim.fy = pos.y;
       sim.x  = pos.x;
       sim.y  = pos.y;
+      delete sim.fx;
+      delete sim.fy;
     }
   }
 }
 
+function linkTouchesNode(link: WikiLink, nodeId: string): boolean {
+  return linkEndId(link.source as string | { id: string }) === nodeId
+    || linkEndId(link.target as string | { id: string }) === nodeId;
+}
+
+function linkEndpoints(link: WikiLink): { source: string; target: string } {
+  return {
+    source: linkEndId(link.source as string | { id: string }),
+    target: linkEndId(link.target as string | { id: string }),
+  };
+}
+
+function linksEqual(a: WikiLink, b: { source: string; target: string }): boolean {
+  const { source, target } = linkEndpoints(a);
+  return source === b.source && target === b.target;
+}
+
 export function GraphWiki({ graphData }: { graphData: GraphData }) {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const fgRef      = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
+  const wrapperRef     = useRef<HTMLDivElement>(null);
+  const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
+  const initialFitDone = useRef(false);
   const [dims, setDims] = useState({ width: 800, height: 440 });
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [hoveredLink, setHoveredLink] = useState<{ source: string; target: string } | null>(null);
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -182,10 +203,10 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     return () => ro.disconnect();
   }, []);
 
-  // Pin positions before ForceGraph2D sees the data — first frame is correct.
+  // Set initial x/y without pinning — simulation starts from correct positions.
   const positionedData = useMemo(() => {
     const positions = computeLayeredPositions(graphData.nodes, graphData.links);
-    pinAllNodes(graphData.nodes, positions);
+    setInitialPositions(graphData.nodes, positions);
     return graphData;
   }, [graphData]);
 
@@ -193,18 +214,42 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     const fg = fgRef.current;
     if (!fg) return;
 
-    // Disable physics — all positions are pinned; simulation has nothing to do.
-    fg.d3Force('center', null);
-    fg.d3Force('charge', null);
-    fg.d3Force('x', null);
-    fg.d3Force('y', null);
-    fg.d3Force('link', null);
+    initialFitDone.current = false;
 
-    // Zoom directly instead of waiting for onEngineStop — avoids a race where
-    // onZoom fires during simulation reheat and clears the auto-fit flag before
-    // onEngineStop gets a chance to call zoomToFit.
-    fg.zoomToFit(400, FIT_PADDING);
+    const positions = computeLayeredPositions(positionedData.nodes, positionedData.links);
+
+    // Springy link force — connects neighbors like rubber bands.
+    fg.d3Force('link', forceLink<SimNode, WikiLink>()
+      .id((n) => n.id)
+      .strength(0.25)
+      .distance(LAYER_SPACING),
+    );
+
+    // Light repulsion so nodes don't collapse onto each other.
+    fg.d3Force('charge', forceManyBody<SimNode>().strength(-120));
+
+    // Strong horizontal anchor keeps nodes locked to their BFS layer column.
+    fg.d3Force('x', d3ForceX<SimNode>()
+      .x((n) => positions.get(n.id)?.x ?? 0)
+      .strength(0.7),
+    );
+    // Soft vertical anchor lets nodes spring up/down within their column.
+    fg.d3Force('y', d3ForceY<SimNode>()
+      .y((n) => positions.get(n.id)?.y ?? 0)
+      .strength(0.06),
+    );
+
+    fg.d3Force('center', null);
+    fg.d3ReheatSimulation();
   }, [positionedData]);
+
+  // Fit the view once after the simulation first settles.
+  const handleEngineStop = useCallback(() => {
+    if (!initialFitDone.current) {
+      initialFitDone.current = true;
+      fgRef.current?.zoomToFit(400, FIT_PADDING);
+    }
+  }, []);
 
   return (
     <div ref={wrapperRef} className={styles.wrapper}>
@@ -222,8 +267,49 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         nodeRelSize={NODE_REL_SIZE}
         linkColor={C.sandDark}
         linkWidth={BORDER_STD}
-        warmupTicks={0}
-        cooldownTicks={0}
+        linkCanvasObject={(link, ctx, globalScale) => {
+          const start = link.source as SimNode;
+          const end = link.target as SimNode;
+          if (start.x == null || start.y == null || end.x == null || end.y == null) return;
+
+          ctx.beginPath();
+          ctx.moveTo(start.x, start.y);
+          ctx.lineTo(end.x, end.y);
+          ctx.strokeStyle = C.ink;
+          ctx.lineWidth = BORDER_STD / globalScale;
+          ctx.stroke();
+        }}
+        linkCanvasObjectMode={(link) =>
+          (hoveredLink && linksEqual(link, hoveredLink))
+          || (hoveredNodeId && linkTouchesNode(link, hoveredNodeId))
+            ? 'after'
+            : undefined
+        }
+        nodeCanvasObject={(node, ctx, globalScale) => {
+          const r = Math.sqrt(nodeVal(resolveVariant(node))) * NODE_REL_SIZE;
+          ctx.beginPath();
+          ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);
+          ctx.strokeStyle = C.ink;
+          ctx.lineWidth = BORDER_STD / globalScale;
+          ctx.stroke();
+        }}
+        nodeCanvasObjectMode={(node) =>
+          hoveredNodeId === node.id
+          || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target))
+            ? 'after'
+            : undefined
+        }
+        onNodeHover={(node) => {
+          setHoveredNodeId(node?.id ?? null);
+          if (node) setHoveredLink(null);
+        }}
+        onLinkHover={(link) => {
+          setHoveredLink(link ? linkEndpoints(link) : null);
+          if (link) setHoveredNodeId(null);
+        }}
+        onEngineStop={handleEngineStop}
+        d3AlphaDecay={0.015}
+        d3VelocityDecay={0.2}
         autoPauseRedraw
       />
     </div>
