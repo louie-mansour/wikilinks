@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d';
 import { forceLink, forceManyBody, forceX as d3ForceX, forceY as d3ForceY } from 'd3-force-3d';
 import styles from './GraphWiki.module.css';
+import { Badge } from '../Badge/Badge';
 
 // Canvas can't read CSS custom properties — mirror values from tokens.css.
 const C = {
@@ -9,8 +10,6 @@ const C = {
   sandDark:  '#d4c0a4',  // --sand-dark (links)
   ink:       '#2c2416',  // --ink (start)
   sage:      '#4a7c59',  // --sage (end)
-  sagePale:  '#edf6ef',  // --sage-pale (new badge bg)
-  sageLight: '#c8dece',  // --sage-light (new badge border)
   terra:     '#c4572a',  // --terra (interior nodes)
   terraPale: '#faf0ea',  // --terra-pale (active node bg)
 } as const;
@@ -27,10 +26,6 @@ const LABEL_PAD_X     = 12;
 const RADIUS_SM       = 10;  // --radius-sm
 const RADIUS_MD       = 18;  // --radius-md
 
-const BADGE_FONT_SIZE = 9;
-const BADGE_PAD_X     = 6;
-const BADGE_PAD_Y     = 2;
-const BADGE_RADIUS    = 6;
 
 const NODE_REL_SIZE  = SPACE_1;
 const BORDER_STD     = 1.5;
@@ -248,39 +243,6 @@ function roundRect(
   ctx.closePath();
 }
 
-function drawNewBadge(
-  node: SimNode,
-  ctx: CanvasRenderingContext2D,
-  globalScale: number,
-): void {
-  const text = '★ new';
-  const fontSize = BADGE_FONT_SIZE / globalScale;
-  const padX = BADGE_PAD_X / globalScale;
-  const padY = BADGE_PAD_Y / globalScale;
-  const radius = BADGE_RADIUS / globalScale;
-
-  ctx.font = `700 ${fontSize}px ${FONT_UI}`;
-  const textW = ctx.measureText(text).width;
-  const boxW = textW + padX * 2;
-  const boxH = fontSize * 1.6 + padY * 2;
-
-  const nodeR = Math.sqrt(nodeVal(resolveVariant(node))) * NODE_REL_SIZE;
-  const x = node.x! + nodeR + SPACE_1 / globalScale;
-  const y = node.y! - boxH / 2;
-
-  ctx.beginPath();
-  roundRect(ctx, x, y, boxW, boxH, radius);
-  ctx.fillStyle = C.sagePale;
-  ctx.fill();
-  ctx.strokeStyle = C.sageLight;
-  ctx.lineWidth = 1 / globalScale;
-  ctx.stroke();
-
-  ctx.fillStyle = C.sage;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + padX, y + boxH / 2);
-}
 
 function drawHighlightedLabel(
   node: SimNode,
@@ -326,6 +288,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const wrapperRef     = useRef<HTMLDivElement>(null);
   const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
   const initialFitDone = useRef(false);
+  const badgeRefs      = useRef<Map<string, HTMLSpanElement>>(new Map());
   const [dims, setDims] = useState({ width: 800, height: 440 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredLink, setHoveredLink] = useState<{ source: string; target: string } | null>(null);
@@ -351,6 +314,31 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const hoveredNeighborIds = useMemo(
     () => (hoveredNodeId ? neighborIds(hoveredNodeId, positionedData.links) : null),
     [hoveredNodeId, positionedData.links],
+  );
+
+  const newNodes = useMemo(
+    () => positionedData.nodes.filter(n => n.isNew),
+    [positionedData.nodes],
+  );
+
+  const handleRenderFramePost = useCallback(
+    (_ctx: CanvasRenderingContext2D, globalScale: number) => {
+      const fg = fgRef.current;
+      if (!fg) return;
+      for (const node of newNodes) {
+        const sim = node as SimNode;
+        if (sim.x == null || sim.y == null) continue;
+        const screen = fg.graph2ScreenCoords(sim.x, sim.y);
+        const r = nodeRadius(resolveVariant(node)) * globalScale;
+        const el = badgeRefs.current.get(node.id);
+        if (el) {
+          el.style.left = `${screen.x + r + SPACE_1}px`;
+          el.style.top  = `${screen.y}px`;
+          el.style.visibility = 'visible';
+        }
+      }
+    },
+    [newNodes],
   );
 
   useEffect(() => {
@@ -399,9 +387,22 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
       <div className={styles.legend}>
         <div className={styles.legendTitle}>Legend</div>
         <div className={styles.legendRow}>
-          <span className={styles.legendBadge}>★ new</span>
+          <Badge variant="new" />
           New article
         </div>
+      </div>
+      <div className={styles.badgeOverlay}>
+        {newNodes.map(node => (
+          <Badge
+            key={node.id}
+            variant="new"
+            className={styles.nodeBadge}
+            ref={(el) => {
+              if (el) badgeRefs.current.set(node.id, el);
+              else badgeRefs.current.delete(node.id);
+            }}
+          />
+        ))}
       </div>
       <ForceGraph2D
         ref={fgRef}
@@ -443,7 +444,6 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           ctx.lineWidth = BORDER_STD / globalScale;
           ctx.stroke();
 
-          if (node.isNew) drawNewBadge(node as SimNode, ctx, globalScale);
           if (
             hoveredNodeId === node.id
             || hoveredNeighborIds?.has(node.id)
@@ -453,8 +453,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           }
         }}
         nodeCanvasObjectMode={(node) =>
-          node.isNew
-          || hoveredNodeId === node.id
+          hoveredNodeId === node.id
           || (hoveredNeighborIds?.has(node.id))
           || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target))
             ? 'after'
@@ -468,6 +467,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           setHoveredLink(link ? linkEndpoints(link) : null);
           if (link) setHoveredNodeId(null);
         }}
+        onRenderFramePost={handleRenderFramePost}
         onEngineStop={handleEngineStop}
         d3AlphaDecay={0.015}
         d3VelocityDecay={0.2}

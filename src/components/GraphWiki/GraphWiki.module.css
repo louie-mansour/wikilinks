@@ -40,15 +40,19 @@
   color: var(--ink-muted);
 }
 
-.legendBadge {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 6px;
-  background: var(--sage-pale);
-  color: var(--sage);
-  border: 1.5px solid var(--sage-light);
-  border-radius: 6px;
-  flex-shrink: 0;
+.badgeOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.nodeBadge {
+  position: absolute;
+  transform: translateY(-50%);
+  visibility: hidden;
+  white-space: nowrap;
 }
 
 @media (max-width: 520px) {

@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import styles from './Badge.module.css';
 
 export type BadgeVariant = 'new' | 'rare' | 'uncommon' | 'record';
@@ -21,10 +22,12 @@ interface BadgeProps {
   className?: string;
 }
 
-export function Badge({ variant, className = '' }: BadgeProps) {
-  return (
-    <span className={`${styles.root} ${VARIANT_CLASS[variant]} ${className}`}>
-      {VARIANT_LABEL[variant]}
-    </span>
-  );
-}
+export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
+  function Badge({ variant, className = '' }, ref) {
+    return (
+      <span ref={ref} className={`${styles.root} ${VARIANT_CLASS[variant]} ${className}`}>
+        {VARIANT_LABEL[variant]}
+      </span>
+    );
+  }
+);
