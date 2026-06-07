@@ -33,7 +33,8 @@ function buildGraph(layerSizes: number[], fanOut: number): GraphData {
     const layer: string[] = [];
     for (let j = 0; j < layerSizes[l]; j++) {
       const id = `n${l}x${j}`;
-      nodes.push({ id, variant: 'path' });
+      // One highlighted path node per layer (j === 0); the rest are default.
+      nodes.push(j === 0 ? { id, variant: 'path' } : { id });
       layer.push(id);
     }
     layers.push(layer);
@@ -51,9 +52,15 @@ function buildGraph(layerSizes: number[], fanOut: number): GraphData {
       continue;
     }
 
-    const edgeFanOut = to.length < from.length
+    let edgeFanOut = to.length < from.length
       ? Math.max(1, Math.round(fanOut * to.length / from.length))
       : Math.min(fanOut, to.length);
+
+    // When fanOut saturates the target layer, cap per-source degree so we don't
+    // wire every source to every target (unrealistic for equal-width layers).
+    if (from.length > 1 && to.length > 1 && edgeFanOut >= to.length) {
+      edgeFanOut = Math.max(1, Math.min(fanOut, to.length - 1, Math.ceil(fanOut / 2)));
+    }
 
     const seen    = new Set<string>();
     const covered = new Set<string>();
@@ -81,6 +88,9 @@ function buildGraph(layerSizes: number[], fanOut: number): GraphData {
       const shuffled = [...from].sort(() => rng() - 0.5);
       for (const f of shuffled) { if (addEdge(f, t)) break; }
     }
+
+    // Keep the highlighted path chain connected across interior layers.
+    if (from.length > 1 && to.length > 1) addEdge(from[0], to[0]);
   }
 
   return { nodes, links };

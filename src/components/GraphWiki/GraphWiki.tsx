@@ -1,17 +1,26 @@
-import { useRef, useEffect, useState, useCallback, MutableRefObject } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
+import { useRef, useEffect, useState } from 'react';
+import { forceX, forceY } from 'd3-force-3d';
+import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d';
 import styles from './GraphWiki.module.css';
 
-// Design-system token values as constants.
-// Canvas can't read CSS custom properties, so we inline the hex values here.
+// Canvas can't read CSS custom properties — mirror values from tokens.css.
 const C = {
-  bg:          '#fefcf8',   // --white
-  nodeDefault: '#e8d9c4',   // --sand-mid
-  nodePath:    '#c4572a',   // --terra
-  nodeStart:   '#2c2416',   // --ink
-  nodeEnd:     '#7a6a52',   // --ink-muted
-  linkDefault: '#d4c0a4',   // --sand-dark
+  white:    '#fefcf8',  // --white (canvas bg)
+  sandDark: '#d4c0a4',  // --sand-dark (links)
+  ink:      '#2c2416',  // --ink (start)
+  sage:     '#4a7c59',  // --sage (end)
+  terra:    '#c4572a',  // --terra (interior nodes)
 } as const;
+
+const SPACE_1 = 4;   // --space-1
+const SPACE_2 = 6;   // --space-2
+const SPACE_7 = 20;  // --space-7
+
+const NODE_REL_SIZE = SPACE_1;
+const BORDER_STD = 1.5;
+const LAYER_SPACING = SPACE_7 * 10;
+const FIT_PADDING = SPACE_7 * 2;
+const SOFT_LAYER_STRENGTH = 0.2;
 
 export type WikiNodeVariant = 'default' | 'start' | 'end' | 'path';
 
@@ -30,16 +39,56 @@ export interface GraphData {
   links: WikiLink[];
 }
 
-export interface GraphWikiProps {
-  graphData: GraphData;
+function resolveVariant(node: WikiNode): WikiNodeVariant {
+  if (node.variant) return node.variant;
+  if (node.id === 'start') return 'start';
+  if (node.id === 'end') return 'end';
+  return 'default';
 }
 
-export function GraphWiki({ graphData }: GraphWikiProps) {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const fgRef = useRef<{ d3Force: (n: string) => { strength: (s: number) => void }; zoomToFit: (ms: number, px: number) => void } | null>(null);
-  const [dims, setDims] = useState({ width: 800, height: 560 });
+function nodeFill(variant: WikiNodeVariant): string {
+  if (variant === 'start') return C.ink;
+  if (variant === 'end') return C.sage;
+  return C.terra;
+}
 
-  // Track container size so the canvas fills the wrapper exactly.
+function nodeRadius(variant: WikiNodeVariant): number {
+  return variant === 'start' || variant === 'end' ? SPACE_2 : SPACE_1;
+}
+
+function nodeVal(variant: WikiNodeVariant): number {
+  return (nodeRadius(variant) / NODE_REL_SIZE) ** 2;
+}
+
+/** BFS hop depth from the start node along directed links. */
+function computeBfsDepths(nodes: WikiNode[], links: WikiLink[]): Map<string, number> {
+  const depths = new Map<string, number>();
+  const startId = nodes.find(n => n.variant === 'start')?.id ?? nodes[0]?.id;
+  if (!startId) return depths;
+
+  const queue = [startId];
+  depths.set(startId, 0);
+
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    const nextDepth = depths.get(id)! + 1;
+    for (const { source, target } of links) {
+      if (source === id && !depths.has(target)) {
+        depths.set(target, nextDepth);
+        queue.push(target);
+      }
+    }
+  }
+
+  return depths;
+}
+
+export function GraphWiki({ graphData }: { graphData: GraphData }) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const fgRef = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
+  const [dims, setDims] = useState({ width: 800, height: 440 });
+  const shouldAutoFitRef = useRef(true);
+
   useEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
@@ -51,66 +100,57 @@ export function GraphWiki({ graphData }: GraphWikiProps) {
     return () => ro.disconnect();
   }, []);
 
-  // Custom canvas painter: filled circles, no labels.
-  const paintNode = useCallback(
-    (node: WikiNode, ctx: CanvasRenderingContext2D) => {
-      const isLarge = node.variant === 'start' || node.variant === 'end';
-      const r = isLarge ? 6 : 4;
-      const x = (node as { x?: number }).x ?? 0;
-      const y = (node as { y?: number }).y ?? 0;
+  useEffect(() => {
+    shouldAutoFitRef.current = true;
 
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
+    const fg = fgRef.current;
+    if (!fg) return;
 
-      if (node.variant === 'end') {
-        ctx.fillStyle = C.bg;
-        ctx.fill();
-        ctx.strokeStyle = C.nodeEnd;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      } else {
-        ctx.fillStyle =
-          node.variant === 'start' ? C.nodeStart :
-          node.variant === 'path'  ? C.nodePath  :
-                                     C.nodeDefault;
-        ctx.fill();
-      }
-    },
-    [],
-  );
+    const depths = computeBfsDepths(graphData.nodes, graphData.links);
+    const maxDepth = Math.max(0, ...depths.values());
+    const xCenter = (maxDepth * LAYER_SPACING) / 2;
 
-  // Zoom to fit smoothly once the simulation has settled.
-  const onEngineStop = useCallback(() => {
-    fgRef.current?.zoomToFit(400, 40);
-  }, []);
+    fg.d3Force('center', null);
+    fg.d3Force(
+      'x',
+      forceX((node: WikiNode) =>
+        (depths.get(node.id) ?? 0) * LAYER_SPACING - xCenter,
+      ).strength(SOFT_LAYER_STRENGTH),
+    );
+    fg.d3ReheatSimulation();
+  }, [graphData]);
+
+  const stopAutoFit = () => { shouldAutoFitRef.current = false; };
 
   return (
     <div ref={wrapperRef} className={styles.wrapper}>
       <ForceGraph2D
-        ref={fgRef as MutableRefObject<never>}
-        graphData={graphData as never}
+        ref={fgRef}
         width={dims.width}
         height={dims.height}
-        backgroundColor={C.bg}
-        // Nodes
+        backgroundColor={C.white}
+        nodeId="id"
         nodeLabel=""
-        nodeCanvasObject={paintNode as never}
-        nodeCanvasObjectMode={() => 'replace'}
-        nodeVal={(n: WikiNode) => (n.variant === 'start' || n.variant === 'end' ? 2.25 : 1)}
-        nodeRelSize={4}
-        // Links
-        linkColor={() => C.linkDefault}
-        linkWidth={() => 1}
-        // Layer nodes by hop-distance: same distance from start = same column
-        dagMode="lr"
-        dagLevelDistance={110}
-        // Physics — settle y-positions within each layer before first paint
+        // Must be set before graphData — force-graph's default nodeAutoColorBy ({})
+        // assigns the same auto-palette color to every node missing a `color` field.
+        nodeAutoColorBy={null}
+        nodeColor={(n) => nodeFill(resolveVariant(n))}
+        nodeVal={(n) => nodeVal(resolveVariant(n))}
+        graphData={graphData}
+        nodeRelSize={NODE_REL_SIZE}
+        linkColor={C.sandDark}
+        linkWidth={BORDER_STD}
         warmupTicks={300}
         cooldownTicks={100}
         d3AlphaDecay={0.03}
         d3VelocityDecay={0.4}
-        onEngineStop={onEngineStop}
-        // Stop re-drawing once the simulation has settled (saves CPU)
+        onEngineStop={() => {
+          if (!shouldAutoFitRef.current) return;
+          shouldAutoFitRef.current = false;
+          fgRef.current?.zoomToFit(400, FIT_PADDING);
+        }}
+        onNodeDrag={stopAutoFit}
+        onZoom={stopAutoFit}
         autoPauseRedraw
       />
     </div>
