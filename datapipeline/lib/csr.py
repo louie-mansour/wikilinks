@@ -1,4 +1,7 @@
-"""CSR helpers: prefix offsets, little-endian u32 arrays for adjacency binaries."""
+"""CSR helpers: prefix offsets, little-endian u32 arrays for adjacency binaries.
+
+Contract: datapipeline/decisions/adjacency-csr.md
+"""
 
 from __future__ import annotations
 

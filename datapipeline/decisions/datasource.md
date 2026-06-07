@@ -92,55 +92,8 @@ Search requires two directed views of the same edge set:
 
 At ~100K nodes and ~29M edges, use **adjacency lists or CSR**, not dense matrices. Store entities as an indexed list: `entities[node_id] → title`.
 
----
-
-## Adjacency binary format
-
-`build_adjacency` writes four CSR binaries plus `entities.tsv` under `data/`. The Rust search service mmap-loads these at startup; it does **not** read `edges_int.tsv` or raw CSV at runtime.
-
-### Files
-
-| File | Role |
-|------|------|
-| `adj_fwd.offsets.bin` | Forward CSR offsets (out-neighbors) |
-| `adj_fwd.neighbors.bin` | Forward neighbor node IDs |
-| `adj_rev.offsets.bin` | Reverse CSR offsets (in-neighbors) |
-| `adj_rev.neighbors.bin` | Reverse neighbor node IDs |
-| `entities.tsv` | Line `N` → title for node ID `N` (no header) |
-
-### Binary encoding
-
-- Raw **little-endian `u32`** arrays — no header, no padding, no versioning.
-- File size must be a multiple of 4.
-- `offsets.len() == entity_count + 1` where `entity_count` = line count of `entities.tsv`.
-- `offsets[entity_count] == neighbors.len()` (total edge count).
-- Neighbors for node `id`: `neighbors[offsets[id]..offsets[id+1]]`.
-- **Duplicate neighbors are preserved** (parallel edges in `edges_int.tsv`).
-
-### BFS semantics
-
-- **Forward (`adj_fwd`):** expand from start — `src → [targets]`.
-- **Reverse (`adj_rev`):** expand backward from goal — `dst → [sources]`.
-- BFS uses integer node IDs throughout; resolve `id → title` only when returning paths.
-
-### Golden example (from `test_build_adjacency.py`)
-
-5 entities, 4 edges (`edges_int_sample.tsv`):
-
-```
-fwd_offsets:  [0, 2, 2, 3, 4, 4]
-fwd_neighbors: [1, 1, 3, 4]
-rev_offsets:  [0, 0, 2, 2, 3, 4]
-rev_neighbors: [0, 0, 2, 3]
-```
-
-Node 0 forward neighbors: `[1, 1]` (duplicate preserved). Node 1 reverse neighbors: `[0, 0]`.
-
-### Reference implementation
-
-- Writer: `datapipeline/lib/csr.py`, `datapipeline/stages/build_adjacency.py`
-- Tests: `datapipeline/tests/test_build_adjacency.py`
+**On-disk graph bundle (normative spec):** `datapipeline/decisions/adjacency-csr.md` — file layout, CSR encoding, validation, and hydration procedure for any producer or consumer (Python pipeline, Rust search service, tests, or tools).
 
 ---
 
-Operational rules for agents and contributors: `.cursor/rules/datapipeline.mdc` and `.claude/rules/datapipeline.md`. Rust adjacency reader: `.cursor/rules/adjacency-format.mdc` and `.claude/rules/adjacency-format.md`.
+Operational rules for agents and contributors: `.cursor/rules/datapipeline.mdc` and `.claude/rules/datapipeline.md`. Rust loader hints: `.cursor/rules/adjacency-format.mdc`.

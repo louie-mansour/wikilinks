@@ -1,4 +1,7 @@
-"""Reads edges_int.tsv; outputs: adj_fwd.* + adj_rev.* (CSR binaries for Rust mmap)."""
+"""Reads edges_int.tsv; writes the graph bundle (adj_fwd.* + adj_rev.*).
+
+Contract: datapipeline/decisions/adjacency-csr.md
+"""
 
 from __future__ import annotations
 

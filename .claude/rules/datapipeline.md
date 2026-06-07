@@ -16,7 +16,7 @@ Read `datapipeline/decisions/datasource.md` before choosing formats, sources, or
 fetch           raw/links_export.csv          (done)
 extract_edges   data/edges.tsv                source_title, target_title only
 build_vocab     data/entities.tsv + data/edges_int.tsv
-build_adjacency data/adj_fwd.* + data/adj_rev.*   CSR or sorted neighbor lists
+build_adjacency data/adj_fwd.* + data/adj_rev.*   CSR graph bundle (see adjacency-csr.md)
 search          in-memory bidirectional BFS
 ```
 

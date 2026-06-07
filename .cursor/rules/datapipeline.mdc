@@ -109,7 +109,7 @@ def run(inp: Path, out: Path, *, force: bool = False) -> None:
 
 ## File formats between stages
 
-Prefer **line-oriented, streamable formats** (TSV, CSV, JSONL) between stages. Use **compact binary** (CSR, sorted int arrays) for final adjacency artifacts loaded by search.
+Prefer **line-oriented, streamable formats** (TSV, CSV, JSONL) between stages. Use **compact binary** (CSR) for the final graph bundle loaded by search — spec: `datapipeline/decisions/adjacency-csr.md`.
 
 Reserve in-memory structures for the search/load stage only — not for intermediate pipeline transforms over the full graph.
 
