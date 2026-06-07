@@ -244,10 +244,12 @@ function roundRect(
 }
 
 
-function drawHighlightedLabel(
+function drawLabel(
   node: SimNode,
   ctx: CanvasRenderingContext2D,
   globalScale: number,
+  borderColor: string,
+  bgColor: string,
 ): void {
   const variant = resolveVariant(node);
   const text = nodeDisplayName(node);
@@ -272,9 +274,9 @@ function drawHighlightedLabel(
 
   ctx.beginPath();
   roundRect(ctx, x, y, boxW, boxH, radius);
-  ctx.fillStyle = C.terraPale;
+  ctx.fillStyle = bgColor;
   ctx.fill();
-  ctx.strokeStyle = C.terra;
+  ctx.strokeStyle = borderColor;
   ctx.lineWidth = borderW;
   ctx.stroke();
 
@@ -282,6 +284,23 @@ function drawHighlightedLabel(
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, cx, cy);
+}
+
+function drawHighlightedLabel(
+  node: SimNode,
+  ctx: CanvasRenderingContext2D,
+  globalScale: number,
+): void {
+  drawLabel(node, ctx, globalScale, C.terra, C.terraPale);
+}
+
+function drawTerminalLabel(
+  node: SimNode,
+  ctx: CanvasRenderingContext2D,
+  globalScale: number,
+): void {
+  const borderColor = nodeFill(resolveVariant(node));
+  drawLabel(node, ctx, globalScale, borderColor, C.white);
 }
 
 export function GraphWiki({ graphData }: { graphData: GraphData }) {
@@ -437,28 +456,36 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
             : undefined
         }
         nodeCanvasObject={(node, ctx, globalScale) => {
-          const r = Math.sqrt(nodeVal(resolveVariant(node))) * NODE_REL_SIZE;
+          const variant = resolveVariant(node);
+          const r = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
           ctx.beginPath();
           ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);
           ctx.strokeStyle = C.ink;
           ctx.lineWidth = BORDER_STD / globalScale;
           ctx.stroke();
 
-          if (
+          const isHovered =
             hoveredNodeId === node.id
             || hoveredNeighborIds?.has(node.id)
-            || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target))
-          ) {
+            || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target));
+          const isTerminal = variant === 'start' || variant === 'end';
+
+          if (isHovered) {
             drawHighlightedLabel(node as SimNode, ctx, globalScale);
+          } else if (isTerminal) {
+            drawTerminalLabel(node as SimNode, ctx, globalScale);
           }
         }}
-        nodeCanvasObjectMode={(node) =>
-          hoveredNodeId === node.id
-          || (hoveredNeighborIds?.has(node.id))
-          || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target))
-            ? 'after'
-            : undefined
-        }
+        nodeCanvasObjectMode={(node) => {
+          const variant = resolveVariant(node);
+          const isTerminal = variant === 'start' || variant === 'end';
+          return isTerminal
+            || hoveredNodeId === node.id
+            || (hoveredNeighborIds?.has(node.id))
+            || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target))
+              ? 'after'
+              : undefined;
+        }}
         onNodeHover={(node) => {
           setHoveredNodeId(node?.id ?? null);
           if (node) setHoveredLink(null);
