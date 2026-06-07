@@ -53,12 +53,10 @@ You can now run any Makefile target below.
 | `make install` | Install web app npm dependencies |
 | `make setup-pipeline` | Create Python venv and install datapipeline deps |
 | `make fetch` | Download Kaggle Wikipedia link graph to `datapipeline/raw/` |
-| `make refetch` | Re-download even if cached data is still valid |
 | `make extract-edges` | Extract deduplicated edges TSV to `datapipeline/data/edges.tsv` |
-| `make re-extract-edges` | Re-extract even if cached output is still valid |
 | `make build-vocab` | Intern titles to integer IDs → `entities.tsv` + `edges_int.tsv` |
-| `make re-build-vocab` | Re-build vocab even if cached output is still valid |
-| `make pipeline` | Run fetch, extract-edges, and build-vocab in order |
+| `make build-adjacency` | Build forward + reverse CSR adjacency from `edges_int.tsv` |
+| `make pipeline` | Run fetch, extract-edges, build-vocab, and build-adjacency in order |
 | `make test-pipeline` | Run datapipeline unit tests |
 | `make dev` | Start the Vite dev server |
 | `make build` | Production build of the web app |
@@ -68,13 +66,11 @@ You can now run any Makefile target below.
 ### Datapipeline
 
 ```bash
-make fetch                              # download (skips if already up to date)
-make refetch                            # re-download even if cached
+make fetch                              # download (replaces existing raw files)
 make extract-edges                      # raw CSV -> data/edges.tsv (deduplicated)
-make re-extract-edges                   # re-extract even if cached
 make build-vocab                        # edges.tsv -> entities.tsv + edges_int.tsv
-make re-build-vocab                     # re-build vocab even if cached
-make pipeline                           # fetch + extract-edges + build-vocab
+make build-adjacency                    # edges_int.tsv -> adj_fwd.* + adj_rev.*
+make pipeline                           # fetch + extract-edges + build-vocab + build-adjacency
 make test-pipeline                      # unit tests
 ```
 
@@ -84,10 +80,11 @@ Or run stages directly:
 datapipeline/.venv/bin/python -m datapipeline.stages.fetch
 datapipeline/.venv/bin/python -m datapipeline.stages.extract_edges
 datapipeline/.venv/bin/python -m datapipeline.stages.build_vocab
+datapipeline/.venv/bin/python -m datapipeline.stages.build_adjacency
 datapipeline/.venv/bin/python -m datapipeline.run
 ```
 
-Downloaded files land in `datapipeline/raw/` (gitignored). Processed outputs land in `datapipeline/data/` (gitignored). A second run of any stage exits immediately when cached output is still valid.
+Downloaded files land in `datapipeline/raw/` (gitignored). Processed outputs land in `datapipeline/data/` (gitignored). Each `make` stage target always re-runs and replaces existing output.
 
 ## Project layout
 

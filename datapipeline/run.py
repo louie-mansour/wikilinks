@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 
 from datapipeline.lib.paths import default_data_dir, default_raw_dir
-from datapipeline.stages import build_vocab, extract_edges, fetch
+from datapipeline.stages import build_adjacency, build_vocab, extract_edges, fetch
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -46,6 +46,12 @@ def main(argv: list[str] | None = None) -> None:
         args.data_dir / build_vocab.DEFAULT_INPUT,
         args.data_dir / build_vocab.DEFAULT_ENTITIES,
         args.data_dir / build_vocab.DEFAULT_OUTPUT,
+        force=args.force,
+    )
+    build_adjacency.run(
+        args.data_dir / build_adjacency.DEFAULT_INPUT,
+        args.data_dir / build_adjacency.DEFAULT_ENTITIES,
+        args.data_dir,
         force=args.force,
     )
 
