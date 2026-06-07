@@ -25,11 +25,13 @@ const LABEL_PAD_X     = 12;
 const RADIUS_SM       = 10;  // --radius-sm
 const RADIUS_MD       = 18;  // --radius-md
 
-const NODE_REL_SIZE = SPACE_1;
-const BORDER_STD    = 1.5;
-const LAYER_SPACING = SPACE_7 * 10;  // horizontal gap between layers
-const NODE_V_SPACING = SPACE_7;      // vertical gap between nodes in the same layer
-const FIT_PADDING   = SPACE_7 * 2;
+const NODE_REL_SIZE  = SPACE_1;
+const BORDER_STD     = 1.5;
+const LAYER_SPACING  = SPACE_7 * 14;  // horizontal gap between layers
+const NODE_V_SPACING = SPACE_7;       // max vertical gap; reduced adaptively for dense layers
+const FIT_PADDING    = SPACE_7 * 2;
+const TARGET_ASPECT  = 1.8;           // desired width:height for graph bounding box
+const MIN_V_SPACING  = 4;             // floor so nodes never fully overlap
 
 export type WikiNodeVariant = 'default' | 'start' | 'end' | 'path';
 
@@ -148,12 +150,19 @@ function computeLayeredPositions(
     layers.get(d)!.push(node.id);
   }
 
+  // Scale vertical spacing down so the layout bounding box stays wider than tall.
+  const maxN = Math.max(...[...layers.values()].map(ids => ids.length), 1);
+  const layoutWidth = totalDepth * LAYER_SPACING;
+  const vSpacing = maxN <= 1
+    ? NODE_V_SPACING
+    : Math.max(MIN_V_SPACING, Math.min(NODE_V_SPACING, layoutWidth / TARGET_ASPECT / (maxN - 1)));
+
   const positions = new Map<string, { x: number; y: number }>();
   for (const [depth, ids] of layers) {
     const x = depth * LAYER_SPACING - xCenter;
     const n = ids.length;
     for (let i = 0; i < n; i++) {
-      const y = n === 1 ? 0 : (i - (n - 1) / 2) * NODE_V_SPACING;
+      const y = n === 1 ? 0 : (i - (n - 1) / 2) * vSpacing;
       positions.set(ids[i], { x, y });
     }
   }
@@ -324,10 +333,10 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
       .x((n) => positions.get(n.id)?.x ?? 0)
       .strength(0.7),
     );
-    // Soft vertical anchor lets nodes spring up/down within their column.
+    // Vertical anchor — stronger so charge repulsion can't spread dense layers.
     fg.d3Force('y', d3ForceY<SimNode>()
       .y((n) => positions.get(n.id)?.y ?? 0)
-      .strength(0.06),
+      .strength(0.5),
     );
 
     fg.d3Force('center', null);
