@@ -10,11 +10,20 @@ const C = {
   ink:      '#2c2416',  // --ink (start)
   sage:     '#4a7c59',  // --sage (end)
   terra:    '#c4572a',  // --terra (interior nodes)
+  terraPale:'#faf0ea',  // --terra-pale (active node bg)
 } as const;
+
+const FONT_UI = "'Figtree', system-ui, sans-serif";
 
 const SPACE_1 = 4;   // --space-1
 const SPACE_2 = 6;   // --space-2
 const SPACE_7 = 20;  // --space-7
+
+const LABEL_FONT_SIZE = 11;
+const LABEL_PAD_Y     = 5;
+const LABEL_PAD_X     = 12;
+const RADIUS_SM       = 10;  // --radius-sm
+const RADIUS_MD       = 18;  // --radius-md
 
 const NODE_REL_SIZE = SPACE_1;
 const BORDER_STD    = 1.5;
@@ -27,6 +36,8 @@ export type WikiNodeVariant = 'default' | 'start' | 'end' | 'path';
 export interface WikiNode {
   id: string;
   variant?: WikiNodeVariant;
+  /** Wikipedia article title — shown on hover/highlight only. */
+  label?: string;
 }
 
 /** Force-graph mutates nodes with simulation coordinates at runtime. */
@@ -172,6 +183,16 @@ function linkTouchesNode(link: WikiLink, nodeId: string): boolean {
     || linkEndId(link.target as string | { id: string }) === nodeId;
 }
 
+function neighborIds(nodeId: string, links: WikiLink[]): Set<string> {
+  const ids = new Set<string>();
+  for (const link of links) {
+    const { source, target } = linkEndpoints(link);
+    if (source === nodeId) ids.add(target);
+    else if (target === nodeId) ids.add(source);
+  }
+  return ids;
+}
+
 function linkEndpoints(link: WikiLink): { source: string; target: string } {
   return {
     source: linkEndId(link.source as string | { id: string }),
@@ -182,6 +203,71 @@ function linkEndpoints(link: WikiLink): { source: string; target: string } {
 function linksEqual(a: WikiLink, b: { source: string; target: string }): boolean {
   const { source, target } = linkEndpoints(a);
   return source === b.source && target === b.target;
+}
+
+function nodeDisplayName(node: WikiNode): string {
+  return node.label ?? node.id;
+}
+
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+): void {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.arcTo(x + w, y, x + w, y + radius, radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.arcTo(x + w, y + h, x + w - radius, y + h, radius);
+  ctx.lineTo(x + radius, y + h);
+  ctx.arcTo(x, y + h, x, y + h - radius, radius);
+  ctx.lineTo(x, y + radius);
+  ctx.arcTo(x, y, x + radius, y, radius);
+  ctx.closePath();
+}
+
+function drawHighlightedLabel(
+  node: SimNode,
+  ctx: CanvasRenderingContext2D,
+  globalScale: number,
+): void {
+  const variant = resolveVariant(node);
+  const text = nodeDisplayName(node);
+  const isTerminal = variant === 'start' || variant === 'end';
+  const fontWeight = isTerminal ? 700 : 500;
+  const fontSize = LABEL_FONT_SIZE / globalScale;
+  const padY = LABEL_PAD_Y / globalScale;
+  const padX = LABEL_PAD_X / globalScale;
+  const radius = (isTerminal ? RADIUS_MD : RADIUS_SM) / globalScale;
+  const borderW = BORDER_STD / globalScale;
+
+  ctx.font = `${fontWeight} ${fontSize}px ${FONT_UI}`;
+  const textW = ctx.measureText(text).width;
+  const boxW = textW + padX * 2;
+  const boxH = fontSize * 1.2 + padY * 2;
+
+  const nodeR = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
+  const cx = node.x!;
+  const cy = node.y! - nodeR - boxH / 2 - SPACE_2 / globalScale;
+  const x = cx - boxW / 2;
+  const y = cy - boxH / 2;
+
+  ctx.beginPath();
+  roundRect(ctx, x, y, boxW, boxH, radius);
+  ctx.fillStyle = C.terraPale;
+  ctx.fill();
+  ctx.strokeStyle = C.terra;
+  ctx.lineWidth = borderW;
+  ctx.stroke();
+
+  ctx.fillStyle = C.ink;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, cx, cy);
 }
 
 export function GraphWiki({ graphData }: { graphData: GraphData }) {
@@ -209,6 +295,11 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     setInitialPositions(graphData.nodes, positions);
     return graphData;
   }, [graphData]);
+
+  const hoveredNeighborIds = useMemo(
+    () => (hoveredNodeId ? neighborIds(hoveredNodeId, positionedData.links) : null),
+    [hoveredNodeId, positionedData.links],
+  );
 
   useEffect(() => {
     const fg = fgRef.current;
@@ -292,9 +383,12 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           ctx.strokeStyle = C.ink;
           ctx.lineWidth = BORDER_STD / globalScale;
           ctx.stroke();
+
+          drawHighlightedLabel(node as SimNode, ctx, globalScale);
         }}
         nodeCanvasObjectMode={(node) =>
           hoveredNodeId === node.id
+          || (hoveredNeighborIds?.has(node.id))
           || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target))
             ? 'after'
             : undefined

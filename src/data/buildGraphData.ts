@@ -1,5 +1,18 @@
 import type { GraphData, WikiNode, WikiLink } from '../components/GraphWiki/GraphWiki';
 
+const DEFAULT_START = 'Albert Einstein';
+const DEFAULT_END   = 'Quantum mechanics';
+
+const MOCK_ARTICLES = [
+  'History of physics', 'Special Relativity', 'Nobel Prize in Physics', 'Physics',
+  'Germany', 'Science', 'Classical mechanics', 'Lorentz transform', 'Thermodynamics',
+  'Wave function', 'Max Planck', 'Niels Bohr',
+  'Philosophy', 'Mathematics', 'Biology', 'Chemistry', 'Astronomy', 'Literature',
+  'Technology', 'Politics', 'Economics', 'Geography',
+  'Classical antiquity', 'Medieval Europe', 'Renaissance',
+  'Industrial Revolution', 'Enlightenment', 'Romanticism',
+];
+
 function makeRng() {
   let s = 0;
   return () => { const x = Math.sin(++s) * 10000; return x - Math.floor(x); };
@@ -18,6 +31,40 @@ function bfsLayers(totalNodes: number, fanOut: number): number[] {
   const usedByHalf = half.reduce((a, b) => a + b, 0);
   const plateau    = Math.floor((totalNodes - 2 - usedByHalf * 2) / 2);
   return [...half, plateau, plateau, ...half.slice().reverse()];
+}
+
+function seededPick<T>(arr: T[], seed: number, count: number): T[] {
+  const copy = [...arr];
+  const result: T[] = [];
+  let s = seed;
+  for (let i = 0; i < count; i++) {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    const j = s % copy.length;
+    result.push(copy[j]);
+    copy.splice(j, 1);
+    if (copy.length === 0) copy.push(...arr);
+  }
+  return result;
+}
+
+/** Attach Wikipedia article titles to graph nodes for hover labels. */
+export function assignGraphLabels(
+  graphData: GraphData,
+  start = DEFAULT_START,
+  end = DEFAULT_END,
+  seed = 42,
+): GraphData {
+  const pool = MOCK_ARTICLES.filter((a) => a !== start && a !== end);
+  const titles = seededPick(pool, seed, graphData.nodes.length);
+  let i = 0;
+
+  const nodes: WikiNode[] = graphData.nodes.map((node) => {
+    if (node.id === 'start') return { ...node, label: start };
+    if (node.id === 'end') return { ...node, label: end };
+    return { ...node, label: titles[i++ % titles.length] };
+  });
+
+  return { ...graphData, nodes };
 }
 
 function buildGraph(layerSizes: number[], fanOut: number): GraphData {
@@ -93,7 +140,7 @@ function buildGraph(layerSizes: number[], fanOut: number): GraphData {
     if (from.length > 1 && to.length > 1) addEdge(from[0], to[0]);
   }
 
-  return { nodes, links };
+  return assignGraphLabels({ nodes, links });
 }
 
 export function buildMultiPathGraph(totalNodes: number, fanOut: number): GraphData {
@@ -105,10 +152,10 @@ export function buildGraphForDegrees(degrees: number, fanOut: number): GraphData
   const numInterior = degrees - 1;
 
   if (numInterior === 0) {
-    return {
+    return assignGraphLabels({
       nodes: [{ id: 'start', variant: 'start' }, { id: 'end', variant: 'end' }],
       links: [{ source: 'start', target: 'end' }],
-    };
+    });
   }
 
   const half: number[] = [];

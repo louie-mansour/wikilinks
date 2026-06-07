@@ -1,7 +1,7 @@
 import type { GraphData } from '../components/GraphWiki/GraphWiki';
 import type { PathData } from '../components/ShortestPaths/ShortestPaths';
 import type { RecordPeriod } from '../components/RecordsSection/RecordsSection';
-import { buildGraphForDegrees } from './buildGraphData';
+import { assignGraphLabels, buildGraphForDegrees } from './buildGraphData';
 
 export interface SearchResult {
   start: string;
@@ -251,7 +251,7 @@ function buildGenericResult(start: string, end: string): SearchResult {
   const searchTimeMs = (s(4) % 2800) + 200;
   const uniqueArticles = intermediates.length + 2 + (s(5) % 4);
 
-  const graphData = buildGraphForDegrees(hops, 8);
+  const graphData = assignGraphLabels(buildGraphForDegrees(hops, 8), start, end, seed);
 
   // ── Paths ─────────────────────────────────────────────────────────────────
   const paths: PathData[] = [];
