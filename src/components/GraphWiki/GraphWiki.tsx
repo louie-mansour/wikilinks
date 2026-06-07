@@ -5,12 +5,14 @@ import styles from './GraphWiki.module.css';
 
 // Canvas can't read CSS custom properties — mirror values from tokens.css.
 const C = {
-  white:    '#fefcf8',  // --white (canvas bg)
-  sandDark: '#d4c0a4',  // --sand-dark (links)
-  ink:      '#2c2416',  // --ink (start)
-  sage:     '#4a7c59',  // --sage (end)
-  terra:    '#c4572a',  // --terra (interior nodes)
-  terraPale:'#faf0ea',  // --terra-pale (active node bg)
+  white:     '#fefcf8',  // --white (canvas bg)
+  sandDark:  '#d4c0a4',  // --sand-dark (links)
+  ink:       '#2c2416',  // --ink (start)
+  sage:      '#4a7c59',  // --sage (end)
+  sagePale:  '#edf6ef',  // --sage-pale (new badge bg)
+  sageLight: '#c8dece',  // --sage-light (new badge border)
+  terra:     '#c4572a',  // --terra (interior nodes)
+  terraPale: '#faf0ea',  // --terra-pale (active node bg)
 } as const;
 
 const FONT_UI = "'Figtree', system-ui, sans-serif";
@@ -24,6 +26,11 @@ const LABEL_PAD_Y     = 5;
 const LABEL_PAD_X     = 12;
 const RADIUS_SM       = 10;  // --radius-sm
 const RADIUS_MD       = 18;  // --radius-md
+
+const BADGE_FONT_SIZE = 9;
+const BADGE_PAD_X     = 6;
+const BADGE_PAD_Y     = 2;
+const BADGE_RADIUS    = 6;
 
 const NODE_REL_SIZE  = SPACE_1;
 const BORDER_STD     = 1.5;
@@ -40,6 +47,8 @@ export interface WikiNode {
   variant?: WikiNodeVariant;
   /** Wikipedia article title — shown on hover/highlight only. */
   label?: string;
+  /** Show the "new" badge next to this node. */
+  isNew?: boolean;
 }
 
 /** Force-graph mutates nodes with simulation coordinates at runtime. */
@@ -239,6 +248,40 @@ function roundRect(
   ctx.closePath();
 }
 
+function drawNewBadge(
+  node: SimNode,
+  ctx: CanvasRenderingContext2D,
+  globalScale: number,
+): void {
+  const text = '★ new';
+  const fontSize = BADGE_FONT_SIZE / globalScale;
+  const padX = BADGE_PAD_X / globalScale;
+  const padY = BADGE_PAD_Y / globalScale;
+  const radius = BADGE_RADIUS / globalScale;
+
+  ctx.font = `700 ${fontSize}px ${FONT_UI}`;
+  const textW = ctx.measureText(text).width;
+  const boxW = textW + padX * 2;
+  const boxH = fontSize * 1.6 + padY * 2;
+
+  const nodeR = Math.sqrt(nodeVal(resolveVariant(node))) * NODE_REL_SIZE;
+  const x = node.x! + nodeR + SPACE_1 / globalScale;
+  const y = node.y! - boxH / 2;
+
+  ctx.beginPath();
+  roundRect(ctx, x, y, boxW, boxH, radius);
+  ctx.fillStyle = C.sagePale;
+  ctx.fill();
+  ctx.strokeStyle = C.sageLight;
+  ctx.lineWidth = 1 / globalScale;
+  ctx.stroke();
+
+  ctx.fillStyle = C.sage;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + padX, y + boxH / 2);
+}
+
 function drawHighlightedLabel(
   node: SimNode,
   ctx: CanvasRenderingContext2D,
@@ -393,10 +436,18 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           ctx.lineWidth = BORDER_STD / globalScale;
           ctx.stroke();
 
-          drawHighlightedLabel(node as SimNode, ctx, globalScale);
+          if (node.isNew) drawNewBadge(node as SimNode, ctx, globalScale);
+          if (
+            hoveredNodeId === node.id
+            || hoveredNeighborIds?.has(node.id)
+            || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target))
+          ) {
+            drawHighlightedLabel(node as SimNode, ctx, globalScale);
+          }
         }}
         nodeCanvasObjectMode={(node) =>
-          hoveredNodeId === node.id
+          node.isNew
+          || hoveredNodeId === node.id
           || (hoveredNeighborIds?.has(node.id))
           || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target))
             ? 'after'

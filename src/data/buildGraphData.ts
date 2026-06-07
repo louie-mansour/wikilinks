@@ -80,8 +80,9 @@ function buildGraph(layerSizes: number[], fanOut: number): GraphData {
     const layer: string[] = [];
     for (let j = 0; j < layerSizes[l]; j++) {
       const id = `n${l}x${j}`;
+      const isNew = rng() < 0.05 ? true : undefined;
       // One highlighted path node per layer (j === 0); the rest are default.
-      nodes.push(j === 0 ? { id, variant: 'path' } : { id });
+      nodes.push(j === 0 ? { id, variant: 'path', isNew } : { id, isNew });
       layer.push(id);
     }
     layers.push(layer);
