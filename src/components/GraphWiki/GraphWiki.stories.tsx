@@ -1,6 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { GraphWiki } from './GraphWiki';
+import type { GraphData } from './GraphWiki';
 import { buildGraphForDegrees, buildMultiPathGraph } from '../../data/buildGraphData';
+
+function withNewNode(graphData: GraphData, nodeId: string): GraphData {
+  return {
+    ...graphData,
+    nodes: graphData.nodes.map(n => n.id === nodeId ? { ...n, isNew: true } : n),
+  };
+}
 
 const meta = {
   title: 'WikiLinks/GraphWiki',
@@ -33,12 +41,12 @@ export const Degree1: Story = {
 
 /** 2 degrees of separation — one intermediate layer of 8 nodes. 10 nodes total. */
 export const Degree2: Story = {
-  args: { graphData: buildGraphForDegrees(2, 8) },
+  args: { graphData: withNewNode(buildGraphForDegrees(2, 8), 'n0x1') },
 };
 
 /** 3 degrees of separation — two layers of 8. 18 nodes total. */
 export const Degree3: Story = {
-  args: { graphData: buildGraphForDegrees(3, 8) },
+  args: { graphData: withNewNode(buildGraphForDegrees(3, 8), 'n1x1') },
 };
 
 /** 4 degrees of separation — layers [8, 64, 8]. 82 nodes total. */

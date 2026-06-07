@@ -116,7 +116,7 @@ const EINSTEIN_QUANTUM: SearchResult = {
       crumbs: [
         { href: '#', label: 'Albert Einstein', highlighted: true },
         { href: '#', label: 'Germany' },
-        { href: '#', label: 'Niels Bohr' },
+        { href: '#', label: 'Niels Bohr', tag: 'new' },
         { href: '#', label: 'Quantum mechanics', highlighted: true },
       ],
     },
