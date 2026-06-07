@@ -396,6 +396,13 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
 
   return (
     <div ref={wrapperRef} className={styles.wrapper}>
+      <div className={styles.legend}>
+        <div className={styles.legendTitle}>Legend</div>
+        <div className={styles.legendRow}>
+          <span className={styles.legendBadge}>★ new</span>
+          New article
+        </div>
+      </div>
       <ForceGraph2D
         ref={fgRef}
         width={dims.width}

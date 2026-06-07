@@ -1,6 +1,7 @@
 @import '../../tokens.css';
 
 .wrapper {
+  position: relative;
   width: 100%;
   height: 440px;
   background: var(--white);
@@ -8,6 +9,46 @@
   border: 1.5px solid var(--sand-mid);
   isolation: isolate;
   overflow: hidden;
+}
+
+.legend {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 1;
+  background: var(--white);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  pointer-events: none;
+}
+
+.legendTitle {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.legendBadge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  background: var(--sage-pale);
+  color: var(--sage);
+  border: 1.5px solid var(--sage-light);
+  border-radius: 6px;
+  flex-shrink: 0;
 }
 
 @media (max-width: 520px) {
