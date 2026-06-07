@@ -32,7 +32,7 @@ A `.build-adjacency-manifest.json` may exist alongside these files (pipeline cac
 
 - Node IDs are **0-based integers**: `0 .. entity_count - 1`.
 - IDs are assigned by `build_vocab` on **first sighting** of each title while streaming `edges.tsv` (pass 1). Order in `entities.tsv` is the canonical ID order.
-- Every `u32` in neighbor arrays must be `< entity_count`.
+- Every `uint32` in neighbor arrays must be `< entity_count`.
 - The graph is **directed**. An edge `src → dst` appears once in forward adjacency for `src` and once in reverse adjacency for `dst`.
 
 ---
@@ -55,7 +55,7 @@ Rules:
 
 **ID → title:** line *n* (or array index *n*).
 
-**Title → ID:** not stored on disk. Consumers that accept titles as input must build a reverse index while loading, e.g. `HashMap<String, u32>`, keyed by exact title string. Missing title ⇒ node not in graph.
+**Title → ID:** not stored on disk. Consumers that accept titles as input must build a reverse index while loading, e.g. `map[string]uint32` (Go), keyed by exact title string. Missing title ⇒ node not in graph.
 
 ---
 
@@ -70,14 +70,14 @@ Four files form two CSR tables (forward and reverse). Each table is a pair:
 
 | Property | Value |
 |----------|-------|
-| Element type | unsigned 32-bit integer (`u32`) |
+| Element type | unsigned 32-bit integer (`uint32`) |
 | Byte order | **little-endian** |
 | Header | none |
 | Padding | none |
 | Version field | none |
 | File size | must be divisible by 4 |
 
-Read each file as a flat array of `u32` values. On big-endian hosts, byte-swap after read.
+Read each file as a flat array of `uint32` values. On big-endian hosts, byte-swap after read.
 
 ### 4.2 Dimensions
 
@@ -154,14 +154,14 @@ Resolve the data directory path (CLI flag, env var, or default `datapipeline/dat
 Stream `entities.tsv` line by line:
 
 - Count lines → `entity_count`.
-- Store titles in a random-access structure indexed by node ID (e.g. `Vec<String>`).
-- Optionally build `title_to_id: HashMap<String, u32>` for API input resolution.
+- Store titles in a random-access structure indexed by node ID (e.g. `[]string`).
+- Optionally build `titleToID map[string]uint32` for API input resolution.
 
 ### Step 3 — Load CSR binaries
 
-Load the four `.bin` files as `u32` arrays (see §4.1).
+Load the four `.bin` files as `uint32` arrays (see §4.1).
 
-At scale (~29M edges), **memory-map** the binaries instead of copying into a heap buffer. Parsed arrays may be `&[u32]` backed by the mapping.
+At scale (~29M edges), **memory-map** the binaries instead of copying into a heap buffer. Use `golang.org/x/sys/unix.Mmap` and reinterpret bytes as `[]uint32` via `unsafe` or `encoding/binary`.
 
 ### Step 4 — Validate
 
@@ -171,17 +171,17 @@ Run all checks in §5 before serving traffic.
 
 Minimum surface after hydration:
 
-```
-entity_count() -> usize
-title(id: u32) -> &str                    // id → title
-resolve_title(title: &str) -> Option<u32> // title → id (if index built)
-fwd_neighbors(id: u32) -> &[u32]          // out-neighbors
-rev_neighbors(id: u32) -> &[u32]          // in-neighbors
+```go
+EntityCount() int
+Title(id uint32) string              // id → title
+ResolveTitle(title string) (uint32, bool) // title → id (if index built)
+FwdNeighbors(id uint32) []uint32     // out-neighbors
+RevNeighbors(id uint32) []uint32     // in-neighbors
 ```
 
 ### Step 6 — Search usage
 
-- Accept user input as titles; resolve to IDs via `resolve_title`.
+- Accept user input as titles; resolve to IDs via `ResolveTitle`.
 - Run bidirectional BFS on integer IDs using `fwd_neighbors` (from start) and `rev_neighbors` (from goal).
 - Build result path as title strings: `[title(id) for id in path_ids]`.
 
@@ -242,4 +242,4 @@ This bundle does **not** include:
 |----------|-----|
 | Pipeline architecture | `datapipeline/decisions/datasource.md` |
 | Python pipeline stages | `.cursor/rules/datapipeline.mdc` |
-| Rust consumer agent hints | `.cursor/rules/adjacency-format.mdc` |
+| Go consumer agent hints | `.cursor/rules/adjacency-format.mdc` |

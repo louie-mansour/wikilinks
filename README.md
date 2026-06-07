@@ -1,11 +1,12 @@
 # WikiLinks
 
-Wikipedia link pathfinder — React frontend plus a Python datapipeline for downloading and processing the link graph.
+Wikipedia link pathfinder — React frontend, a Python datapipeline for downloading and processing the link graph, and a Go search service that runs bidirectional BFS over the graph.
 
 ## Prerequisites
 
 - **Python 3.9+** (`python3 --version`)
 - **Node.js 18+** and npm (`node --version`, `npm --version`)
+- **Go 1.22+** (`go version`) — required for the search service
 - **Kaggle account** (only needed for `make fetch`) — [kaggle.com](https://www.kaggle.com)
 
 ## Getting started
@@ -62,6 +63,31 @@ You can now run any Makefile target below.
 | `make build` | Production build of the web app |
 | `make storybook` | Start Storybook on port 6006 |
 | `make build-storybook` | Build static Storybook site |
+| `make service-build` | Compile Go search service to `bin/wikilinks-server` |
+| `make service-dev` | Run Go server in dev mode (uses `datapipeline/data/`) |
+| `make service-start` | Run the compiled binary |
+| `make service-test` | Run Go unit tests |
+| `make service-lint` | Run golangci-lint on the service |
+
+### Search service
+
+The service loads the CSR graph bundle from `datapipeline/data/` at startup and serves HTTP on port `8080`.
+
+```bash
+make service-build                          # compile
+make service-dev                            # run (requires graph bundle)
+curl http://localhost:8080/health           # {"status":"ok"}
+curl "http://localhost:8080/api/search?from=Apollo&to=Zeus"
+```
+
+Flags (passed via `ARGS` or directly to the binary):
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--data-dir` | `datapipeline/data` | Path to the graph bundle directory |
+| `--port` | `8080` | HTTP listen port |
+
+The graph must be built first (`make pipeline` or at minimum `make build-adjacency`).
 
 ### Datapipeline
 
@@ -91,6 +117,12 @@ Downloaded files land in `datapipeline/raw/` (gitignored). Processed outputs lan
 ```
 wikilinks/
 ├── web/                 # React + Vite frontend
+├── service/             # Go search service (bidirectional BFS)
+│   ├── cmd/server/      # Entrypoint
+│   └── internal/
+│       ├── graph/       # CSR loader + BFS engine
+│       ├── service/     # Business logic
+│       └── controller/  # HTTP handlers
 ├── datapipeline/
 │   ├── decisions/       # Architecture docs (source of truth)
 │   ├── stages/          # Pipeline stages (fetch, …)

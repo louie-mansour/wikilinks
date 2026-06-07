@@ -92,8 +92,8 @@ Search requires two directed views of the same edge set:
 
 At ~100K nodes and ~29M edges, use **adjacency lists or CSR**, not dense matrices. Store entities as an indexed list: `entities[node_id] → title`.
 
-**On-disk graph bundle (normative spec):** `datapipeline/decisions/adjacency-csr.md` — file layout, CSR encoding, validation, and hydration procedure for any producer or consumer (Python pipeline, Rust search service, tests, or tools).
+**On-disk graph bundle (normative spec):** `datapipeline/decisions/adjacency-csr.md` — file layout, CSR encoding, validation, and hydration procedure for any producer or consumer (Python pipeline, Go search service, tests, or tools).
 
 ---
 
-Operational rules for agents and contributors: `.cursor/rules/datapipeline.mdc` and `.claude/rules/datapipeline.md`. Rust loader hints: `.cursor/rules/adjacency-format.mdc`.
+Operational rules for agents and contributors: `.cursor/rules/datapipeline.mdc` and `.claude/rules/datapipeline.md`. Go loader hints: `.cursor/rules/adjacency-format.mdc`.

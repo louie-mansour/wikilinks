@@ -1,0 +1,16 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+issues:
+  exclude-rules:
+    # readUint32sFromFile is a test utility exported only within the package
+    - linters: [unused]
+      text: "readUint32sFromFile"

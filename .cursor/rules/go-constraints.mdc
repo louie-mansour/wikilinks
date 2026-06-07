@@ -1,6 +1,9 @@
 ---
-alwaysApply: true
+description: Go BFS engine — zero-pointer graph layout and cache-friendly traversal
+globs: **/*.go
+alwaysApply: false
 ---
+
 # Go Architecture Rules for Ultra-High-Performance Graph Traversal
 
 You are building an in-memory Bidirectional BFS engine to find paths through the Wikipedia link network (7M+ nodes, 430M+ edges). 
@@ -19,3 +22,4 @@ Because this application handles a massive dataset, you must optimize strictly f
       // One giant contiguous allocation holding all destination IDs.
       Edges   []uint32 
   }
+```

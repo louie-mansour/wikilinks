@@ -1,19 +1,19 @@
 ---
-description: Rust graph loader — implement against the adjacency CSR API contract
-globs: **/*.rs
+description: Go graph loader — implement against the adjacency CSR API contract
+globs: **/*.go
 alwaysApply: false
 ---
 
-# Graph bundle loader (Rust)
+# Graph bundle loader (Go)
 
 **Contract (normative):** `datapipeline/decisions/adjacency-csr.md` — read this first. It defines files, encoding, validation, and hydration steps.
 
-## Rust-specific guidance
+## Go-specific guidance
 
-- **mmap** the four `.bin` files; do not `read_to_end` at ~29M edges.
-- Parse as **little-endian `u32`** (`u32::from_le_bytes` or `byteorder` / `zerocopy`).
+- **mmap** the four `.bin` files via `golang.org/x/sys/unix` or `syscall`; do not `io.ReadAll` at ~29M edges.
+- Parse as **little-endian `uint32`** using `encoding/binary` with `binary.LittleEndian`.
 - Validate all §5 checks at startup before serving requests.
-- Build `title_to_id` while streaming `entities.tsv` if the API accepts titles.
+- Build `titleToID map[string]uint32` while streaming `entities.tsv` if the API accepts titles.
 - BFS on **integer IDs** only; call `title(id)` when formatting result paths.
 
 ## Reference code

@@ -1,15 +1,15 @@
-# Graph bundle loader (Rust)
+# Graph bundle loader (Go)
 
-Applies to: `**/*.rs`
+Applies to: `**/*.go`
 
 **Contract (normative):** `datapipeline/decisions/adjacency-csr.md` — read this first.
 
-## Rust-specific guidance
+## Go-specific guidance
 
-- **mmap** the four `.bin` files; do not `read_to_end` at ~29M edges.
-- Parse as **little-endian `u32`**.
+- **mmap** the four `.bin` files via `golang.org/x/sys/unix` or `syscall`; do not `io.ReadAll` at ~29M edges.
+- Parse as **little-endian `uint32`** using `encoding/binary` with `binary.LittleEndian`.
 - Validate all contract §5 checks at startup.
-- Build `title_to_id` while loading `entities.tsv` if the API accepts titles.
+- Build `titleToID map[string]uint32` while streaming `entities.tsv` if the API accepts titles.
 - BFS on integer IDs; resolve to titles only for output paths.
 
 ## Reference
