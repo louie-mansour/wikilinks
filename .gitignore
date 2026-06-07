@@ -43,3 +43,8 @@ Thumbs.db
 
 # Claude Code — local permissions/overrides only
 .claude/settings.local.json
+
+# Datapipeline — downloaded and generated data
+datapipeline/raw/
+datapipeline/data/
+datapipeline/.venv/

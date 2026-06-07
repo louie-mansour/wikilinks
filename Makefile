@@ -1,9 +1,15 @@
 WEB := web
+PYTHON := datapipeline/.venv/bin/python3
 
-.PHONY: install dev build storybook build-storybook
+.PHONY: install setup-pipeline dev build storybook build-storybook fetch refetch extract-edges re-extract-edges build-vocab re-build-vocab pipeline
 
 install:
 	cd $(WEB) && npm install
+
+setup-pipeline:
+	python3 -m venv datapipeline/.venv
+	$(PYTHON) -m pip install --upgrade pip
+	$(PYTHON) -m pip install -r datapipeline/requirements.txt
 
 dev:
 	cd $(WEB) && npm run dev
@@ -16,3 +22,27 @@ storybook:
 
 build-storybook:
 	cd $(WEB) && npm run build-storybook
+
+fetch:
+	$(PYTHON) -m datapipeline.stages.fetch $(ARGS)
+
+refetch:
+	$(PYTHON) -m datapipeline.stages.fetch --force $(ARGS)
+
+extract-edges:
+	$(PYTHON) -m datapipeline.stages.extract_edges $(ARGS)
+
+re-extract-edges:
+	$(PYTHON) -m datapipeline.stages.extract_edges --force $(ARGS)
+
+build-vocab:
+	$(PYTHON) -m datapipeline.stages.build_vocab $(ARGS)
+
+re-build-vocab:
+	$(PYTHON) -m datapipeline.stages.build_vocab --force $(ARGS)
+
+pipeline:
+	$(PYTHON) -m datapipeline.run $(ARGS)
+
+test-pipeline:
+	$(PYTHON) -m unittest discover -s datapipeline/tests -v

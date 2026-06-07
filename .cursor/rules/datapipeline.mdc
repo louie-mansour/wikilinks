@@ -1,0 +1,142 @@
+---
+description: Python Wikipedia links datapipeline — unix-style staged files, idempotent stages
+globs: datapipeline/**
+alwaysApply: false
+---
+
+# Wikipedia Links Datapipeline
+
+Build the pipeline in **Python** under `datapipeline/`. Before choosing formats, sources, or stage boundaries, read `datapipeline/decisions/datasource.md`.
+
+## Architecture decisions (from datasource.md)
+
+- **Display key:** article titles (e.g. `"Python_(programming_language)"`) are shown in final paths. Resolve `id → title` only at path output via an entities table — not during BFS expansion.
+- **Internal key:** after `extract_edges`, use **integer node IDs** on disk and in BFS (frontier queues, parent maps, adjacency). This keeps memory and I/O manageable at ~29M edges.
+- **Sources:** Kaggle 100K subset (`links_export.csv`) for dev; KONECT full graph (`out.wikipedia_link_en` + `ent.wikipedia_link_en`) for production-scale BFS stress tests.
+- **Kaggle input:** use `raw/links_export.csv` only — do **not** parse `raw/graph.json` (monolithic, redundant, not streamable).
+- **KONECT ETL:** entity file maps line index → title; edge file is space-separated integer pairs — dedicated stages must join these into the same downstream formats as Kaggle.
+
+## Planned stage order
+
+Build stages in this order. Each stage reads/writes only under `raw/` or `data/`:
+
+```
+fetch           raw/links_export.csv          (done)
+extract_edges   data/edges.tsv                source_title, target_title only
+build_vocab     data/entities.tsv             id ↔ title
+                data/edges_int.tsv            src_id, dst_id
+build_adjacency data/adj_fwd.* + data/adj_rev.*   CSR or sorted neighbor lists
+search          in-memory bidirectional BFS     loads adj + entities
+```
+
+**Do not skip `extract_edges`.** Raw CSV is ~4.8 GB with unused columns; downstream stages must never re-read it.
+
+**Do not build string-keyed adjacency from raw.** Compress to int edges first, then build forward + reverse adjacency from `edges_int.tsv`.
+
+## Stage schemas
+
+| Stage | Input | Output | Notes |
+|-------|-------|--------|-------|
+| `extract_edges` | `links_export.csv` | `edges.tsv` | Stream with `csv.DictReader`; drop metadata columns; optional dedupe/self-loop removal |
+| `build_vocab` | `edges.tsv` | `entities.tsv`, `edges_int.tsv` | Intern titles on first sighting; two-pass OK |
+| `build_adjacency` | `edges_int.tsv` | forward + reverse adjacency files | Adjacency lists or CSR — not dense matrices |
+
+Document each stage's I/O in a one-line module docstring.
+
+## Bidirectional BFS graph shape
+
+BFS needs two directed views of the same edge set:
+
+- **Forward:** `src → [targets]` — expand from start
+- **Reverse:** `dst → [sources]` — expand backward from goal
+
+At ~100K nodes / ~29M edges, use **adjacency lists or CSR**, not dense matrices. Keep `entities` as `[title₀, title₁, …]` indexed by node id.
+
+## Large raw files — safety rules
+
+Files in `raw/` are very large (~5 GB CSV, ~3 GB JSON). When exploring or debugging:
+
+- **Never** read entire raw files into memory (`read()`, `json.load()`, `pandas.read_csv` on full file).
+- **Never** open `graph.json` for pipeline work — use `links_export.csv`.
+- **Do** stream line-by-line; sample with `head` / first N rows only.
+- **Do** check file sizes with `ls -lh` before reading.
+- **Do** write all stage outputs to `data/` so `raw/` is read once per stage chain at most.
+
+## Unix-style staged pipeline
+
+Each stage is a **small, single-purpose script** that reads file(s) and writes file(s). Stages communicate only through paths on disk — no shared in-process state between runs.
+
+```
+datapipeline/
+  decisions/          # architecture docs (source of truth)
+  raw/                # downloaded upstream files (gitignored)
+  data/               # stage outputs / cache (gitignored)
+  stages/             # one module per stage, e.g. stages/fetch.py
+  run.py              # thin orchestrator: run stages in order
+```
+
+### Stage contract
+
+Every stage must:
+
+1. **Accept explicit paths** via CLI args or env vars (`--in`, `--out`), with sensible defaults under `raw/` and `data/`.
+2. **Write atomically:** write to a temp file in the same directory, then `rename` into place.
+3. **Be idempotent:** if `--out` already exists and is valid (non-empty, checksum/metadata matches inputs), log and exit 0 without reprocessing.
+4. **Be independently runnable:** `python -m datapipeline.stages.<name> --in ... --out ...` works alone.
+5. **Stay small:** one transformation per file; split when a stage does fetch + parse + normalize.
+
+### ✅ Good stage
+
+```python
+# stages/build_adjacency.py — reads int edges TSV, writes adjacency CSR
+def run(inp: Path, out: Path, *, force: bool = False) -> None:
+    if out.exists() and not force and not stale(out, [inp]):
+        print(f"skip {out} (up to date)")
+        return
+    tmp = out.with_suffix(out.suffix + ".tmp")
+    # ... transform inp → tmp ...
+    tmp.replace(out)
+```
+
+### ❌ Avoid
+
+- Monolithic scripts that download, parse, and load into memory in one run
+- Pipelines that only work when called from a specific import order
+- Re-fetching or re-parsing when cached output is still valid
+- Building adjacency directly from `raw/links_export.csv` or using string keys in adjacency structures
+- Loading full raw files into memory
+- Using `graph.json` as a pipeline input
+
+## File formats between stages
+
+Prefer **line-oriented, streamable formats** (TSV, CSV, JSONL) between stages. Use **compact binary** (CSR, sorted int arrays) for final adjacency artifacts loaded by search.
+
+Reserve in-memory structures for the search/load stage only — not for intermediate pipeline transforms over the full graph.
+
+## Orchestration
+
+`run.py` (or Makefile targets) runs stages in dependency order and passes paths explicitly:
+
+```bash
+python -m datapipeline.stages.fetch
+python -m datapipeline.stages.extract_edges --in raw/links_export.csv --out data/edges.tsv
+python -m datapipeline.stages.build_vocab --in data/edges.tsv --entities data/entities.tsv --out data/edges_int.tsv
+python -m datapipeline.stages.build_adjacency --in data/edges_int.tsv --out-dir data/
+```
+
+KONECT (future):
+
+```bash
+python -m datapipeline.stages.fetch --source konect
+python -m datapipeline.stages.map_entities --in raw/ent.wikipedia_link_en --out data/entities.tsv
+python -m datapipeline.stages.edges_to_int --in raw/out.wikipedia_link_en --entities data/entities.tsv --out data/edges_int.tsv
+python -m datapipeline.stages.build_adjacency --in data/edges_int.tsv --out-dir data/
+```
+
+Add `--force` to bypass cache; never delete `raw/` automatically.
+
+## Dependencies & hygiene
+
+- Use a `datapipeline/requirements.txt` (or project-level lockfile) for pipeline-only deps.
+- Keep `raw/` and `data/` in `.gitignore`; commit stages, decisions, and orchestration only.
+- Log stage name, input paths, output path, and row/edge counts on success.
