@@ -1,0 +1,21 @@
+---
+alwaysApply: true
+---
+# Go Architecture Rules for Ultra-High-Performance Graph Traversal
+
+You are building an in-memory Bidirectional BFS engine to find paths through the Wikipedia link network (7M+ nodes, 430M+ edges). 
+
+Because this application handles a massive dataset, you must optimize strictly for CPU cache locality and zero Garbage Collector (GC) pointer-scanning overhead. Follow these structural constraints flawlessly.
+
+## 1. Data Structure Layout (Zero Pointers, Pure Slices)
+* **Rule:** Do NOT use structs with pointers, maps, or nested object references to represent the graph nodes or edges. 
+* **Implementation:** Use a flat, array-backed adjacency list using contiguous primitive slices (`[]uint32`). The Go GC must view this memory as "dull" (containing no pointers to scan).
+* **Graph Representation Template:**
+  ```go
+  type WikipediaGraph struct {
+      // Index represents the Article ID. 
+      // Value points to the starting index in the Edges slice.
+      Offsets []uint32 
+      // One giant contiguous allocation holding all destination IDs.
+      Edges   []uint32 
+  }
