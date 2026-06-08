@@ -43,6 +43,15 @@ func TestLoadGoldenFixture(t *testing.T) {
 	if _, ok := g.ResolveTitle("Nonexistent"); ok {
 		t.Errorf("ResolveTitle(Nonexistent) should return false")
 	}
+
+	wantStarts := []string{"Article_A", "Article_C", "Article_D"}
+	checkStringSlice(t, "StartingNodes", g.StartingNodes(), wantStarts)
+
+	wantEnds := []string{"Article_B", "Article_D", "Article_E"}
+	checkStringSlice(t, "EndingNodes", g.EndingNodes(), wantEnds)
+
+	checkStringSlice(t, "SuggestStart(article)", g.SuggestStart("article", 10), wantStarts)
+	checkStringSlice(t, "SuggestEnd(article_e)", g.SuggestEnd("article_e", 10), []string{"Article_E"})
 }
 
 func TestLoadMissingFile(t *testing.T) {
@@ -50,6 +59,19 @@ func TestLoadMissingFile(t *testing.T) {
 	_, err := Load(dir)
 	if err == nil {
 		t.Fatal("expected error for missing files, got nil")
+	}
+}
+
+func checkStringSlice(t *testing.T, name string, got, want []string) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Errorf("%s = %v (len %d), want %v (len %d)", name, got, len(got), want, len(want))
+		return
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("%s[%d] = %q, want %q", name, i, got[i], want[i])
+		}
 	}
 }
 

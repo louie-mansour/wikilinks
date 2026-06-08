@@ -64,7 +64,23 @@ func Load(dataDir string) (*WikipediaGraph, error) {
 	if err := validate(g); err != nil {
 		return nil, fmt.Errorf("validation: %w", err)
 	}
+	g.startingNodes = buildNodeTitles(g, g.fwdOffsets, len(g.titles)/30) // ~100K of ~3M
+	g.endingNodes = buildNodeTitles(g, g.revOffsets, len(g.titles))      // ~3M on Kaggle
+	g.startingIndex = NewTitleIndex(g.startingNodes)
+	g.endingIndex = NewTitleIndex(g.endingNodes)
 	return g, nil
+}
+
+// buildNodeTitles collects titles for nodes with non-empty CSR rows in offsets.
+func buildNodeTitles(g *WikipediaGraph, offsets []uint32, capHint int) []string {
+	n := uint32(len(g.titles))
+	nodes := make([]string, 0, capHint)
+	for id := uint32(0); id < n; id++ {
+		if offsets[id] != offsets[id+1] {
+			nodes = append(nodes, g.titles[id])
+		}
+	}
+	return nodes
 }
 
 func loadEntities(path string) ([]string, map[string]uint32, error) {

@@ -26,12 +26,22 @@ func main() {
 		slog.Error("failed to load graph", "err", err)
 		os.Exit(1)
 	}
-	slog.Info("graph loaded", "entities", g.EntityCount())
+	slog.Info("graph loaded",
+		"entities", g.EntityCount(),
+		"startingNodes", len(g.StartingNodes()),
+		"endingNodes", len(g.EndingNodes()),
+	)
 
-	svc := service.NewSearch(g)
+	searchSvc := service.NewSearch(g)
+	startingNodesSvc := service.NewStartingNodes(g)
+	endingNodesSvc := service.NewEndingNodes(g)
+	suggestSvc := service.NewSuggest(g)
 	mux := http.NewServeMux()
 	controller.NewHealth().Register(mux)
-	controller.NewSearch(svc).Register(mux)
+	controller.NewSearch(searchSvc).Register(mux)
+	controller.NewStartingNodes(startingNodesSvc).Register(mux)
+	controller.NewEndingNodes(endingNodesSvc).Register(mux)
+	controller.NewSuggest(suggestSvc).Register(mux)
 
 	srv := &http.Server{
 		Addr:         ":" + *port,
