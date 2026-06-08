@@ -26,9 +26,9 @@ func TestEndingNodesEndpoint(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL + "/api/ending-nodes")
+	resp, err := http.Get(srv.URL + "/internal/ending-nodes")
 	if err != nil {
-		t.Fatalf("GET /api/ending-nodes: %v", err)
+		t.Fatalf("GET /internal/ending-nodes: %v", err)
 	}
 	defer resp.Body.Close()
 

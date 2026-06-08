@@ -6,7 +6,7 @@ import (
 	"github.com/louiemansour/wikilinks/service/internal/service"
 )
 
-// StartingNodes handles GET /api/starting-nodes.
+// StartingNodes handles GET /internal/starting-nodes.
 type StartingNodes struct {
 	svc *service.StartingNodes
 }
@@ -16,7 +16,7 @@ func NewStartingNodes(svc *service.StartingNodes) *StartingNodes {
 }
 
 func (c *StartingNodes) Register(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/starting-nodes", c.list)
+	mux.HandleFunc("GET /internal/starting-nodes", c.list)
 }
 
 func (c *StartingNodes) list(w http.ResponseWriter, _ *http.Request) {

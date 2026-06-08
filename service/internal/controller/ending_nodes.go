@@ -6,7 +6,7 @@ import (
 	"github.com/louiemansour/wikilinks/service/internal/service"
 )
 
-// EndingNodes handles GET /api/ending-nodes.
+// EndingNodes handles GET /internal/ending-nodes.
 type EndingNodes struct {
 	svc *service.EndingNodes
 }
@@ -16,7 +16,7 @@ func NewEndingNodes(svc *service.EndingNodes) *EndingNodes {
 }
 
 func (c *EndingNodes) Register(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/ending-nodes", c.list)
+	mux.HandleFunc("GET /internal/ending-nodes", c.list)
 }
 
 func (c *EndingNodes) list(w http.ResponseWriter, _ *http.Request) {
