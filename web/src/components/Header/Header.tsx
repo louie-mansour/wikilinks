@@ -5,6 +5,8 @@ import styles from './Header.module.css';
 interface HeaderProps {
   startSuggestions: Suggestion[];
   endSuggestions: Suggestion[];
+  startSuggestionsLoading?: boolean;
+  endSuggestionsLoading?: boolean;
   startValue?: string;
   endValue?: string;
   onStartSelect?: (title: string) => void;
@@ -19,6 +21,8 @@ interface HeaderProps {
 export function Header({
   startSuggestions,
   endSuggestions,
+  startSuggestionsLoading = false,
+  endSuggestionsLoading = false,
   startValue = '',
   endValue = '',
   onStartSelect,
@@ -58,6 +62,7 @@ export function Header({
               placeholder="I'm feeling lucky"
               value={startValue}
               suggestions={startSuggestions}
+              isLoading={startSuggestionsLoading}
               onSelect={onStartSelect}
               onChange={onStartChange}
               className={styles.combobox}
@@ -77,6 +82,7 @@ export function Header({
               placeholder="I'm feeling lucky"
               value={endValue}
               suggestions={endSuggestions}
+              isLoading={endSuggestionsLoading}
               onSelect={onEndSelect}
               onChange={onEndChange}
               className={styles.combobox}

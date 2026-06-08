@@ -1,13 +1,14 @@
 import { useState, useCallback } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { Header } from './Header';
+import type { Suggestion } from '../Combobox/Combobox';
 import {
   SUGGESTIONS as WIKI_SUGGESTIONS,
   animateRoulette,
   resolveSearchArticles,
 } from '../../data/suggestions';
 
-const SUGGESTIONS = [
+const SUGGESTIONS: Suggestion[] = [
   { title: 'Albert Einstein', featured: true },
   { title: 'Quantum mechanics', featured: true },
   { title: 'Special relativity' },
@@ -26,6 +27,50 @@ const SUGGESTIONS = [
   { title: 'World War II', featured: true },
   { title: 'Leonardo da Vinci', featured: true },
 ];
+
+function filterLocalSuggestions(all: Suggestion[], query: string): Suggestion[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return all
+    .filter((s) => s.title.toLowerCase().includes(q))
+    .slice(0, 7);
+}
+
+function HeaderDemo({
+  initialStart = '',
+  initialEnd = '',
+  ...props
+}: Omit<
+  React.ComponentProps<typeof Header>,
+  | 'startSuggestions'
+  | 'endSuggestions'
+  | 'startValue'
+  | 'endValue'
+  | 'onStartChange'
+  | 'onEndChange'
+  | 'onStartSelect'
+  | 'onEndSelect'
+> & {
+  initialStart?: string;
+  initialEnd?: string;
+}) {
+  const [startValue, setStartValue] = useState(initialStart);
+  const [endValue, setEndValue] = useState(initialEnd);
+
+  return (
+    <Header
+      {...props}
+      startValue={startValue}
+      endValue={endValue}
+      startSuggestions={filterLocalSuggestions(SUGGESTIONS, startValue)}
+      endSuggestions={filterLocalSuggestions(SUGGESTIONS, endValue)}
+      onStartChange={setStartValue}
+      onEndChange={setEndValue}
+      onStartSelect={setStartValue}
+      onEndSelect={setEndValue}
+    />
+  );
+}
 
 const meta = {
   title: 'WikiLinks/Header',
@@ -51,66 +96,56 @@ const meta = {
       </div>
     ),
   ],
+  args: {
+    startSuggestions: [],
+    endSuggestions: [],
+  },
 } satisfies Meta<typeof Header>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: {
-    startSuggestions: SUGGESTIONS,
-    endSuggestions: SUGGESTIONS,
-  },
+  render: () => <HeaderDemo />,
 };
 
 export const WithValues: Story = {
-  args: {
-    startSuggestions: SUGGESTIONS,
-    endSuggestions: SUGGESTIONS,
-    startValue: 'Albert Einstein',
-    endValue: 'Quantum mechanics',
-  },
+  render: () => (
+    <HeaderDemo initialStart="Albert Einstein" initialEnd="Quantum mechanics" />
+  ),
 };
 
 export const Searching: Story = {
   name: 'Searching (loading button)',
-  args: {
-    startSuggestions: SUGGESTIONS,
-    endSuggestions: SUGGESTIONS,
-    startValue: 'Albert Einstein',
-    endValue: 'Quantum mechanics',
-    isSearching: true,
-    searchLabel: 'Finding paths…',
-  },
+  render: () => (
+    <HeaderDemo
+      initialStart="Albert Einstein"
+      initialEnd="Quantum mechanics"
+      isSearching
+      searchLabel="Finding paths…"
+    />
+  ),
 };
 
 export const PickingArticles: Story = {
   name: 'Picking articles (loading button)',
-  args: {
-    startSuggestions: SUGGESTIONS,
-    endSuggestions: SUGGESTIONS,
-    isSearching: true,
-    searchLabel: 'Picking articles…',
-  },
+  render: () => (
+    <HeaderDemo isSearching searchLabel="Picking articles…" />
+  ),
 };
 
 export const LongInputs: Story = {
-  args: {
-    startSuggestions: SUGGESTIONS,
-    endSuggestions: SUGGESTIONS,
-    startValue: 'International Union of Pure and Applied Physics',
-    endValue:
-      'United Nations Educational, Scientific and Cultural Organization',
-  },
+  render: () => (
+    <HeaderDemo
+      initialStart="International Union of Pure and Applied Physics"
+      initialEnd="United Nations Educational, Scientific and Cultural Organization"
+    />
+  ),
 };
 
 /** Mirrors app “I’m feeling lucky” flow — empty fields roulette for 1s before landing. */
 export const FeelingLuckyRoulette: Story = {
   name: 'Feeling Lucky (roulette)',
-  args: {
-    startSuggestions: SUGGESTIONS,
-    endSuggestions: SUGGESTIONS,
-  },
   parameters: {
     docs: {
       description: {
@@ -152,8 +187,8 @@ export const FeelingLuckyRoulette: Story = {
 
     return (
       <Header
-        startSuggestions={WIKI_SUGGESTIONS}
-        endSuggestions={WIKI_SUGGESTIONS}
+        startSuggestions={filterLocalSuggestions(WIKI_SUGGESTIONS, startValue)}
+        endSuggestions={filterLocalSuggestions(WIKI_SUGGESTIONS, endValue)}
         startValue={startValue}
         endValue={endValue}
         onStartChange={setStartValue}

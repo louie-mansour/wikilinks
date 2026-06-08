@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { Combobox } from './Combobox';
+import { Combobox, type ComboboxProps, type Suggestion } from './Combobox';
 
-const WIKI_SUGGESTIONS = [
+const WIKI_SUGGESTIONS: Suggestion[] = [
   { title: 'Albert Einstein', featured: true },
   { title: 'Quantum mechanics', featured: true },
   { title: 'Special relativity' },
@@ -20,6 +21,34 @@ const WIKI_SUGGESTIONS = [
   { title: 'Artificial intelligence', featured: true },
 ];
 
+function filterLocalSuggestions(all: Suggestion[], query: string): Suggestion[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return all
+    .filter((s) => s.title.toLowerCase().includes(q))
+    .slice(0, 7);
+}
+
+function ComboboxDemo({
+  allSuggestions,
+  defaultValue = '',
+  ...props
+}: Omit<ComboboxProps, 'suggestions' | 'value' | 'onChange'> & {
+  allSuggestions: Suggestion[];
+}) {
+  const [value, setValue] = useState(defaultValue);
+  const suggestions = filterLocalSuggestions(allSuggestions, value);
+
+  return (
+    <Combobox
+      {...props}
+      value={value}
+      onChange={setValue}
+      suggestions={suggestions}
+    />
+  );
+}
+
 const meta = {
   title: 'WikiLinks/Combobox',
   component: Combobox,
@@ -34,7 +63,7 @@ const meta = {
     id: 'wiki-search',
     label: 'Search Wikipedia',
     placeholder: 'Search articles…',
-    suggestions: WIKI_SUGGESTIONS,
+    suggestions: [],
   },
 } satisfies Meta<typeof Combobox>;
 
@@ -42,10 +71,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /* ────────────────────────────────────────
-   DEFAULT — empty value, featured on focus
+   DEFAULT — empty value, type to filter
 ──────────────────────────────────────── */
 export const Default: Story = {
   name: 'Default',
+  render: (args) => (
+    <ComboboxDemo {...args} allSuggestions={WIKI_SUGGESTIONS} />
+  ),
 };
 
 /* ────────────────────────────────────────
@@ -53,18 +85,26 @@ export const Default: Story = {
 ──────────────────────────────────────── */
 export const WithValue: Story = {
   name: 'With Value',
-  args: {
-    id: 'wiki-search-prefilled',
-    defaultValue: 'Albert Einstein',
-  },
+  render: (args) => (
+    <ComboboxDemo
+      {...args}
+      id="wiki-search-prefilled"
+      allSuggestions={WIKI_SUGGESTIONS}
+      defaultValue="Albert Einstein"
+    />
+  ),
 };
 
 export const LongValue: Story = {
   name: 'Long Value',
-  args: {
-    id: 'wiki-search-long',
-    defaultValue: 'United Nations Educational, Scientific and Cultural Organization',
-  },
+  render: (args) => (
+    <ComboboxDemo
+      {...args}
+      id="wiki-search-long"
+      allSuggestions={WIKI_SUGGESTIONS}
+      defaultValue="United Nations Educational, Scientific and Cultural Organization"
+    />
+  ),
 };
 
 /* ────────────────────────────────────────
@@ -79,7 +119,7 @@ export const Mobile: Story = {
       </div>
     ),
   ],
-  args: {
-    id: 'wiki-search-mobile',
-  },
+  render: (args) => (
+    <ComboboxDemo {...args} id="wiki-search-mobile" allSuggestions={WIKI_SUGGESTIONS} />
+  ),
 };

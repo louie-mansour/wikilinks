@@ -8,10 +8,10 @@ import { ShortestPaths } from './components/ShortestPaths/ShortestPaths';
 import { EmptyState } from './components/EmptyState/EmptyState';
 import { LoadingState } from './components/LoadingState/LoadingState';
 import {
-  SUGGESTIONS,
   resolveSearchArticles,
   animateRoulette,
 } from './data/suggestions';
+import { useDebouncedSuggestions } from './hooks/useDebouncedSuggestions';
 import { searchPaths, formatSearchTime, formatNumber, type SearchResult } from './data/mockSearch';
 import styles from './App.module.css';
 
@@ -31,6 +31,9 @@ export function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [sortOrder, setSortOrder] = useState('interesting');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  const startSuggestions = useDebouncedSuggestions('start', startArticle);
+  const endSuggestions = useDebouncedSuggestions('end', endArticle);
 
   const handleSearch = useCallback(async () => {
     if (isRouletting || isSearching) return;
@@ -88,8 +91,10 @@ export function App() {
     <div className={styles.page}>
       <div className={styles.pageHeader}>
         <Header
-          startSuggestions={SUGGESTIONS}
-          endSuggestions={SUGGESTIONS}
+          startSuggestions={startSuggestions.suggestions}
+          endSuggestions={endSuggestions.suggestions}
+          startSuggestionsLoading={startSuggestions.isLoading}
+          endSuggestionsLoading={endSuggestions.isLoading}
           startValue={startArticle}
           endValue={endArticle}
           onStartSelect={setStartArticle}

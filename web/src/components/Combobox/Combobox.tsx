@@ -13,6 +13,7 @@ export interface ComboboxProps {
   defaultValue?: string;
   value?: string;
   suggestions: Suggestion[];
+  isLoading?: boolean;
   onSelect?: (title: string) => void;
   onChange?: (value: string) => void;
   className?: string;
@@ -40,6 +41,7 @@ export function Combobox({
   defaultValue = '',
   value: controlledValue,
   suggestions,
+  isLoading = false,
   onSelect,
   onChange,
   className = '',
@@ -62,13 +64,9 @@ export function Combobox({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Derive visible options
   const query = value.trim();
-  const visibleOptions: Suggestion[] = query
-    ? suggestions
-        .filter((s) => s.title.toLowerCase().includes(query.toLowerCase()))
-        .slice(0, 7)
-    : suggestions.filter((s) => s.featured).slice(0, 6);
+  const visibleOptions = suggestions.slice(0, 7);
+  const canShowList = query.length > 0;
 
   // Close on outside click
   useEffect(() => {
@@ -93,18 +91,19 @@ export function Combobox({
   );
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    updateValue(e.target.value);
-    setOpen(true);
+    const next = e.target.value;
+    updateValue(next);
+    setOpen(next.trim().length > 0);
     setActiveIndex(-1);
   }
 
   function handleInputFocus() {
-    setOpen(true);
+    if (canShowList) setOpen(true);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (!open) {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && canShowList) {
         setOpen(true);
         e.preventDefault();
       }
@@ -143,8 +142,10 @@ export function Combobox({
     if (open) {
       setOpen(false);
       setActiveIndex(-1);
-    } else {
+    } else if (canShowList) {
       setOpen(true);
+      inputRef.current?.focus();
+    } else {
       inputRef.current?.focus();
     }
   }
@@ -212,8 +213,8 @@ export function Combobox({
         </button>
       </div>
 
-      {/* Dropdown listbox */}
-      {open && (
+      {/* Dropdown listbox — hidden while loading with no prior results */}
+      {open && canShowList && (visibleOptions.length > 0 || !isLoading) && (
         <ul
           id={listboxId}
           role="listbox"
