@@ -1,5 +1,7 @@
 package graph
 
+import "math/rand/v2"
+
 // WikipediaGraph holds the CSR adjacency graph in memory.
 // After Load returns, this struct is read-only and safe for concurrent access.
 type WikipediaGraph struct {
@@ -61,4 +63,31 @@ func (g *WikipediaGraph) SuggestStart(prefix string, limit int) []string {
 // SuggestEnd returns up to limit end-article titles matching the prefix.
 func (g *WikipediaGraph) SuggestEnd(prefix string, limit int) []string {
 	return g.endingIndex.PrefixSearch(prefix, limit)
+}
+
+// RandomStartNodes returns count distinct random start-eligible article titles.
+func (g *WikipediaGraph) RandomStartNodes(count int) []string {
+	return randomSample(g.startingNodes, count)
+}
+
+// RandomEndNodes returns count distinct random end-eligible article titles.
+func (g *WikipediaGraph) RandomEndNodes(count int) []string {
+	return randomSample(g.endingNodes, count)
+}
+
+// randomSample picks count distinct items from src using a partial Fisher-Yates shuffle.
+func randomSample(src []string, count int) []string {
+	if len(src) == 0 {
+		return []string{}
+	}
+	if count > len(src) {
+		count = len(src)
+	}
+	tmp := make([]string, len(src))
+	copy(tmp, src)
+	for i := 0; i < count; i++ {
+		j := i + rand.IntN(len(tmp)-i)
+		tmp[i], tmp[j] = tmp[j], tmp[i]
+	}
+	return tmp[:count]
 }

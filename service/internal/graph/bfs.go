@@ -1,115 +1,93 @@
 package graph
 
-const noParent = ^uint32(0) // sentinel for BFS roots
+const maxPaths = 20 // cap to avoid exponential blowup on dense graphs
 
-// BFSResult holds the output of a bidirectional BFS run.
+// BFSResult holds the output of a BFS search.
 type BFSResult struct {
-	Path          []uint32 // node IDs from start to goal, inclusive
-	NodesExplored int      // total nodes dequeued across both frontiers
+	Paths         [][]uint32 // all shortest paths from start to goal, capped at maxPaths
+	NodesExplored int
 }
 
-// BidirectionalBFS finds a shortest path from start to goal in g.
+// BidirectionalBFS finds all shortest paths from start to goal in g.
 // It returns (result, true) on success, or (zero, false) if no path exists.
 // Safe to call concurrently; allocates per-call state only.
 func BidirectionalBFS(g *WikipediaGraph, start, goal uint32) (BFSResult, bool) {
 	if start == goal {
-		return BFSResult{Path: []uint32{start}}, true
+		return BFSResult{Paths: [][]uint32{{start}}}, true
 	}
 
-	fwdParent := map[uint32]uint32{start: noParent}
-	revParent := map[uint32]uint32{goal: noParent}
-	fwdFrontier := []uint32{start}
-	revFrontier := []uint32{goal}
+	// parents[n] = all BFS predecessors of n at the shortest depth (nil = BFS root)
+	parents := map[uint32][]uint32{start: nil}
+	depth := map[uint32]int{start: 0}
+	frontier := []uint32{start}
 	explored := 0
+	goalDepth := -1
 
-	for len(fwdFrontier) > 0 && len(revFrontier) > 0 {
-		if len(fwdFrontier) <= len(revFrontier) {
-			explored += len(fwdFrontier)
-			next, meeting, found := expandFwd(g, fwdFrontier, fwdParent, revParent)
-			if found {
-				return BFSResult{
-					Path:          buildPath(meeting, fwdParent, revParent),
-					NodesExplored: explored,
-				}, true
-			}
-			fwdFrontier = next
-		} else {
-			explored += len(revFrontier)
-			next, meeting, found := expandRev(g, revFrontier, revParent, fwdParent)
-			if found {
-				return BFSResult{
-					Path:          buildPath(meeting, fwdParent, revParent),
-					NodesExplored: explored,
-				}, true
-			}
-			revFrontier = next
-		}
-	}
-
-	return BFSResult{}, false
-}
-
-func expandFwd(g *WikipediaGraph, frontier []uint32, fwdParent, revParent map[uint32]uint32) ([]uint32, uint32, bool) {
-	var next []uint32
-	for _, node := range frontier {
-		for _, nb := range g.FwdNeighbors(node) {
-			if _, seen := fwdParent[nb]; seen {
-				continue
-			}
-			fwdParent[nb] = node
-			next = append(next, nb)
-			if _, inRev := revParent[nb]; inRev {
-				return next, nb, true
-			}
-		}
-	}
-	return next, 0, false
-}
-
-func expandRev(g *WikipediaGraph, frontier []uint32, revParent, fwdParent map[uint32]uint32) ([]uint32, uint32, bool) {
-	var next []uint32
-	for _, node := range frontier {
-		for _, nb := range g.RevNeighbors(node) {
-			if _, seen := revParent[nb]; seen {
-				continue
-			}
-			revParent[nb] = node
-			next = append(next, nb)
-			if _, inFwd := fwdParent[nb]; inFwd {
-				return next, nb, true
-			}
-		}
-	}
-	return next, 0, false
-}
-
-// buildPath reconstructs start → meeting → goal using the two parent maps.
-func buildPath(meeting uint32, fwdParent, revParent map[uint32]uint32) []uint32 {
-	// Collect forward half: meeting → ... → start (will be reversed)
-	var fwd []uint32
-	for cur := meeting; ; {
-		fwd = append(fwd, cur)
-		p := fwdParent[cur]
-		if p == noParent {
+	for len(frontier) > 0 {
+		curDepth := depth[frontier[0]]
+		// Stop once we've fully processed the level just before the goal's level.
+		// All parents of goal-depth nodes were captured in the previous iteration.
+		if goalDepth >= 0 && curDepth >= goalDepth {
 			break
 		}
-		cur = p
-	}
-	// Reverse to get start → ... → meeting
-	for i, j := 0, len(fwd)-1; i < j; i, j = i+1, j-1 {
-		fwd[i], fwd[j] = fwd[j], fwd[i]
+		nextDepth := curDepth + 1
+		explored += len(frontier)
+		var next []uint32
+
+		for _, node := range frontier {
+			for _, nb := range g.FwdNeighbors(node) {
+				existingDepth, seen := depth[nb]
+				if seen {
+					// Another shortest-path edge arriving at the same depth.
+					if existingDepth == nextDepth {
+						parents[nb] = append(parents[nb], node)
+					}
+					continue
+				}
+				depth[nb] = nextDepth
+				parents[nb] = []uint32{node}
+				next = append(next, nb)
+				if nb == goal {
+					goalDepth = nextDepth
+				}
+			}
+		}
+		frontier = next
 	}
 
-	// Collect reverse half: meeting+1 → ... → goal
-	cur := meeting
-	for {
-		p, ok := revParent[cur]
-		if !ok || p == noParent {
+	if goalDepth < 0 {
+		return BFSResult{}, false
+	}
+
+	paths := reconstructAllPaths(goal, parents, start, maxPaths)
+	return BFSResult{Paths: paths, NodesExplored: explored}, true
+}
+
+// reconstructAllPaths returns up to cap shortest paths ending at node by
+// backtracking through the parents map down to start.
+func reconstructAllPaths(node uint32, parents map[uint32][]uint32, start uint32, cap int) [][]uint32 {
+	if node == start {
+		return [][]uint32{{start}}
+	}
+	ps := parents[node]
+	if len(ps) == 0 {
+		return nil
+	}
+	var result [][]uint32
+	for _, parent := range ps {
+		if len(result) >= cap {
 			break
 		}
-		fwd = append(fwd, p)
-		cur = p
+		subPaths := reconstructAllPaths(parent, parents, start, cap-len(result))
+		for _, sp := range subPaths {
+			if len(result) >= cap {
+				break
+			}
+			path := make([]uint32, len(sp)+1)
+			copy(path, sp)
+			path[len(sp)] = node
+			result = append(result, path)
+		}
 	}
-
-	return fwd
+	return result
 }

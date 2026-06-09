@@ -81,9 +81,11 @@ function pickRouletteFrame(pool: string[], finalTitle: string, progress: number)
 export async function animateRoulette(
   finalTitle: string,
   onTick: (value: string) => void,
+  articlePool?: string[],
 ): Promise<void> {
-  const pool = ARTICLE_TITLES.filter((title) => title !== finalTitle);
-  const frames = pool.length > 0 ? pool : ARTICLE_TITLES;
+  const source = articlePool && articlePool.length > 0 ? articlePool : ARTICLE_TITLES;
+  const pool = source.filter((title) => title !== finalTitle);
+  const frames = pool.length > 0 ? pool : source;
 
   let elapsed = 0;
   onTick(pickRouletteFrame(frames, finalTitle, 0));

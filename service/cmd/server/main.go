@@ -36,12 +36,14 @@ func main() {
 	startingNodesSvc := service.NewStartingNodes(g)
 	endingNodesSvc := service.NewEndingNodes(g)
 	suggestSvc := service.NewSuggest(g)
+	randomSvc := service.NewRandom(g)
 	mux := http.NewServeMux()
 	controller.NewHealth().Register(mux)
 	controller.NewSearch(searchSvc).Register(mux)
 	controller.NewStartingNodes(startingNodesSvc).Register(mux)
 	controller.NewEndingNodes(endingNodesSvc).Register(mux)
 	controller.NewSuggest(suggestSvc).Register(mux)
+	controller.NewRandom(randomSvc).Register(mux)
 
 	srv := &http.Server{
 		Addr:         ":" + *port,

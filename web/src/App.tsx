@@ -8,11 +8,13 @@ import { ShortestPaths } from './components/ShortestPaths/ShortestPaths';
 import { EmptyState } from './components/EmptyState/EmptyState';
 import { LoadingState } from './components/LoadingState/LoadingState';
 import {
-  resolveSearchArticles,
+  SUGGESTIONS,
   animateRoulette,
 } from './data/suggestions';
+import { fetchRandom } from './api/random';
 import { useDebouncedSuggestions } from './hooks/useDebouncedSuggestions';
-import { searchPaths, formatSearchTime, formatNumber, type SearchResult } from './data/mockSearch';
+import { formatSearchTime, formatNumber, type SearchResult } from './data/mockSearch';
+import { searchPaths } from './api/search';
 import styles from './App.module.css';
 
 const SORT_OPTIONS = [
@@ -35,24 +37,51 @@ export function App() {
   const startSuggestions = useDebouncedSuggestions('start', startArticle);
   const endSuggestions = useDebouncedSuggestions('end', endArticle);
 
+  const fallbackTitles = SUGGESTIONS.map((s) => s.title);
+
+  const pickRandom = (pool: string[], exclude?: string): string => {
+    const candidates = exclude ? pool.filter((t) => t !== exclude) : pool;
+    const source = candidates.length > 0 ? candidates : pool;
+    return source[Math.floor(Math.random() * source.length)];
+  };
+
   const handleSearch = useCallback(async () => {
     if (isRouletting || isSearching) return;
 
     const needsStartRandom = !startArticle.trim();
     const needsEndRandom = !endArticle.trim();
-    const { start, end } = resolveSearchArticles(startArticle, endArticle);
+
+    let startPool: string[] = [];
+    let endPool: string[] = [];
+
+    if (needsStartRandom || needsEndRandom) {
+      const [sp, ep] = await Promise.all([
+        needsStartRandom ? fetchRandom('start', 20).catch(() => fallbackTitles) : Promise.resolve([]),
+        needsEndRandom ? fetchRandom('end', 20).catch(() => fallbackTitles) : Promise.resolve([]),
+      ]);
+      startPool = sp;
+      endPool = ep;
+    }
+
+    const resolvedStart = needsStartRandom
+      ? pickRandom(startPool)
+      : startArticle.trim();
+
+    const resolvedEnd = needsEndRandom
+      ? pickRandom(endPool, resolvedStart)
+      : endArticle.trim();
 
     try {
       const rouletteTasks: Promise<void>[] = [];
       if (needsStartRandom) {
-        rouletteTasks.push(animateRoulette(start, setStartArticle));
+        rouletteTasks.push(animateRoulette(resolvedStart, setStartArticle, startPool));
       } else {
-        setStartArticle(start);
+        setStartArticle(resolvedStart);
       }
       if (needsEndRandom) {
-        rouletteTasks.push(animateRoulette(end, setEndArticle));
+        rouletteTasks.push(animateRoulette(resolvedEnd, setEndArticle, endPool));
       } else {
-        setEndArticle(end);
+        setEndArticle(resolvedEnd);
       }
 
       if (rouletteTasks.length > 0) {
@@ -62,7 +91,7 @@ export function App() {
       }
 
       setIsSearching(true);
-      const data = await searchPaths(start, end);
+      const data = await searchPaths(resolvedStart, resolvedEnd);
       setResult(data);
       setVisibleCount(PAGE_SIZE);
       setSortOrder('interesting');
@@ -70,6 +99,7 @@ export function App() {
       setIsRouletting(false);
       setIsSearching(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startArticle, endArticle, isRouletting, isSearching]);
 
   const sortedPaths = result
