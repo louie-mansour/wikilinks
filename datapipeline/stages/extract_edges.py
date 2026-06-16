@@ -29,6 +29,7 @@ class ExtractStats:
     duplicates_skipped: int = 0
     self_loops_skipped: int = 0
     empty_skipped: int = 0
+    depth_filtered: int = 0
 
     def as_dict(self) -> dict[str, int]:
         return {
@@ -37,6 +38,7 @@ class ExtractStats:
             "duplicates_skipped": self.duplicates_skipped,
             "self_loops_skipped": self.self_loops_skipped,
             "empty_skipped": self.empty_skipped,
+            "depth_filtered": self.depth_filtered,
         }
 
 
@@ -47,7 +49,9 @@ def edge_hash(source: str, target: str) -> bytes:
     return hashlib.blake2b(payload, digest_size=8).digest()
 
 
-def extract_edges(inp: Path, out: Path, seen: set[bytes]) -> ExtractStats:
+def extract_edges(
+    inp: Path, out: Path, seen: set[bytes], max_depth: int | None = None
+) -> ExtractStats:
     stats = ExtractStats()
     tmp = out.with_suffix(out.suffix + ".tmp")
 
@@ -80,6 +84,15 @@ def extract_edges(inp: Path, out: Path, seen: set[bytes]) -> ExtractStats:
                 stats.self_loops_skipped += 1
                 continue
 
+            if max_depth is not None:
+                raw_depth = (row.get("depth") or "").strip()
+                try:
+                    if int(raw_depth) > max_depth:
+                        stats.depth_filtered += 1
+                        continue
+                except ValueError:
+                    pass
+
             key = edge_hash(source, target)
             if key in seen:
                 stats.duplicates_skipped += 1
@@ -99,7 +112,7 @@ def extract_edges(inp: Path, out: Path, seen: set[bytes]) -> ExtractStats:
     return stats
 
 
-def run(inp: Path, out: Path, *, force: bool = False) -> None:
+def run(inp: Path, out: Path, *, force: bool = False, max_depth: int | None = None) -> None:
     inp = inp.resolve()
     out = out.resolve()
     out_dir = out.parent
@@ -114,23 +127,32 @@ def run(inp: Path, out: Path, *, force: bool = False) -> None:
         print(f"extract_edges: skip {out} (up to date, {size:,} bytes)")
         return
 
-    print(f"extract_edges: {inp} -> {out}")
+    depth_msg = f" (max depth={max_depth})" if max_depth is not None else ""
+    print(f"extract_edges: {inp} -> {out}{depth_msg}")
     seen: set[bytes] = set()
-    stats = extract_edges(inp, out, seen)
+    stats = extract_edges(inp, out, seen, max_depth=max_depth)
+
+    manifest_stats = stats.as_dict()
+    if max_depth is not None:
+        manifest_stats["max_depth"] = max_depth
 
     write_stage_manifest(
         out_dir,
         MANIFEST_NAME,
-        build_stage_manifest(output=out, inputs=[inp], stats=stats.as_dict()),
+        build_stage_manifest(output=out, inputs=[inp], stats=manifest_stats),
     )
 
     size = out.stat().st_size
+    depth_filtered_msg = (
+        f", {stats.depth_filtered:,} depth-filtered" if max_depth is not None else ""
+    )
     print(
         f"extract_edges: done -> {out} ({size:,} bytes, "
         f"{stats.edges_written:,} edges, "
         f"{stats.duplicates_skipped:,} duplicates skipped, "
         f"{stats.self_loops_skipped:,} self-loops skipped, "
-        f"{stats.empty_skipped:,} empty skipped)"
+        f"{stats.empty_skipped:,} empty skipped"
+        f"{depth_filtered_msg})"
     )
 
 
@@ -159,10 +181,21 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="Re-process even if cached output is valid",
     )
+    parser.add_argument(
+        "--max-depth",
+        dest="max_depth",
+        type=int,
+        default=None,
+        help=(
+            "Drop links with HTML nesting depth > MAX_DEPTH. "
+            "depth=1–2 is main body/section text; depth=3+ is navboxes/accordions. "
+            "Omit to keep all links (default)."
+        ),
+    )
     args = parser.parse_args(argv)
 
     try:
-        run(args.inp, args.out, force=args.force)
+        run(args.inp, args.out, force=args.force, max_depth=args.max_depth)
     except SystemExit:
         raise
     except Exception as exc:

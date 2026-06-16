@@ -2,7 +2,7 @@ WEB := web
 SERVICE := service
 PYTHON := datapipeline/.venv/bin/python3
 
-.PHONY: install setup-pipeline dev build storybook build-storybook fetch extract-edges build-vocab build-adjacency pipeline test-pipeline service-build service-start service-dev service-test service-lint
+.PHONY: install setup-pipeline dev build storybook build-storybook fetch extract-edges map-entities edges-to-int build-vocab build-title-index extract-wiki-edges build-adjacency pipeline-kaggle pipeline-konect pipeline-wikipedia test-pipeline service-build service-start service-dev service-test service-lint
 
 install:
 	cd $(WEB) && npm install
@@ -25,19 +25,37 @@ build-storybook:
 	cd $(WEB) && npm run build-storybook
 
 fetch:
-	$(PYTHON) -m datapipeline.stages.fetch --force $(ARGS)
+	$(PYTHON) -m datapipeline.stages.fetch $(ARGS)
 
 extract-edges:
-	$(PYTHON) -m datapipeline.stages.extract_edges --force $(ARGS)
+	$(PYTHON) -m datapipeline.stages.extract_edges --max-depth 2 $(ARGS)
+
+map-entities:
+	$(PYTHON) -m datapipeline.stages.map_entities $(ARGS)
+
+edges-to-int:
+	$(PYTHON) -m datapipeline.stages.edges_to_int $(ARGS)
 
 build-vocab:
 	$(PYTHON) -m datapipeline.stages.build_vocab --force $(ARGS)
 
+build-title-index:
+	$(PYTHON) -m datapipeline.stages.build_title_index --force $(ARGS)
+
+extract-wiki-edges:
+	$(PYTHON) -m datapipeline.stages.extract_wiki_edges --force $(ARGS)
+
 build-adjacency:
 	$(PYTHON) -m datapipeline.stages.build_adjacency --force $(ARGS)
 
-pipeline:
-	$(PYTHON) -m datapipeline.run --force $(ARGS)
+pipeline-kaggle:
+	$(PYTHON) -m datapipeline.run --source kaggle $(ARGS)
+
+pipeline-konect:
+	$(PYTHON) -m datapipeline.run --source konect $(ARGS)
+
+pipeline-wikipedia:
+	$(PYTHON) -m datapipeline.run --source wikipedia $(ARGS)
 
 test-pipeline:
 	$(PYTHON) -m unittest discover -s datapipeline/tests -v

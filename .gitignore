@@ -41,7 +41,7 @@ Thumbs.db
 *.swo
 *~
 
-# Claude Code — local permissions/overrides only
+# Claude Code - local permissions/overrides only
 .claude/settings.local.json
 
 # Datapipeline — downloaded and generated data

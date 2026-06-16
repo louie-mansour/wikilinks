@@ -1,11 +1,15 @@
 package graph
 
-const maxPaths = 20 // cap to avoid exponential blowup on dense graphs
+const (
+	maxPaths = 20 // cap to avoid exponential blowup on dense graphs
+	maxDepth = 6  // stop searching beyond 6 hops to keep queries bounded
+)
 
 // BFSResult holds the output of a BFS search.
 type BFSResult struct {
-	Paths         [][]uint32 // all shortest paths from start to goal, capped at maxPaths
-	NodesExplored int
+	Paths            [][]uint32 // all shortest paths from start to goal, capped at maxPaths
+	NodesExplored    int
+	ExceededMaxDepth bool // true when the search was cut off before finding a path
 }
 
 // BidirectionalBFS finds all shortest paths from start to goal in g.
@@ -29,6 +33,9 @@ func BidirectionalBFS(g *WikipediaGraph, start, goal uint32) (BFSResult, bool) {
 		// All parents of goal-depth nodes were captured in the previous iteration.
 		if goalDepth >= 0 && curDepth >= goalDepth {
 			break
+		}
+		if curDepth >= maxDepth {
+			return BFSResult{ExceededMaxDepth: true}, false
 		}
 		nextDepth := curDepth + 1
 		explored += len(frontier)

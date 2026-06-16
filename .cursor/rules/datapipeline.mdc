@@ -12,7 +12,7 @@ Build the pipeline in **Python** under `datapipeline/`. Before choosing formats,
 
 - **Display key:** article titles (e.g. `"Python_(programming_language)"`) are shown in final paths. Resolve `id → title` only at path output via an entities table — not during BFS expansion.
 - **Internal key:** after `extract_edges`, use **integer node IDs** on disk and in BFS (frontier queues, parent maps, adjacency). This keeps memory and I/O manageable at ~29M edges.
-- **Sources:** Kaggle 100K subset (`links_export.csv`) for dev; KONECT full graph (`out.wikipedia_link_en` + `ent.wikipedia_link_en`) for production-scale BFS stress tests.
+- **Sources:** Kaggle 100K subset (`links_export.csv`) for dev; Wikipedia's own SQL dumps (`page` + `linktarget` + `pagelinks`, `--source wikipedia`) are the preferred full-scale path; KONECT full graph (`out.wikipedia_link_en` + `ent.wikipedia_link_en`) is superseded for full-scale but kept for BFS stress tests.
 - **Kaggle input:** use `raw/links_export.csv` only — do **not** parse `raw/graph.json` (monolithic, redundant, not streamable).
 - **KONECT ETL:** entity file maps line index → title; edge file is space-separated integer pairs — dedicated stages must join these into the same downstream formats as Kaggle.
 
@@ -124,12 +124,23 @@ python -m datapipeline.stages.build_vocab --in data/edges.tsv --entities data/en
 python -m datapipeline.stages.build_adjacency --in data/edges_int.tsv --out-dir data/
 ```
 
-KONECT (future):
+KONECT (int-native path — skips extract_edges + build_vocab; superseded for full-scale, see datasource.md):
 
 ```bash
 python -m datapipeline.stages.fetch --source konect
 python -m datapipeline.stages.map_entities --in raw/ent.wikipedia_link_en --out data/entities.tsv
 python -m datapipeline.stages.edges_to_int --in raw/out.wikipedia_link_en --entities data/entities.tsv --out data/edges_int.tsv
+python -m datapipeline.stages.build_adjacency --in data/edges_int.tsv --out-dir data/
+```
+
+Fetch builds `ent.wikipedia_link_en` from Wikimedia `enwiki-latest-page.sql.gz` via `datapipeline/lib/page_sql.py` and `datapipeline/lib/konect_ent.py`.
+
+Wikipedia SQL dumps (preferred full-scale path — current, self-consistent, no `Page_{id}` placeholders; redirects not resolved, see datasource.md "Known limitations / follow-ups"):
+
+```bash
+python -m datapipeline.stages.fetch --source wikipedia
+python -m datapipeline.stages.build_title_index --in raw/enwiki-latest-page.sql.gz --out-dir data/
+python -m datapipeline.stages.extract_wiki_edges --linktarget raw/enwiki-latest-linktarget.sql.gz --pagelinks raw/enwiki-latest-pagelinks.sql.gz --entities data/entities.tsv --page-ids data/wiki_page_ids.tsv --out data/edges_int.tsv
 python -m datapipeline.stages.build_adjacency --in data/edges_int.tsv --out-dir data/
 ```
 

@@ -1,6 +1,9 @@
 package graph
 
-import "math/rand/v2"
+import (
+	"math/rand/v2"
+	"strings"
+)
 
 // WikipediaGraph holds the CSR adjacency graph in memory.
 // After Load returns, this struct is read-only and safe for concurrent access.
@@ -55,14 +58,38 @@ func (g *WikipediaGraph) EndingNodes() []string {
 	return g.endingNodes
 }
 
-// SuggestStart returns up to limit start-article titles matching the prefix.
+// SuggestStart returns up to limit start-article titles matching prefix.
+// Results are ranked: exact prefix matches, then word-boundary prefix matches,
+// then fuzzy (edit-distance ≤ 1) word matches.
 func (g *WikipediaGraph) SuggestStart(prefix string, limit int) []string {
-	return g.startingIndex.PrefixSearch(prefix, limit)
+	return suggest(g.startingIndex, prefix, limit)
 }
 
-// SuggestEnd returns up to limit end-article titles matching the prefix.
+// SuggestEnd returns up to limit end-article titles matching prefix.
+// Results are ranked: exact prefix matches, then word-boundary prefix matches,
+// then fuzzy (edit-distance ≤ 1) word matches.
 func (g *WikipediaGraph) SuggestEnd(prefix string, limit int) []string {
-	return g.endingIndex.PrefixSearch(prefix, limit)
+	return suggest(g.endingIndex, prefix, limit)
+}
+
+func suggest(idx TitleIndex, prefix string, limit int) []string {
+	exact := idx.PrefixSearch(prefix, limit)
+	if len(exact) >= limit {
+		return exact
+	}
+	// Word-boundary and fuzzy tiers only apply to multi-word queries (queries
+	// containing a space). Single-token queries use prefix search only to
+	// avoid spurious matches from short tokens like "a" matching every title.
+	if !strings.ContainsRune(prefix, ' ') {
+		return exact
+	}
+	wordPrefix := idx.wordPrefixSearch(prefix, limit-len(exact), exact)
+	combined := append(exact, wordPrefix...)
+	if len(combined) >= limit {
+		return combined
+	}
+	fuzzy := idx.levenshteinSearch(prefix, limit-len(combined), combined)
+	return append(combined, fuzzy...)
 }
 
 // RandomStartNodes returns count distinct random start-eligible article titles.

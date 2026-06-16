@@ -38,6 +38,8 @@ func (c *Search) search(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
 		case errors.Is(err, service.ErrNoPath):
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": "no path found"})
+		case errors.Is(err, service.ErrPathTooLong):
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "no path found within 6 degrees"})
 		default:
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
 		}

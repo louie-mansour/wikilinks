@@ -22,10 +22,26 @@ search          in-memory bidirectional BFS
 
 Do not skip `extract_edges`. Downstream stages must not re-read the ~4.8 GB raw CSV.
 
-## Kaggle vs KONECT inputs
+### Wikipedia SQL dumps path (`--source wikipedia`, preferred full-scale)
+
+```
+fetch --source wikipedia   raw/enwiki-latest-page.sql.gz (~2.4GB)
+                            raw/enwiki-latest-linktarget.sql.gz (~1.4GB)
+                            raw/enwiki-latest-pagelinks.sql.gz (~7.0GB)
+build_title_index           data/entities.tsv + data/wiki_page_ids.tsv
+extract_wiki_edges           data/edges_int.tsv
+build_adjacency (unchanged)  data/adj_fwd.* + data/adj_rev.*
+```
+
+These three raw files are multi-GB `.sql.gz` dumps — stream via `lib/page_sql.py`,
+never load fully into memory. **Redirects are not resolved** in this path; see
+`datapipeline/decisions/datasource.md` "Known limitations / follow-ups".
+
+## Kaggle vs KONECT vs Wikipedia inputs
 
 - **Kaggle:** stream `raw/links_export.csv` only — ignore `raw/graph.json`.
-- **KONECT (future):** join `ent.wikipedia_link_en` + `out.wikipedia_link_en` into the same `entities.tsv` / `edges_int.tsv` formats.
+- **KONECT (superseded for full-scale; still used for stress tests):** join `ent.wikipedia_link_en` + `out.wikipedia_link_en` into the same `entities.tsv` / `edges_int.tsv` formats.
+- **Wikipedia SQL dumps (preferred full-scale):** join `page` + `linktarget` + `pagelinks` SQL dumps into `entities.tsv` / `edges_int.tsv` via `build_title_index` + `extract_wiki_edges`.
 
 ## Large raw files
 

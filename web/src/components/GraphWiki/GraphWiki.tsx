@@ -402,7 +402,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   }, []);
 
   return (
-    <div ref={wrapperRef} className={styles.wrapper}>
+    <div ref={wrapperRef} className={styles.wrapper} style={{ cursor: hoveredNodeId ? 'pointer' : 'default' }}>
       <div className={styles.legend}>
         <div className={styles.legendTitle}>Legend</div>
         <div className={styles.legendRow}>
@@ -485,6 +485,14 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
             || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target))
               ? 'after'
               : undefined;
+        }}
+        onNodeClick={(node) => {
+          const title = node.label ?? node.id;
+          window.open(
+            `https://en.wikipedia.org/wiki/${encodeURIComponent(title).replace(/%20/g, '_')}`,
+            '_blank',
+            'noopener,noreferrer',
+          );
         }}
         onNodeHover={(node) => {
           setHoveredNodeId(node?.id ?? null);

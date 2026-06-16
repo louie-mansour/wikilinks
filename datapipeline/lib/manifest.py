@@ -33,13 +33,9 @@ def is_fetch_current(
     *,
     source: str,
     dataset: str,
-    required_file: str,
+    required_files: tuple[str, ...],
 ) -> bool:
-    """Return True if required output exists and manifest matches source/dataset/size."""
-    output = out_dir / required_file
-    if not output.exists() or output.stat().st_size == 0:
-        return False
-
+    """Return True if all required outputs exist and manifest matches source/dataset/sizes."""
     manifest = read_manifest(out_dir)
     if manifest is None:
         return False
@@ -47,8 +43,14 @@ def is_fetch_current(
     if manifest.get("source") != source or manifest.get("dataset") != dataset:
         return False
 
-    recorded_size = manifest.get("files", {}).get(required_file)
-    return recorded_size == output.stat().st_size
+    recorded = manifest.get("files", {})
+    for name in required_files:
+        output = out_dir / name
+        if not output.is_file() or output.stat().st_size == 0:
+            return False
+        if recorded.get(name) != output.stat().st_size:
+            return False
+    return True
 
 
 def build_manifest(

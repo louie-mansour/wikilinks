@@ -10,25 +10,6 @@ import sys
 from pathlib import Path
 
 
-def prefix_offsets(degree: array.array) -> array.array:
-    """Turn per-node degrees into CSR offsets (length len(degree) + 1)."""
-    offsets = array.array("I", [0])
-    total = 0
-    for value in degree:
-        total += value
-        offsets.append(total)
-    return offsets
-
-
-def count_nonzero_rows(offsets: array.array) -> int:
-    """Count nodes with at least one neighbor."""
-    return sum(
-        1
-        for i in range(len(offsets) - 1)
-        if offsets[i] != offsets[i + 1]
-    )
-
-
 def neighbors_slice(
     offsets: array.array, neighbors: array.array, node_id: int
 ) -> list[int]:

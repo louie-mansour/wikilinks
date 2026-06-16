@@ -53,11 +53,17 @@ You can now run any Makefile target below.
 |---------|-------------|
 | `make install` | Install web app npm dependencies |
 | `make setup-pipeline` | Create Python venv and install datapipeline deps |
-| `make fetch` | Download Kaggle Wikipedia link graph to `datapipeline/raw/` |
-| `make extract-edges` | Extract deduplicated edges TSV to `datapipeline/data/edges.tsv` |
-| `make build-vocab` | Intern titles to integer IDs → `entities.tsv` + `edges_int.tsv` |
+| `make fetch` | Download Wikipedia link graph to `datapipeline/raw/` (Kaggle default; use `ARGS="--source konect"` or `ARGS="--source wikipedia"`) |
+| `make extract-edges` | Extract deduplicated edges TSV to `datapipeline/data/edges.tsv` (Kaggle path) |
+| `make map-entities` | Copy KONECT entity titles → `datapipeline/data/entities.tsv` |
+| `make edges-to-int` | Convert KONECT integer edges → `datapipeline/data/edges_int.tsv` |
+| `make build-vocab` | Intern titles to integer IDs → `entities.tsv` + `edges_int.tsv` (Kaggle path) |
+| `make build-title-index` | Build `entities.tsv` + `wiki_page_ids.tsv` from `enwiki-latest-page.sql.gz` (Wikipedia path) |
+| `make extract-wiki-edges` | Resolve `pagelinks` + `linktarget` → `edges_int.tsv` (Wikipedia path) |
 | `make build-adjacency` | Build forward + reverse CSR adjacency from `edges_int.tsv` |
-| `make pipeline` | Run fetch, extract-edges, build-vocab, and build-adjacency in order |
+| `make pipeline-kaggle` | Run full Kaggle pipeline (~29M edges) |
+| `make pipeline-konect` | Run full KONECT pipeline (~437M edges) |
+| `make pipeline-wikipedia` | Run full Wikipedia SQL dumps pipeline (~6.8–7M articles, likely >1B edges) |
 | `make test-pipeline` | Run datapipeline unit tests |
 | `make dev` | Start the Vite dev server |
 | `make build` | Production build of the web app |
@@ -87,30 +93,55 @@ Flags (passed via `ARGS` or directly to the binary):
 | `--data-dir` | `datapipeline/data` | Path to the graph bundle directory |
 | `--port` | `8080` | HTTP listen port |
 
-The graph must be built first (`make pipeline` or at minimum `make build-adjacency`).
+The graph must be built first (`make pipeline-kaggle` / `make pipeline-konect` / `make pipeline-wikipedia`, or at minimum `make build-adjacency`).
 
 ### Datapipeline
 
+**Kaggle (default, ~29M edges):**
+
 ```bash
-make fetch                              # download (replaces existing raw files)
-make extract-edges                      # raw CSV -> data/edges.tsv (deduplicated)
+make fetch                              # download to datapipeline/raw/
+make extract-edges                      # raw CSV -> data/edges.tsv
 make build-vocab                        # edges.tsv -> entities.tsv + edges_int.tsv
 make build-adjacency                    # edges_int.tsv -> adj_fwd.* + adj_rev.*
-make pipeline                           # fetch + extract-edges + build-vocab + build-adjacency
-make test-pipeline                      # unit tests
+make pipeline-kaggle                    # all of the above
 ```
+
+**KONECT (~437M edges, superseded for full-scale — see `datapipeline/decisions/datasource.md`):**
+
+```bash
+make fetch ARGS="--source konect"       # ~3.8 GB download (KONECT tar + enwiki page.sql.gz)
+make map-entities                       # ent -> data/entities.tsv
+make edges-to-int                       # out + entities -> data/edges_int.tsv
+make build-adjacency                    # same CSR bundle as Kaggle
+make pipeline-konect                    # all KONECT stages in order
+```
+
+**Wikipedia SQL dumps (preferred full-scale path, ~6.8–7M articles, likely >1B edges):**
+
+```bash
+make fetch ARGS="--source wikipedia"    # ~10.8 GB download (page + linktarget + pagelinks SQL dumps)
+make build-title-index                  # page.sql -> data/entities.tsv + data/wiki_page_ids.tsv
+make extract-wiki-edges                 # linktarget + pagelinks -> data/edges_int.tsv
+make build-adjacency                    # same CSR bundle as Kaggle/KONECT
+make pipeline-wikipedia                 # all Wikipedia stages in order
+```
+
+Redirects are not resolved in this path (see `datapipeline/decisions/datasource.md`
+"Known limitations / follow-ups").
 
 Or run stages directly:
 
 ```bash
-datapipeline/.venv/bin/python -m datapipeline.stages.fetch
+datapipeline/.venv/bin/python -m datapipeline.stages.fetch --source kaggle
 datapipeline/.venv/bin/python -m datapipeline.stages.extract_edges
 datapipeline/.venv/bin/python -m datapipeline.stages.build_vocab
 datapipeline/.venv/bin/python -m datapipeline.stages.build_adjacency
-datapipeline/.venv/bin/python -m datapipeline.run
+datapipeline/.venv/bin/python -m datapipeline.run --source konect
+datapipeline/.venv/bin/python -m datapipeline.run --source wikipedia
 ```
 
-Downloaded files land in `datapipeline/raw/` (gitignored). Processed outputs land in `datapipeline/data/` (gitignored). Each `make` stage target always re-runs and replaces existing output.
+Downloaded files land in `datapipeline/raw/` (gitignored). Processed outputs land in `datapipeline/data/` (gitignored). Pass `--force` to any stage to bypass cache.
 
 ## Project layout
 

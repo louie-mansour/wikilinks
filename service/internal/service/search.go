@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	ErrNoPath = errors.New("no path found between the two articles")
+	ErrNoPath      = errors.New("no path found between the two articles")
+	ErrPathTooLong = errors.New("no path found within 6 degrees")
 )
 
 // ErrTitleNotFound is returned when a title is not in the graph.
@@ -101,6 +102,9 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 	elapsed := time.Since(t0)
 
 	if !found {
+		if result.ExceededMaxDepth {
+			return nil, ErrPathTooLong
+		}
 		return nil, ErrNoPath
 	}
 

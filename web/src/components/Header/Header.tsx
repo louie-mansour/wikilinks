@@ -59,7 +59,7 @@ export function Header({
             <Combobox
               id="header-start"
               label="Start article"
-              placeholder="I'm feeling lucky"
+              placeholder="Type article here"
               value={startValue}
               suggestions={startSuggestions}
               isLoading={startSuggestionsLoading}
@@ -79,7 +79,7 @@ export function Header({
             <Combobox
               id="header-end"
               label="End article"
-              placeholder="I'm feeling lucky"
+              placeholder="Type article here"
               value={endValue}
               suggestions={endSuggestions}
               isLoading={endSuggestionsLoading}

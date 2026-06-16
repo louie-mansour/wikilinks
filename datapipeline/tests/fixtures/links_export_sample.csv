@@ -4,3 +4,4 @@ id,source_title,target_title,language,position,depth,created_at,source_url,targe
 3,Article_A,Article_A,en,0,1,2025-01-01 00:00:00,https://en.wikipedia.org/wiki/Article_A,https://en.wikipedia.org/wiki/Article_A
 4,,Article_C,en,0,1,2025-01-01 00:00:00,https://en.wikipedia.org/wiki/,https://en.wikipedia.org/wiki/Article_C
 5,Article_D,Article_E,en,0,1,2025-01-01 00:00:00,https://en.wikipedia.org/wiki/Article_D,https://en.wikipedia.org/wiki/Article_E
+6,Article_A,Article_F,en,5,3,2025-01-01 00:00:00,https://en.wikipedia.org/wiki/Article_A,https://en.wikipedia.org/wiki/Article_F

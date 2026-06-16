@@ -26,6 +26,8 @@ export function PathItem({ number, crumbs }: PathItemProps) {
             )}
             <a
               href={crumb.href}
+              target="_blank"
+              rel="noopener noreferrer"
               className={`${styles.crumb} ${crumb.highlighted ? styles.crumbHl : ''}`}
             >
               {crumb.label}

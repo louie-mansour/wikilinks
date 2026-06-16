@@ -18,11 +18,34 @@ class ExtractEdgesTest(unittest.TestCase):
             out = Path(tmp) / "edges.tsv"
             stats = extract_edges.extract_edges(FIXTURE, out, set())
 
-            self.assertEqual(stats.rows_read, 5)
-            self.assertEqual(stats.edges_written, 2)
+            self.assertEqual(stats.rows_read, 6)
+            self.assertEqual(stats.edges_written, 3)
             self.assertEqual(stats.duplicates_skipped, 1)
             self.assertEqual(stats.self_loops_skipped, 1)
             self.assertEqual(stats.empty_skipped, 1)
+            self.assertEqual(stats.depth_filtered, 0)
+
+            with out.open(newline="", encoding="utf-8") as f:
+                rows = list(csv.reader(f, delimiter="\t"))
+
+            self.assertEqual(rows[0], ["source_title", "target_title"])
+            self.assertEqual(
+                rows[1:],
+                [
+                    ["Article_A", "Article_B"],
+                    ["Article_D", "Article_E"],
+                    ["Article_A", "Article_F"],
+                ],
+            )
+
+    def test_max_depth_filters_navbox_links(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "edges.tsv"
+            stats = extract_edges.extract_edges(FIXTURE, out, set(), max_depth=2)
+
+            self.assertEqual(stats.rows_read, 6)
+            self.assertEqual(stats.edges_written, 2)
+            self.assertEqual(stats.depth_filtered, 1)
 
             with out.open(newline="", encoding="utf-8") as f:
                 rows = list(csv.reader(f, delimiter="\t"))
