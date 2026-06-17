@@ -66,7 +66,7 @@
   font: 14px/1 var(--font-ui);
   font-weight: 600;
   color: var(--ink);
-  padding: 12px 10px 12px 16px;
+  padding: 12px 16px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -84,25 +84,6 @@
 .input::placeholder {
   color: var(--ink-faint);
   font-weight: 400;
-}
-
-/* Chevron toggle button */
-.chevron {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  padding: 0 14px 0 4px;
-  cursor: pointer;
-  color: var(--ink-faint);
-  /* Extend click area to full row height */
-  align-self: stretch;
-}
-
-.chevron:hover {
-  color: var(--terra);
 }
 
 /* ─────────────────────────────────────────
@@ -192,14 +173,6 @@
     transition: opacity 0.15s ease;
   }
 
-  .chevron {
-    transition: color 0.12s, transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
-  }
-
-  .chevron svg {
-    transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
-  }
-
   .option {
     transition: background 0.1s, color 0.1s;
   }
@@ -219,15 +192,6 @@
     animation: combo-shine 0.65s ease forwards;
   }
 
-  .wrap:hover:not([data-open]) .chevron {
-    color: var(--terra);
-    transform: translateY(1px);
-  }
-
-  .wrap:hover:not([data-open]) .chevron svg {
-    animation: combo-chevron-bounce 0.55s ease-in-out infinite;
-  }
-
   @keyframes combo-shine {
     from {
       transform: translateX(-120%);
@@ -237,15 +201,6 @@
     }
   }
 
-  @keyframes combo-chevron-bounce {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(3px);
-    }
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -255,7 +210,4 @@
     box-shadow: 0 0 0 3px var(--terra-light);
   }
 
-  .wrap:hover:not([data-open]) .chevron {
-    color: var(--terra);
-  }
 }

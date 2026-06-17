@@ -138,18 +138,6 @@ export function Combobox({
     }
   }
 
-  function handleChevronClick() {
-    if (open) {
-      setOpen(false);
-      setActiveIndex(-1);
-    } else if (canShowList) {
-      setOpen(true);
-      inputRef.current?.focus();
-    } else {
-      inputRef.current?.focus();
-    }
-  }
-
   const activeOptionId =
     activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined;
 
@@ -184,33 +172,6 @@ export function Combobox({
           onKeyDown={handleKeyDown}
         />
 
-        {/* Chevron toggle */}
-        <button
-          type="button"
-          aria-label={open ? 'Close suggestions' : 'Open suggestions'}
-          aria-hidden="true"
-          tabIndex={-1}
-          className={styles.chevron}
-          onClick={handleChevronClick}
-        >
-          {/* 12×12 SVG chevron, §9 */}
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <polyline
-              points="2,4 6,8 10,4"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
       </div>
 
       {/* Dropdown listbox — hidden while loading with no prior results */}
