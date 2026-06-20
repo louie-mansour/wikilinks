@@ -15,6 +15,7 @@ interface ShortestPathsProps {
   sortValue?: string;
   onSortChange?: (value: string) => void;
   remainingCount?: number;
+  totalRemainingCount?: number;
   onLoadMore?: () => void;
 }
 
@@ -25,6 +26,7 @@ export function ShortestPaths({
   sortValue,
   onSortChange,
   remainingCount,
+  totalRemainingCount,
   onLoadMore,
 }: ShortestPathsProps) {
   return (
@@ -52,7 +54,7 @@ export function ShortestPaths({
       {remainingCount != null && remainingCount > 0 && (
         <div className={styles.loadMore}>
           <Button variant="secondary" onClick={onLoadMore}>
-            Load {remainingCount} more paths
+            Load {remainingCount} of {totalRemainingCount ?? remainingCount} more paths
           </Button>
         </div>
       )}

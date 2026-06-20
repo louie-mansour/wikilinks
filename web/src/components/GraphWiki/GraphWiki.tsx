@@ -751,7 +751,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         <div className={styles.legendTitle}>Legend</div>
         <div className={styles.legendRow}>
           <Badge variant="first" />
-          First discovered
+          First time found
         </div>
       </div>
       {canHover && (

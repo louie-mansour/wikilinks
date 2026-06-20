@@ -20,7 +20,6 @@ import styles from './App.module.css';
 const SORT_OPTIONS = [
   { value: 'interesting', label: 'Sort: most interesting' },
   { value: 'alpha', label: 'Sort: alphabetical' },
-  { value: 'hops', label: 'Sort: fewest hops' },
 ];
 
 const PAGE_SIZE = 5;
@@ -116,8 +115,7 @@ export function App() {
           const bLabel = b.crumbs[1]?.label ?? '';
           return aLabel.localeCompare(bLabel);
         }
-        if (sortOrder === 'hops') return a.crumbs.length - b.crumbs.length;
-        return 0; // 'interesting' = original order
+return 0; // 'interesting' = original order
       })
     : [];
 
@@ -181,12 +179,13 @@ export function App() {
           />
 
           <ShortestPaths
-            title={`${formatNumber(result.pathsFound)} shortest path${result.pathsFound !== 1 ? 's' : ''} — ${result.minHops} hop${result.minHops !== 1 ? 's' : ''} each`}
+            title={`${formatNumber(result.pathsFound)} shortest path${result.pathsFound !== 1 ? 's' : ''}`}
             paths={visiblePaths}
             sortOptions={SORT_OPTIONS}
             sortValue={sortOrder}
             onSortChange={(val) => { setSortOrder(val); setVisibleCount(PAGE_SIZE); }}
-            remainingCount={remainingCount > 0 ? remainingCount : undefined}
+            remainingCount={remainingCount > 0 ? Math.min(PAGE_SIZE, remainingCount) : undefined}
+            totalRemainingCount={remainingCount > 0 ? remainingCount : undefined}
             onLoadMore={() => setVisibleCount((c) => c + PAGE_SIZE)}
           />
         </div>
