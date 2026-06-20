@@ -40,14 +40,6 @@
   color: var(--ink-muted);
 }
 
-.badgeOverlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  overflow: hidden;
-}
-
 .linkOverlay {
   position: absolute;
   inset: 0;
@@ -96,13 +88,6 @@
   visibility: hidden;
   pointer-events: auto;
   cursor: pointer;
-}
-
-.nodeBadge {
-  position: absolute;
-  transform: translateY(-50%);
-  visibility: hidden;
-  white-space: nowrap;
 }
 
 @media (max-width: 520px) {

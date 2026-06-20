@@ -3,7 +3,7 @@ package graph
 import "sync"
 
 const (
-	MaxPaths = 1000 // cap to avoid exponential blowup on dense graphs
+	MaxPaths = 10000 // cap to avoid exponential blowup on dense graphs
 	MaxDepth = 10  // stop searching beyond 10 hops to keep queries bounded
 )
 

@@ -514,10 +514,55 @@ function drawTerminalLabel(
   drawLabel(node, ctx, globalScale, orientation, borderColor, C.white);
 }
 
+const BADGE_FONT_SIZE = 9;
+const BADGE_PAD_X     = 6;
+const BADGE_PAD_Y     = 2;
+const BADGE_RADIUS    = 6;
+const BADGE_BG        = '#fdf2e3';  // --clay-pale
+const BADGE_TEXT      = '#e8a05a';  // --clay
+const BADGE_BORDER    = '#f5dbb0';  // --clay-border
+
+function drawBadge(
+  node: SimNode,
+  ctx: CanvasRenderingContext2D,
+  globalScale: number,
+): void {
+  if (node.x == null || node.y == null) return;
+  const variant = resolveVariant(node);
+  const r        = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
+  const fontSize = BADGE_FONT_SIZE / globalScale;
+  const padX     = BADGE_PAD_X / globalScale;
+  const padY     = BADGE_PAD_Y / globalScale;
+  const gap      = SPACE_1 / globalScale;
+  const bRadius  = BADGE_RADIUS / globalScale;
+  const borderW  = 1 / globalScale;
+
+  ctx.font = `700 ${fontSize}px ${FONT_UI}`;
+  const text = '★ first';
+  const textW = ctx.measureText(text).width;
+  const boxW  = textW + padX * 2;
+  const boxH  = fontSize * 1.6 + padY * 2;
+
+  const x = node.x + r + gap;
+  const y = node.y - boxH / 2;
+
+  ctx.beginPath();
+  roundRect(ctx, x, y, boxW, boxH, bRadius);
+  ctx.fillStyle = BADGE_BG;
+  ctx.fill();
+  ctx.strokeStyle = BADGE_BORDER;
+  ctx.lineWidth = borderW;
+  ctx.stroke();
+
+  ctx.fillStyle = BADGE_TEXT;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + padX, node.y);
+}
+
 export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const wrapperRef     = useRef<HTMLDivElement>(null);
   const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
-  const badgeRefs           = useRef<Map<string, HTMLSpanElement>>(new Map());
   const labelLinkRefs       = useRef<Map<string, HTMLAnchorElement>>(new Map());
   const hoverLabelRefs      = useRef<Map<string, HTMLDivElement>>(new Map());
   const linkLineRefs        = useRef<Map<string, SVGLineElement>>(new Map());
@@ -609,16 +654,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
       const fg = fgRef.current;
       if (!fg) return;
       for (const node of newNodes) {
-        const sim = node as SimNode;
-        if (sim.x == null || sim.y == null) continue;
-        const screen = fg.graph2ScreenCoords(sim.x, sim.y);
-        const r = nodeRadius(resolveVariant(node)) * globalScale;
-        const el = badgeRefs.current.get(node.id);
-        if (el) {
-          el.style.left = `${screen.x + r + SPACE_1}px`;
-          el.style.top  = `${screen.y}px`;
-          el.style.visibility = 'visible';
-        }
+        drawBadge(node as SimNode, ctx, globalScale);
       }
       for (const node of terminalNodes) {
         const sim = node as SimNode;
@@ -717,19 +753,6 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           <Badge variant="first" />
           First discovered
         </div>
-      </div>
-      <div className={styles.badgeOverlay}>
-        {newNodes.map(node => (
-          <Badge
-            key={node.id}
-            variant="first"
-            className={styles.nodeBadge}
-            ref={(el) => {
-              if (el) badgeRefs.current.set(node.id, el);
-              else badgeRefs.current.delete(node.id);
-            }}
-          />
-        ))}
       </div>
       {canHover && (
         <svg className={styles.linkOverlay} aria-hidden="true">
