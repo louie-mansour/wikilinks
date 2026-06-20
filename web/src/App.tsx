@@ -7,6 +7,7 @@ import { ShareBar } from './components/ShareBar/ShareBar';
 import { ShortestPaths } from './components/ShortestPaths/ShortestPaths';
 import { EmptyState } from './components/EmptyState/EmptyState';
 import { LoadingState } from './components/LoadingState/LoadingState';
+import { PanelEnter } from './components/PanelEnter/PanelEnter';
 import {
   SUGGESTIONS,
   animateRoulette,
@@ -125,27 +126,29 @@ return 0; // 'interesting' = original order
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
-        <Header
-          startSuggestions={startSuggestions.suggestions}
-          endSuggestions={endSuggestions.suggestions}
-          startSuggestionsLoading={startSuggestions.isLoading}
-          endSuggestionsLoading={endSuggestions.isLoading}
-          startValue={startArticle}
-          endValue={endArticle}
-          onStartSelect={setStartArticle}
-          onEndSelect={setEndArticle}
-          onStartChange={setStartArticle}
-          onEndChange={setEndArticle}
-          onSearch={handleSearch}
-          isSearching={isRouletting || isSearching}
-          searchLabel={
-            isRouletting
-              ? 'Picking articles…'
-              : isSearching
-                ? 'Finding paths…'
-                : 'Find paths'
-          }
-        />
+        <PanelEnter index={0}>
+          <Header
+            startSuggestions={startSuggestions.suggestions}
+            endSuggestions={endSuggestions.suggestions}
+            startSuggestionsLoading={startSuggestions.isLoading}
+            endSuggestionsLoading={endSuggestions.isLoading}
+            startValue={startArticle}
+            endValue={endArticle}
+            onStartSelect={setStartArticle}
+            onEndSelect={setEndArticle}
+            onStartChange={setStartArticle}
+            onEndChange={setEndArticle}
+            onSearch={handleSearch}
+            isSearching={isRouletting || isSearching}
+            searchLabel={
+              isRouletting
+                ? 'Picking articles…'
+                : isSearching
+                  ? 'Finding paths…'
+                  : 'Find paths'
+            }
+          />
+        </PanelEnter>
       </div>
 
       {isRouletting || isSearching ? (

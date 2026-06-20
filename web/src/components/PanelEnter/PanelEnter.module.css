@@ -1,0 +1,35 @@
+@import '../../tokens.css';
+
+@media (prefers-reduced-motion: no-preference) {
+  .root {
+    opacity: 0;
+    transform: translateY(32px);
+    animation: panelSlideUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation-delay: calc(var(--panel-i, 0) * var(--panel-stagger, 0.14s));
+  }
+
+  @keyframes panelSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(32px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    opacity: 0;
+    animation: panelFadeIn 0.2s ease forwards;
+    animation-delay: calc(var(--panel-i, 0) * 0.05s);
+  }
+
+  @keyframes panelFadeIn {
+    to {
+      opacity: 1;
+    }
+  }
+}
