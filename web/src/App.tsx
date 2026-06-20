@@ -178,7 +178,7 @@ return 0; // 'interesting' = original order
               minHops={result.minHops}
               nodesExplored={formatNumber(result.nodesExplored)}
               searchTime={formatSearchTime(result.searchTimeMs)}
-              newArticles={result.newArticles}
+              pathArticles={result.graphData.nodes.length}
             />
           </PanelEnter>
 

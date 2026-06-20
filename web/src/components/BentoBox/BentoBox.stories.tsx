@@ -25,7 +25,7 @@ export const Default: Story = {
     minHops: 4,
     nodesExplored: '8,241',
     searchTime: '1.2s',
-    newArticles: 14,
+    pathArticles: 14,
   },
 };
 
@@ -40,7 +40,7 @@ export const FewPaths: Story = {
     minHops: 3,
     nodesExplored: '412',
     searchTime: '0.3s',
-    newArticles: 5,
+    pathArticles: 5,
   },
 };
 
@@ -55,7 +55,7 @@ export const ManyPaths: Story = {
     minHops: 5,
     nodesExplored: '24,831',
     searchTime: '4.7s',
-    newArticles: 38,
+    pathArticles: 38,
   },
 };
 
@@ -71,7 +71,7 @@ export const LongArticleNames: Story = {
     minHops: 4,
     nodesExplored: '2,104',
     searchTime: '0.9s',
-    newArticles: 11,
+    pathArticles: 11,
   },
   parameters: {
     viewport: { defaultViewport: 'mobile1' },

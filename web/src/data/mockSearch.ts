@@ -12,7 +12,6 @@ export interface SearchResult {
   nodesExplored: number;
   searchTimeMs: number;
   uniqueArticles: number;
-  newArticles: number;
   paths: PathData[];
   graphData: GraphData;
   records: RecordPeriod[];
@@ -35,7 +34,6 @@ const EINSTEIN_QUANTUM: SearchResult = {
   nodesExplored: 8241,
   searchTimeMs: 1200,
   uniqueArticles: 14,
-  newArticles: 3,
   shareCode: 'aE3f9k',
   maxHops: 10,
   maxPaths: 1000,
@@ -261,7 +259,6 @@ function buildGenericResult(start: string, end: string): SearchResult {
   const nodesExplored = (s(3) % 4000) + 500;
   const searchTimeMs = (s(4) % 2800) + 200;
   const uniqueArticles = intermediates.length + 2 + (s(5) % 4);
-  const newArticles = (s(13) % 3) + 1;
 
   const graphData = assignGraphLabels(buildGraphForDegrees(hops, 8), start, end, seed);
 
@@ -345,7 +342,6 @@ function buildGenericResult(start: string, end: string): SearchResult {
     nodesExplored,
     searchTimeMs,
     uniqueArticles,
-    newArticles,
     paths,
     graphData,
     records,

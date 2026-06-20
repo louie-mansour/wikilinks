@@ -30,7 +30,7 @@ export interface BentoBoxProps {
   minHops: number | string;
   nodesExplored: number | string;
   searchTime: string;
-  newArticles: number | string;
+  pathArticles: number | string;
   className?: string;
 }
 
@@ -41,7 +41,7 @@ export function BentoBox({
   minHops,
   nodesExplored,
   searchTime,
-  newArticles,
+  pathArticles,
   className = '',
 }: BentoBoxProps) {
   return (
@@ -68,21 +68,21 @@ export function BentoBox({
       />
 
       <SmallStatCard
-        label="Nodes explored"
+        label="Articles explored"
         value={nodesExplored}
         cardClassName={styles.cardNodes}
+      />
+
+      <SmallStatCard
+        label="Articles in paths"
+        value={pathArticles}
+        cardClassName={styles.cardArticles}
       />
 
       <SmallStatCard
         label="Search time"
         value={searchTime}
         cardClassName={styles.cardTime}
-      />
-
-      <SmallStatCard
-        label="New articles"
-        value={newArticles}
-        cardClassName={styles.cardArticles}
       />
     </section>
   );
