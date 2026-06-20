@@ -33,6 +33,8 @@ type SearchResult struct {
 	GraphData      GraphData      `json:"graphData"`
 	Records        []RecordPeriod `json:"records"`
 	ShareCode      string         `json:"shareCode"`
+	MaxHops        int            `json:"maxHops"`
+	MaxPaths       int            `json:"maxPaths"`
 }
 
 type PathData struct {
@@ -104,6 +106,8 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 			GraphData:     buildNoPathGraphData(from, to),
 			Records:       []RecordPeriod{},
 			ShareCode:     buildShareCode(from, to),
+			MaxHops:       graph.MaxDepth,
+			MaxPaths:      graph.MaxPaths,
 		}, nil
 	}
 
@@ -186,6 +190,8 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 		GraphData:      graphData,
 		Records:        records,
 		ShareCode:      buildShareCode(from, to),
+		MaxHops:        graph.MaxDepth,
+		MaxPaths:       graph.MaxPaths,
 	}, nil
 }
 

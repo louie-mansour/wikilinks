@@ -17,6 +17,8 @@ export interface SearchResult {
   graphData: GraphData;
   records: RecordPeriod[];
   shareCode: string;
+  maxHops: number;
+  maxPaths: number;
 }
 
 function wikiUrl(title: string): string {
@@ -35,6 +37,8 @@ const EINSTEIN_QUANTUM: SearchResult = {
   uniqueArticles: 14,
   newArticles: 3,
   shareCode: 'aE3f9k',
+  maxHops: 10,
+  maxPaths: 1000,
   graphData: buildGraphForDegrees(4, 8),
   paths: [
     {
@@ -346,6 +350,8 @@ function buildGenericResult(start: string, end: string): SearchResult {
     graphData,
     records,
     shareCode: generateShareCode(start + end),
+    maxHops: 10,
+    maxPaths: 1000,
   };
 }
 

@@ -157,7 +157,7 @@ export function App() {
       ) : result?.noPathFound ? (
         <div className={styles.sections} key={`${result.start}|${result.end}`}>
           <GraphWiki graphData={result.graphData} />
-          <EmptyState hint={`No path found between "${result.start}" and "${result.end}" within 6 degrees of separation.`} />
+          <EmptyState hint={`No path found between "${result.start}" and "${result.end}" within ${result.maxHops} degrees of separation.`} />
         </div>
       ) : result ? (
         <div className={styles.sections} key={`${result.start}|${result.end}`}>
