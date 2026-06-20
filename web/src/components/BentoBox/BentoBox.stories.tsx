@@ -26,6 +26,7 @@ export const Default: Story = {
     nodesExplored: '8,241',
     searchTime: '1.2s',
     pathArticles: 14,
+    firstArticles: 2,
   },
 };
 
@@ -41,6 +42,7 @@ export const FewPaths: Story = {
     nodesExplored: '412',
     searchTime: '0.3s',
     pathArticles: 5,
+    firstArticles: 1,
   },
 };
 
@@ -56,6 +58,7 @@ export const ManyPaths: Story = {
     nodesExplored: '24,831',
     searchTime: '4.7s',
     pathArticles: 38,
+    firstArticles: 0,
   },
 };
 
@@ -72,6 +75,7 @@ export const LongArticleNames: Story = {
     nodesExplored: '2,104',
     searchTime: '0.9s',
     pathArticles: 11,
+    firstArticles: 3,
   },
   parameters: {
     viewport: { defaultViewport: 'mobile1' },

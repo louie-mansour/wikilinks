@@ -11,6 +11,11 @@
   max-width: 100%;
 }
 
+/* Stack above sibling inputs and page content while the listbox is open */
+.wrap[data-open] {
+  z-index: 100;
+}
+
 /* Visually-hidden label */
 .label {
   position: absolute;

@@ -87,7 +87,7 @@
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 /* Single value style shared by all small cards.
@@ -103,16 +103,35 @@
   font-variant-numeric: tabular-nums;
 }
 
+.statSmallSub {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 3px;
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
+.statSmallSubEmphasis {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ────────────────────────────────────────
    Small card themes — background, border, value color
 ──────────────────────────────────────── */
 .cardHops {
-  background: var(--terra-pale);
-  border-color: var(--terra-light);
-  --card-value-color: var(--terra);
+  grid-column: 2;
+  grid-row: 2;
+  background: var(--white);
+  border-color: var(--sand-mid);
+  --card-value-color: var(--ink-muted);
 }
 
 .cardNodes {
+  grid-column: 3;
+  grid-row: 1;
   background: var(--sand);
   border-color: var(--sand-dark);
   --card-value-color: var(--ink);
@@ -123,15 +142,23 @@
 }
 
 .cardTime {
+  grid-column: 3;
+  grid-row: 2;
   background: var(--clay-pale);
   border-color: var(--clay-border);
   --card-value-color: var(--clay);
 }
 
+.cardTime .statSmallValue {
+  font-size: 28px;
+}
+
 .cardArticles {
-  background: var(--white);
-  border-color: var(--sand-mid);
-  --card-value-color: var(--ink-muted);
+  grid-column: 2;
+  grid-row: 1;
+  background: var(--terra-pale);
+  border-color: var(--terra-light);
+  --card-value-color: var(--terra);
 }
 
 /* ────────────────────────────────────────
@@ -174,6 +201,14 @@
     grid-column: 1 / -1;
     grid-row: auto;
     padding: 14px 16px;
+  }
+
+  .cardHops,
+  .cardNodes,
+  .cardTime,
+  .cardArticles {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .statPaths {

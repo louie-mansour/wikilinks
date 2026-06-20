@@ -12,6 +12,7 @@ export interface SearchResult {
   nodesExplored: number;
   searchTimeMs: number;
   uniqueArticles: number;
+  newArticles: number;
   paths: PathData[];
   graphData: GraphData;
   records: RecordPeriod[];
@@ -34,6 +35,7 @@ const EINSTEIN_QUANTUM: SearchResult = {
   nodesExplored: 8241,
   searchTimeMs: 1200,
   uniqueArticles: 14,
+  newArticles: 2,
   shareCode: 'aE3f9k',
   maxHops: 10,
   maxPaths: 1000,
@@ -334,6 +336,12 @@ function buildGenericResult(start: string, end: string): SearchResult {
     recordPeriod('Past day', prevDay),
   ];
 
+  const newArticles = new Set(
+    paths.flatMap((path) =>
+      path.crumbs.filter((crumb) => crumb.tag === 'first').map((crumb) => crumb.label),
+    ),
+  ).size;
+
   return {
     start,
     end,
@@ -342,6 +350,7 @@ function buildGenericResult(start: string, end: string): SearchResult {
     nodesExplored,
     searchTimeMs,
     uniqueArticles,
+    newArticles,
     paths,
     graphData,
     records,

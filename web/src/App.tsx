@@ -179,6 +179,7 @@ return 0; // 'interesting' = original order
               nodesExplored={formatNumber(result.nodesExplored)}
               searchTime={formatSearchTime(result.searchTimeMs)}
               pathArticles={result.graphData.nodes.length}
+              firstArticles={result.newArticles}
             />
           </PanelEnter>
 

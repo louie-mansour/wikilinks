@@ -8,6 +8,8 @@
 
 /* Same horizontal inset as .sections so the header aligns with cards below */
 .pageHeader {
+  position: relative;
+  z-index: 10;
   padding: 14px 16px 0;
 }
 

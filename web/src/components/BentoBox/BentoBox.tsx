@@ -4,14 +4,27 @@ interface SmallStatCardProps {
   label: string;
   value: React.ReactNode;
   cardClassName: string;
+  subtext?: React.ReactNode;
 }
 
-function SmallStatCard({ label, value, cardClassName }: SmallStatCardProps) {
+function SmallStatCard({ label, value, cardClassName, subtext }: SmallStatCardProps) {
   return (
     <article className={`${styles.bentoCard} ${styles.smallCard} ${cardClassName}`}>
       <span className={styles.statLabel}>{label}</span>
       <span className={styles.statSmallValue}>{value}</span>
+      {subtext ? <span className={styles.statSmallSub}>{subtext}</span> : null}
     </article>
+  );
+}
+
+function firstArticlesSubtext(count: number): React.ReactNode | undefined {
+  if (count <= 0) return undefined;
+  if (count === 1) return "You're the first in the world to discover this one";
+  return (
+    <>
+      You're the first in the world to discover{' '}
+      <span className={styles.statSmallSubEmphasis}>{count}</span> of these
+    </>
   );
 }
 
@@ -31,6 +44,7 @@ export interface BentoBoxProps {
   nodesExplored: number | string;
   searchTime: string;
   pathArticles: number | string;
+  firstArticles?: number;
   className?: string;
 }
 
@@ -42,6 +56,7 @@ export function BentoBox({
   nodesExplored,
   searchTime,
   pathArticles,
+  firstArticles = 0,
   className = '',
 }: BentoBoxProps) {
   return (
@@ -62,9 +77,10 @@ export function BentoBox({
       </article>
 
       <SmallStatCard
-        label="Min hops"
-        value={minHops}
-        cardClassName={styles.cardHops}
+        label="Articles in paths"
+        value={pathArticles}
+        cardClassName={styles.cardArticles}
+        subtext={firstArticlesSubtext(firstArticles)}
       />
 
       <SmallStatCard
@@ -74,9 +90,9 @@ export function BentoBox({
       />
 
       <SmallStatCard
-        label="Articles in paths"
-        value={pathArticles}
-        cardClassName={styles.cardArticles}
+        label="Min hops"
+        value={minHops}
+        cardClassName={styles.cardHops}
       />
 
       <SmallStatCard
