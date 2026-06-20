@@ -64,6 +64,35 @@
 /* ── Loading — three dots march right (primary only) ── */
 .loading {
   cursor: wait;
+  /* Freeze layout/paint so hover cannot fight the dot animation */
+  transform: none !important;
+  background: var(--terra) !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+
+.loading::before,
+.loading::after {
+  animation: none !important;
+  transition: none !important;
+  opacity: 0 !important;
+  max-width: 0 !important;
+  margin-left: 0 !important;
+}
+
+.loading::before {
+  transform: translateX(-100%) !important;
+}
+
+.loading:hover,
+.loading:hover::before,
+.loading:hover::after,
+.loading:hover .buttonLabel {
+  box-shadow: none;
+}
+
+.loading:hover::before {
+  transform: translateX(-100%) !important;
 }
 
 .loadingDots {
@@ -73,7 +102,8 @@
   align-items: flex-end;
   gap: 7px;
   height: 14px;
-  padding: 0 2px;
+  /* Room for the march so dots aren't clipped at the button edge */
+  padding: 0 10px 0 2px;
 }
 
 .dot {
@@ -81,30 +111,13 @@
   height: 7px;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.3;
-  transform: translateX(0) scale(0.75);
-  will-change: transform, opacity;
+  flex-shrink: 0;
 }
 
-.loading::after {
-  max-width: 0 !important;
-  opacity: 0 !important;
-  margin-left: 0 !important;
-}
-
-.loading:hover,
-.loading:hover::before,
-.loading:hover::after,
-.loading:hover .buttonLabel {
-  /* No hover peek while busy */
-  transform: none;
-  box-shadow: none;
-}
-
-.loading:hover::before {
-  transform: translateX(-100%);
-  animation: none;
-  opacity: 0;
+.loading .dot {
+  /* Base values match keyframe endpoints — avoids compositor resets */
+  opacity: 0.28;
+  transform: translateX(0) scale(0.72);
 }
 
 .primary::after {
@@ -150,6 +163,12 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .primary.loading,
+  .primary.loading:hover,
+  .primary.loading:active {
+    transition: none;
+  }
+
   .primary {
     transition:
       background 0.2s ease,
@@ -240,15 +259,15 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .loading .dot {
-    animation: dot-march 0.95s ease-in-out infinite;
+    animation: dot-march 1.05s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
   }
 
   .loading .dot:nth-child(2) {
-    animation-delay: 0.14s;
+    animation-delay: 0.175s;
   }
 
   .loading .dot:nth-child(3) {
-    animation-delay: 0.28s;
+    animation-delay: 0.35s;
   }
 
   @keyframes dot-march {
@@ -257,17 +276,9 @@
       opacity: 0.28;
       transform: translateX(0) scale(0.72);
     }
-    35% {
+    50% {
       opacity: 1;
-      transform: translateX(6px) scale(1.18);
-    }
-    55% {
-      opacity: 0.55;
-      transform: translateX(10px) scale(0.95);
-    }
-    75% {
-      opacity: 0.28;
-      transform: translateX(4px) scale(0.8);
+      transform: translateX(9px) scale(1.18);
     }
   }
 }
