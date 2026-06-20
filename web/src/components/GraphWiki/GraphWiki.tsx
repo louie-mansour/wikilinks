@@ -345,6 +345,27 @@ function wikiUrl(title: string): string {
   return `https://en.wikipedia.org/wiki/${encodeURIComponent(title).replace(/%20/g, '_')}`;
 }
 
+function deviceSupportsHover(): boolean {
+  if (typeof window === 'undefined') return true;
+  return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+}
+
+function positionLabelLink(
+  el: HTMLElement,
+  layout: LabelLayout,
+  fg: ForceGraphMethods<WikiNode, WikiLink>,
+  globalScale: number,
+): void {
+  const center = fg.graph2ScreenCoords(layout.cx, layout.cy);
+  const w = layout.boxW * globalScale;
+  const h = layout.boxH * globalScale;
+  el.style.left = `${center.x - w / 2}px`;
+  el.style.top = `${center.y - h / 2}px`;
+  el.style.width = `${w}px`;
+  el.style.height = `${h}px`;
+  el.style.visibility = 'visible';
+}
+
 interface LabelLayout {
   cx: number;
   cy: number;
@@ -462,9 +483,11 @@ function drawTerminalLabel(
 export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const wrapperRef     = useRef<HTMLDivElement>(null);
   const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
-  const badgeRefs      = useRef<Map<string, HTMLSpanElement>>(new Map());
-  const labelLinkRefs  = useRef<Map<string, HTMLAnchorElement>>(new Map());
+  const badgeRefs           = useRef<Map<string, HTMLSpanElement>>(new Map());
+  const labelLinkRefs       = useRef<Map<string, HTMLAnchorElement>>(new Map());
+  const highlightedLabelRef = useRef<HTMLAnchorElement>(null);
   const [dims, setDims] = useState({ width: 800, height: 440 });
+  const [canHover, setCanHover] = useState(deviceSupportsHover);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredLink, setHoveredLink] = useState<{ source: string; target: string } | null>(null);
 
@@ -479,6 +502,14 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     });
     ro.observe(el);
     return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const update = () => setCanHover(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
   }, []);
 
   // Set initial x/y without pinning — simulation starts from correct positions.
@@ -508,6 +539,14 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     [positionedData.nodes],
   );
 
+  const highlightedInteriorNode = useMemo(() => {
+    if (canHover || !hoveredNodeId) return null;
+    const node = positionedData.nodes.find(n => n.id === hoveredNodeId);
+    if (!node) return null;
+    const variant = resolveVariant(node);
+    return variant === 'start' || variant === 'end' ? null : node;
+  }, [canHover, hoveredNodeId, positionedData.nodes]);
+
   const handleRenderFramePost = useCallback(
     (ctx: CanvasRenderingContext2D, globalScale: number) => {
       const fg = fgRef.current;
@@ -529,17 +568,22 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         const layout = computeLabelLayout(sim, ctx, globalScale, orientation);
         const el = labelLinkRefs.current.get(node.id);
         if (!layout || !el) continue;
-        const center = fg.graph2ScreenCoords(layout.cx, layout.cy);
-        const w = layout.boxW * globalScale;
-        const h = layout.boxH * globalScale;
-        el.style.left = `${center.x - w / 2}px`;
-        el.style.top = `${center.y - h / 2}px`;
-        el.style.width = `${w}px`;
-        el.style.height = `${h}px`;
-        el.style.visibility = 'visible';
+        positionLabelLink(el, layout, fg, globalScale);
+      }
+      const highlightedEl = highlightedLabelRef.current;
+      if (highlightedInteriorNode && highlightedEl) {
+        const layout = computeLabelLayout(
+          highlightedInteriorNode as SimNode,
+          ctx,
+          globalScale,
+          orientation,
+        );
+        if (layout) positionLabelLink(highlightedEl, layout, fg, globalScale);
+      } else if (highlightedEl) {
+        highlightedEl.style.visibility = 'hidden';
       }
     },
-    [newNodes, terminalNodes, orientation],
+    [newNodes, terminalNodes, orientation, highlightedInteriorNode],
   );
 
   useEffect(() => {
@@ -591,7 +635,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   }, [positionedData, orientation]);
 
   return (
-    <div ref={wrapperRef} className={styles.wrapper} style={{ cursor: hoveredNodeId ? 'pointer' : 'default' }}>
+    <div ref={wrapperRef} className={styles.wrapper} style={{ cursor: canHover && hoveredNodeId ? 'pointer' : 'default' }}>
       <div className={styles.legend}>
         <div className={styles.legendTitle}>Legend</div>
         <div className={styles.legendRow}>
@@ -630,6 +674,16 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
             />
           );
         })}
+        {highlightedInteriorNode && (
+          <a
+            href={wikiUrl(nodeDisplayName(highlightedInteriorNode))}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.terminalLabelLink}
+            aria-label={`Open ${nodeDisplayName(highlightedInteriorNode)} on Wikipedia`}
+            ref={highlightedLabelRef}
+          />
+        )}
       </div>
       <ForceGraph2D
         ref={fgRef}
@@ -695,13 +749,26 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
               : undefined;
         }}
         onNodeClick={(node) => {
+          if (!canHover) {
+            setHoveredNodeId(node.id);
+            setHoveredLink(null);
+            return;
+          }
           window.open(wikiUrl(nodeDisplayName(node)), '_blank', 'noopener,noreferrer');
         }}
+        onBackgroundClick={() => {
+          if (!canHover) {
+            setHoveredNodeId(null);
+            setHoveredLink(null);
+          }
+        }}
         onNodeHover={(node) => {
+          if (!canHover) return;
           setHoveredNodeId(node?.id ?? null);
           if (node) setHoveredLink(null);
         }}
         onLinkHover={(link) => {
+          if (!canHover) return;
           setHoveredLink(link ? linkEndpoints(link) : null);
           if (link) setHoveredNodeId(null);
         }}
