@@ -19,7 +19,7 @@ export const WithFirstTag: Story = {
     number: 1,
     crumbs: [
       { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Physics', tag: 'new' },
+      { href: '#', label: 'Physics', tag: 'first' },
       { href: '#', label: 'Wave function', tag: 'rare' },
       { href: '#', label: 'Quantum mechanics', highlighted: true },
     ],
@@ -56,7 +56,7 @@ export const SevenHops: Story = {
     crumbs: [
       { href: '#', label: 'Albert Einstein', highlighted: true },
       { href: '#', label: 'Theory of relativity' },
-      { href: '#', label: 'Spacetime', tag: 'new' },
+      { href: '#', label: 'Spacetime', tag: 'first' },
       { href: '#', label: 'General relativity' },
       { href: '#', label: 'Gravitational wave', tag: 'rare' },
       { href: '#', label: 'LIGO Scientific Collaboration' },
@@ -76,7 +76,7 @@ export const MultipleItems: Story = {
         number={1}
         crumbs={[
           { href: '#', label: 'Albert Einstein', highlighted: true },
-          { href: '#', label: 'Physics', tag: 'new' },
+          { href: '#', label: 'Physics', tag: 'first' },
           { href: '#', label: 'Wave function', tag: 'rare' },
           { href: '#', label: 'Quantum mechanics', highlighted: true },
         ]}

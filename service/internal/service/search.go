@@ -238,7 +238,7 @@ func buildCrumbs(path []string, newSet map[string]struct{}) []Crumb {
 	for i, title := range path {
 		var tag string
 		if _, ok := newSet[title]; ok {
-			tag = "new"
+			tag = "first"
 		}
 		crumbs[i] = Crumb{
 			Href:        "https://en.wikipedia.org/wiki/" + strings.ReplaceAll(title, " ", "_"),

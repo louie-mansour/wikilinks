@@ -55,11 +55,18 @@ func main() {
 	controller.NewSuggest(suggestSvc).Register(mux)
 	controller.NewRandom(randomSvc).Register(mux)
 
+	// Hard searches can take ~20s on the full graph; keep server timeouts above that.
+	const handlerTimeout = 60 * time.Second
+
 	srv := &http.Server{
-		Addr:         ":" + *port,
-		Handler:      chain(mux, withCORS, withTimeout(10*time.Second), withLogging),
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		Addr: ":" + *port,
+		Handler: chain(
+			http.TimeoutHandler(mux, handlerTimeout, `{"error":"request timed out"}`),
+			withCORS,
+			withLogging,
+		),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: handlerTimeout + 5*time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 
@@ -102,16 +109,6 @@ func withCORS(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-func withTimeout(d time.Duration) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx, cancel := context.WithTimeout(r.Context(), d)
-			defer cancel()
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
 }
 
 type statusRecorder struct {

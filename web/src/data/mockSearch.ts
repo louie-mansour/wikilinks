@@ -41,7 +41,7 @@ const EINSTEIN_QUANTUM: SearchResult = {
       id: 1,
       crumbs: [
         { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Physics'), label: 'Physics', tag: 'new' },
+        { href: wikiUrl('Physics'), label: 'Physics', tag: 'first' },
         { href: wikiUrl('Wave function'), label: 'Wave function', tag: 'rare' },
         { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
       ],
@@ -123,7 +123,7 @@ const EINSTEIN_QUANTUM: SearchResult = {
       crumbs: [
         { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
         { href: wikiUrl('Germany'), label: 'Germany' },
-        { href: wikiUrl('Niels Bohr'), label: 'Niels Bohr', tag: 'new' },
+        { href: wikiUrl('Niels Bohr'), label: 'Niels Bohr', tag: 'first' },
         { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
       ],
     },
@@ -131,7 +131,7 @@ const EINSTEIN_QUANTUM: SearchResult = {
       id: 11,
       crumbs: [
         { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Physics'), label: 'Physics', tag: 'new' },
+        { href: wikiUrl('Physics'), label: 'Physics', tag: 'first' },
         { href: wikiUrl('Thermodynamics'), label: 'Thermodynamics' },
         { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
       ],
@@ -177,15 +177,15 @@ const EINSTEIN_QUANTUM: SearchResult = {
     {
       period: 'All time',
       rows: [
-        { key: 'Most paths', value: '300' },
+        { key: 'Most paths', value: '300', badge: true },
         { key: 'Most nodes', value: '12,048', badge: true },
-        { key: 'Longest path', value: '9 hops' },
+        { key: 'Longest path', value: '9 hops', badge: true },
       ],
     },
     {
       period: 'Past week',
       rows: [
-        { key: 'Most paths', value: '300' },
+        { key: 'Most paths', value: '300', badge: true },
         { key: 'Most nodes', value: '5,211' },
         { key: 'Longest path', value: '8 hops' },
       ],
@@ -194,8 +194,8 @@ const EINSTEIN_QUANTUM: SearchResult = {
       period: 'Past day',
       rows: [
         { key: 'Most paths', value: '300' },
-        { key: 'Most nodes', value: '3,892' },
-        { key: 'Longest path', value: '7 hops' },
+        { key: 'Most nodes', value: '3,892', badge: true },
+        { key: 'Longest path', value: '7 hops', badge: true },
       ],
     },
   ],
@@ -264,7 +264,7 @@ function buildGenericResult(start: string, end: string): SearchResult {
   // ── Paths ─────────────────────────────────────────────────────────────────
   const paths: PathData[] = [];
   const pathInters = seededPick(INTERMEDIATES.filter((t) => t !== start && t !== end), seed + 2, pathsFound);
-  const TAGS: Array<'new' | 'rare' | 'uncommon' | undefined> = ['new', 'rare', 'uncommon', undefined, undefined];
+  const TAGS: Array<'first' | 'rare' | 'uncommon' | undefined> = ['first', 'rare', 'uncommon', undefined, undefined];
   for (let i = 0; i < pathsFound; i++) {
     const inter = pathInters[i % pathInters.length];
     const tag = TAGS[(i + s(i + 10)) % TAGS.length];
@@ -304,7 +304,7 @@ function buildGenericResult(start: string, end: string): SearchResult {
   ): RecordPeriod {
     const pathsVal = Math.max(pathsFound, prev.paths);
     const nodesVal = Math.max(nodesExplored, prev.nodes);
-    const hopsVal = Math.min(hops, prev.hops);
+    const hopsVal = Math.max(hops, prev.hops);
     return {
       period,
       rows: [
@@ -321,7 +321,7 @@ function buildGenericResult(start: string, end: string): SearchResult {
         {
           key: 'Longest path',
           value: `${hopsVal} hops`,
-          badge: hops < prev.hops,
+          badge: hops > prev.hops,
         },
       ],
     };

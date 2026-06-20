@@ -14,23 +14,23 @@
   line-height: 1.6;
 }
 
-/* new = green, rare = yellow, uncommon = red, record = green */
-.variantNew {
-  background: var(--sage-pale);
-  color: var(--sage);
-  border-color: var(--sage-light);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--sage) 22%, transparent),
-    0 2px 8px color-mix(in srgb, var(--sage) 20%, transparent);
-}
-
-.rare {
+/* first = clay, rare = sage, uncommon = terra, record = clay */
+.first {
   background: var(--clay-pale);
   color: var(--clay);
   border-color: var(--clay-border);
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--clay) 25%, transparent),
     0 2px 8px color-mix(in srgb, var(--clay) 22%, transparent);
+}
+
+.rare {
+  background: var(--sage-pale);
+  color: var(--sage);
+  border-color: var(--sage-light);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--sage) 22%, transparent),
+    0 2px 8px color-mix(in srgb, var(--sage) 20%, transparent);
 }
 
 .uncommon {
@@ -43,21 +43,21 @@
 }
 
 .record {
-  background: var(--sage-pale);
-  color: var(--sage);
-  border-color: var(--sage-light);
+  background: var(--clay-pale);
+  color: var(--clay);
+  border-color: var(--clay-border);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--sage) 22%, transparent),
-    0 2px 8px color-mix(in srgb, var(--sage) 20%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--clay) 25%, transparent),
+    0 2px 8px color-mix(in srgb, var(--clay) 22%, transparent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .variantNew {
-    animation: badge-glow-sage 2s ease-in-out infinite;
+  .first {
+    animation: badge-glow-clay 2s ease-in-out infinite;
   }
 
   .rare {
-    animation: badge-glow-clay 2.4s ease-in-out infinite;
+    animation: badge-glow-sage 2.4s ease-in-out infinite;
   }
 
   .uncommon {
@@ -65,7 +65,7 @@
   }
 
   .record {
-    animation: badge-glow-sage 2s ease-in-out infinite;
+    animation: badge-glow-clay 2s ease-in-out infinite;
   }
 
   @keyframes badge-glow-clay {

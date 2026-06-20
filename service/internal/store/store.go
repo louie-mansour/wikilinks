@@ -135,11 +135,11 @@ func (s *Store) QueryRecords() ([]RecordPeriod, error) {
 	periods := make([]RecordPeriod, 0, len(windows))
 	for _, w := range windows {
 		var maxPaths, maxNodes sql.NullInt64
-		var minHops sql.NullInt64
+		var maxHops sql.NullInt64
 		err := s.db.QueryRow(`
-			SELECT MAX(paths_found), MAX(nodes_explored), MIN(min_hops)
+			SELECT MAX(paths_found), MAX(nodes_explored), MAX(min_hops)
 			FROM searches WHERE created_at >= ?
-		`, w.threshold).Scan(&maxPaths, &maxNodes, &minHops)
+		`, w.threshold).Scan(&maxPaths, &maxNodes, &maxHops)
 		if err != nil {
 			return nil, fmt.Errorf("query records for %q: %w", w.period, err)
 		}
@@ -154,66 +154,81 @@ func (s *Store) QueryRecords() ([]RecordPeriod, error) {
 			Rows: []RecordRow{
 				{Key: "Most paths", Value: fmt.Sprintf("%d", maxPaths.Int64)},
 				{Key: "Most nodes", Value: fmt.Sprintf("%d", maxNodes.Int64)},
-				{Key: "Shortest path", Value: fmt.Sprintf("%d hops", minHops.Int64)},
+				{Key: "Longest path", Value: fmt.Sprintf("%d hops", maxHops.Int64)},
 			},
 		})
 	}
 	return periods, nil
 }
 
-// AnnotateRecordBadges marks rows where the current search set a new record in each window.
+// AnnotateRecordBadges marks rows where the current search set a new all-time record
+// and its value is the displayed high-water mark for that row (across all time windows).
 func AnnotateRecordBadges(current, previous []RecordPeriod, meta SearchMeta) []RecordPeriod {
-	prevByPeriod := make(map[string]map[string]string, len(previous))
-	for _, p := range previous {
-		rows := make(map[string]string, len(p.Rows))
-		for _, r := range p.Rows {
-			rows[r.Key] = r.Value
-		}
-		prevByPeriod[p.Period] = rows
-	}
+	allTimePrev := periodRows(previous, "All time")
 
 	for i, period := range current {
-		prevRows := prevByPeriod[period.Period]
 		for j, row := range period.Rows {
-			current[i].Rows[j].Badge = isNewRecord(row.Key, row.Value, prevRows, meta)
+			current[i].Rows[j].Badge = isNewRecord(row.Key, row.Value, allTimePrev, meta)
 		}
 	}
 	return current
 }
 
-func isNewRecord(key, displayed string, prevRows map[string]string, meta SearchMeta) bool {
+func periodRows(periods []RecordPeriod, name string) map[string]string {
+	for _, p := range periods {
+		if p.Period == name {
+			rows := make(map[string]string, len(p.Rows))
+			for _, r := range p.Rows {
+				rows[r.Key] = r.Value
+			}
+			return rows
+		}
+	}
+	return nil
+}
+
+func isNewRecord(key, displayed string, allTimePrev map[string]string, meta SearchMeta) bool {
+	if !searchMatchesDisplayed(key, displayed, meta) {
+		return false
+	}
+	if allTimePrev == nil {
+		return true
+	}
+	return beatsAllTimePrevious(key, allTimePrev, meta)
+}
+
+func searchMatchesDisplayed(key, displayed string, meta SearchMeta) bool {
 	switch key {
 	case "Most paths":
-		displayedVal := parseRecordInt(displayed)
-		if meta.PathsFound != displayedVal {
-			return false
-		}
-		if prevRows == nil {
-			return true
-		}
-		return meta.PathsFound > parseRecordInt(prevRows["Most paths"])
+		return meta.PathsFound == parseRecordInt(displayed)
 	case "Most nodes":
-		displayedVal := parseRecordInt(displayed)
-		if meta.NodesExplored != displayedVal {
-			return false
-		}
-		if prevRows == nil {
-			return true
-		}
-		return meta.NodesExplored > parseRecordInt(prevRows["Most nodes"])
-	case "Shortest path":
-		displayedVal := parseRecordHops(displayed)
-		if meta.MinHops != displayedVal {
-			return false
-		}
-		if prevRows == nil {
-			return true
-		}
-		prev := parseRecordHops(prevRows["Shortest path"])
-		return prev == 0 || meta.MinHops < prev
+		return meta.NodesExplored == parseRecordInt(displayed)
+	case "Longest path", "Shortest path":
+		return meta.MinHops == parseRecordHops(displayed)
 	default:
 		return false
 	}
+}
+
+func beatsAllTimePrevious(key string, prev map[string]string, meta SearchMeta) bool {
+	switch key {
+	case "Most paths":
+		return meta.PathsFound > parseRecordInt(prev["Most paths"])
+	case "Most nodes":
+		return meta.NodesExplored > parseRecordInt(prev["Most nodes"])
+	case "Longest path", "Shortest path":
+		prevHops := prevPathHops(prev)
+		return meta.MinHops > prevHops
+	default:
+		return false
+	}
+}
+
+func prevPathHops(prev map[string]string) int {
+	if v, ok := prev["Longest path"]; ok {
+		return parseRecordHops(v)
+	}
+	return parseRecordHops(prev["Shortest path"])
 }
 
 func parseRecordInt(s string) int {

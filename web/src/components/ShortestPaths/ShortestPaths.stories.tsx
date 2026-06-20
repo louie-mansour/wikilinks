@@ -11,7 +11,7 @@ const SAMPLE_PATHS = [
     id: 1,
     crumbs: [
       { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Physics', tag: 'new' as const },
+      { href: '#', label: 'Physics', tag: 'first' as const },
       { href: '#', label: 'Wave function', tag: 'rare' as const },
       { href: '#', label: 'Quantum mechanics', highlighted: true },
     ],
@@ -97,7 +97,7 @@ export const FewPaths: Story = {
 const SEVEN_HOP_PATH = [
   { href: '#', label: 'Albert Einstein', highlighted: true },
   { href: '#', label: 'Theory of relativity' },
-  { href: '#', label: 'Spacetime', tag: 'new' as const },
+  { href: '#', label: 'Spacetime', tag: 'first' as const },
   { href: '#', label: 'General relativity' },
   { href: '#', label: 'Gravitational wave', tag: 'rare' as const },
   { href: '#', label: 'LIGO Scientific Collaboration' },

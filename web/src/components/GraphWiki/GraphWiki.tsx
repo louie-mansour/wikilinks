@@ -714,15 +714,15 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
       <div className={styles.legend}>
         <div className={styles.legendTitle}>Legend</div>
         <div className={styles.legendRow}>
-          <Badge variant="new" />
-          New article
+          <Badge variant="first" />
+          First discovered
         </div>
       </div>
       <div className={styles.badgeOverlay}>
         {newNodes.map(node => (
           <Badge
             key={node.id}
-            variant="new"
+            variant="first"
             className={styles.nodeBadge}
             ref={(el) => {
               if (el) badgeRefs.current.set(node.id, el);

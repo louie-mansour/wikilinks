@@ -1,20 +1,20 @@
 import { forwardRef } from 'react';
 import styles from './Badge.module.css';
 
-export type BadgeVariant = 'new' | 'rare' | 'uncommon' | 'record';
+export type BadgeVariant = 'first' | 'rare' | 'uncommon' | 'record';
 
 const VARIANT_CLASS: Record<BadgeVariant, string> = {
-  new: styles.variantNew,
+  first: styles.first,
   rare: styles.rare,
   uncommon: styles.uncommon,
   record: styles.record,
 };
 
 const VARIANT_LABEL: Record<BadgeVariant, string> = {
-  new: '★ new',
+  first: '★ first',
   rare: '★ rare',
   uncommon: '★ uncommon',
-  record: '★ new record',
+  record: '★ record',
 };
 
 interface BadgeProps {

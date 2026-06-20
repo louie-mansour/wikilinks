@@ -5,7 +5,7 @@ export interface Crumb {
   href: string;
   label: string;
   highlighted?: boolean;
-  tag?: 'new' | 'rare' | 'uncommon';
+  tag?: 'first' | 'rare' | 'uncommon';
 }
 
 interface PathItemProps {
