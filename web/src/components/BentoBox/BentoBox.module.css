@@ -9,6 +9,7 @@
   grid-template-columns: 2fr 1fr 1fr;
   grid-template-rows: auto auto;
   gap: 8px;
+  min-width: 0;
 }
 
 /* ────────────────────────────────────────
@@ -48,6 +49,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-width: 0;
 }
 
 .statPaths {
@@ -58,31 +60,34 @@
   letter-spacing: -3px;
   color: var(--sage);
   line-height: 1;
-  margin-bottom: 6px;
 }
 
 .statSub {
   display: block;
   font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 400;
   font-style: italic;
+  font-size: 13px;
   color: var(--ink-muted);
-  line-height: 1.4;
+  margin-top: 5px;
+  line-height: 1.45;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+.statSubArticle {
+  font-weight: 700;
+  overflow-wrap: break-word;
 }
 
 /* ────────────────────────────────────────
-   Small cards (cards 2–5) — 3-row inner grid
-   Row 1 (auto): label — always top-aligned
-   Row 2 (1fr):  value — bottom-aligned into its row via align-self
-   Row 3 (auto): note — always at the same bottom position
-   Cards in the same outer grid row share equal height, so all
-   three items land at identical vertical positions across cards.
+   Small cards (cards 2–5)
 ──────────────────────────────────────── */
 .smallCard {
   padding: 14px 16px;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* Single value style shared by all small cards.
@@ -95,17 +100,7 @@
   letter-spacing: -1px;
   line-height: 1;
   color: var(--card-value-color, var(--ink));
-  align-self: end;
-  padding-bottom: 4px;
-}
-
-.statNote {
-  display: block;
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--ink-muted);
-  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ────────────────────────────────────────
@@ -121,6 +116,10 @@
   background: var(--sand);
   border-color: var(--sand-dark);
   --card-value-color: var(--ink);
+}
+
+.cardNodes .statSmallValue {
+  letter-spacing: -0.5px;
 }
 
 .cardTime {
@@ -157,7 +156,7 @@
 
   .bentoCard:hover .statPaths,
   .bentoCard:hover .statSmallValue {
-    transform: scale(1.08);
+    transform: scale(1.16);
   }
 }
 
@@ -174,19 +173,10 @@
   .cardPaths {
     grid-column: 1 / -1;
     grid-row: auto;
-    flex-direction: row;
-    align-items: center;
     padding: 14px 16px;
-    gap: 16px;
   }
 
   .statPaths {
     font-size: 48px;
-    margin-bottom: 0;
-  }
-
-  /* Stack label and subtitle vertically within the row layout */
-  .cardPaths .statLabel {
-    margin-bottom: 2px;
   }
 }

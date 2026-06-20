@@ -17,13 +17,14 @@ PAGE_FIXTURE = Path(__file__).parent / "fixtures" / "page_sample.sql"
 class PageSqlTest(unittest.TestCase):
     def test_iter_article_titles_filters_namespace(self) -> None:
         titles = dict(iter_article_titles(PAGE_FIXTURE))
+        # _unescape_sql_string converts underscores to spaces
         self.assertEqual(
             titles,
             {
-                1: "Main_Page",
-                2: "Missing_A",
-                4: "Article_A",
-                5: "Article_B",
+                1: "Main Page",
+                2: "Missing A",
+                4: "Article A",
+                5: "Article B",
             },
         )
 
@@ -43,11 +44,11 @@ class KonectEntTest(unittest.TestCase):
             self.assertEqual(count, 5)
             self.assertEqual(
                 out.read_text(encoding="utf-8"),
-                "Main_Page\n"
-                "Missing_A\n"
+                "Main Page\n"
+                "Missing A\n"
                 "Page_3\n"
-                "Article_A\n"
-                "Article_B\n",
+                "Article A\n"
+                "Article B\n",
             )
 
 

@@ -6,6 +6,7 @@ import { assignGraphLabels, buildGraphForDegrees } from './buildGraphData';
 export interface SearchResult {
   start: string;
   end: string;
+  noPathFound?: boolean;
   pathsFound: number;
   minHops: number;
   nodesExplored: number;

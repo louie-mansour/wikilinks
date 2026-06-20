@@ -24,12 +24,21 @@ _LINKTARGET_ROW_RE = re.compile(
 # (pl_from, pl_from_namespace, pl_target_id)
 _PAGELINKS_ROW_RE = re.compile(r"\((\d+),(\d+),(\d+)\)")
 
+# Matches one row in INSERT INTO `redirect` VALUES (...),(...);
+# (rd_from, rd_namespace, rd_title, rd_interwiki, rd_fragment)
+_REDIRECT_ROW_RE = re.compile(
+    r"\((\d+),(\d+),'((?:[^'\\]|\\.)*)'",
+)
+
 PAGE_SQL_URL = "https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-page.sql.gz"
 LINKTARGET_SQL_URL = (
     "https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-linktarget.sql.gz"
 )
 PAGELINKS_SQL_URL = (
     "https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-pagelinks.sql.gz"
+)
+REDIRECT_SQL_URL = (
+    "https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-redirect.sql.gz"
 )
 
 
@@ -104,6 +113,21 @@ def iter_linktargets(path: Path):
         lt_namespaces = np.array([m[1] for m in matches], dtype=np.int32)
         lt_titles = [_unescape_sql_string(m[2]) for m in matches]
         yield lt_ids, lt_namespaces, lt_titles
+
+
+def iter_redirects(path: Path):
+    """Yield (rd_from, rd_namespaces, rd_titles) per chunk from redirect.sql(.gz).
+
+    rd_from/rd_namespaces are numpy arrays; rd_titles is a parallel list of
+    unescaped title strings (the redirect *target*, not the redirect page itself).
+    """
+    for matches in iter_sql_value_chunks(path, _REDIRECT_ROW_RE):
+        if not matches:
+            continue
+        rd_from = np.array([m[0] for m in matches], dtype=np.uint32)
+        rd_namespaces = np.array([m[1] for m in matches], dtype=np.int32)
+        rd_titles = [_unescape_sql_string(m[2]) for m in matches]
+        yield rd_from, rd_namespaces, rd_titles
 
 
 def iter_pagelinks(path: Path):

@@ -24,6 +24,7 @@ MANIFEST_NAME = ".build-title-index-manifest.json"
 DEFAULT_INPUT = "enwiki-latest-page.sql.gz"
 ENTITIES_OUTPUT = "entities.tsv"
 PAGE_IDS_OUTPUT = "wiki_page_ids.tsv"
+REDIRECT_TITLES_OUTPUT = "redirect_titles.tsv"
 PROGRESS_INTERVAL = 1_000_000
 
 
@@ -33,6 +34,7 @@ class TitleIndexStats:
     ns0_total: int = 0
     redirects_skipped: int = 0
     entities_written: int = 0
+    redirect_titles_written: int = 0
 
     def as_dict(self) -> dict[str, int]:
         return {
@@ -40,23 +42,31 @@ class TitleIndexStats:
             "ns0_total": self.ns0_total,
             "redirects_skipped": self.redirects_skipped,
             "entities_written": self.entities_written,
+            "redirect_titles_written": self.redirect_titles_written,
         }
 
 
-def build_title_index(inp: Path, entities_out: Path, page_ids_out: Path) -> TitleIndexStats:
+def build_title_index(
+    inp: Path, entities_out: Path, page_ids_out: Path, redirect_titles_out: Path
+) -> TitleIndexStats:
     stats = TitleIndexStats()
     entities_tmp = entities_out.with_suffix(entities_out.suffix + ".tmp")
     page_ids_tmp = page_ids_out.with_suffix(page_ids_out.suffix + ".tmp")
+    redirect_titles_tmp = redirect_titles_out.with_suffix(redirect_titles_out.suffix + ".tmp")
 
-    with entities_tmp.open("w", encoding="utf-8") as entities_file, page_ids_tmp.open(
-        "w", encoding="utf-8"
-    ) as page_ids_file:
+    with (
+        entities_tmp.open("w", encoding="utf-8") as entities_file,
+        page_ids_tmp.open("w", encoding="utf-8") as page_ids_file,
+        redirect_titles_tmp.open("w", encoding="utf-8") as redirect_titles_file,
+    ):
         for page_id, namespace, title, is_redirect in iter_pages(inp):
             stats.pages_read += 1
             if namespace == 0:
                 stats.ns0_total += 1
                 if is_redirect:
                     stats.redirects_skipped += 1
+                    redirect_titles_file.write(f"{page_id}\t{title}\n")
+                    stats.redirect_titles_written += 1
                 else:
                     entities_file.write(f"{title}\n")
                     page_ids_file.write(f"{page_id}\n")
@@ -70,6 +80,7 @@ def build_title_index(inp: Path, entities_out: Path, page_ids_out: Path) -> Titl
 
     entities_tmp.replace(entities_out)
     page_ids_tmp.replace(page_ids_out)
+    redirect_titles_tmp.replace(redirect_titles_out)
     return stats
 
 
@@ -78,7 +89,8 @@ def run(inp: Path, out_dir: Path, *, force: bool = False) -> None:
     out_dir = out_dir.resolve()
     entities_out = out_dir / ENTITIES_OUTPUT
     page_ids_out = out_dir / PAGE_IDS_OUTPUT
-    outputs = [entities_out, page_ids_out]
+    redirect_titles_out = out_dir / REDIRECT_TITLES_OUTPUT
+    outputs = [entities_out, page_ids_out, redirect_titles_out]
 
     if not inp.is_file():
         raise SystemExit(f"build_title_index: input not found: {inp}")
@@ -90,8 +102,8 @@ def run(inp: Path, out_dir: Path, *, force: bool = False) -> None:
         print(f"build_title_index: skip {out_dir} (up to date, {sizes})")
         return
 
-    print(f"build_title_index: {inp} -> {entities_out}, {page_ids_out}")
-    stats = build_title_index(inp, entities_out, page_ids_out)
+    print(f"build_title_index: {inp} -> {entities_out}, {page_ids_out}, {redirect_titles_out}")
+    stats = build_title_index(inp, entities_out, page_ids_out, redirect_titles_out)
 
     write_stage_manifest(
         out_dir,
@@ -103,6 +115,7 @@ def run(inp: Path, out_dir: Path, *, force: bool = False) -> None:
     print(
         f"build_title_index: done -> {out_dir} ({sizes}, "
         f"{stats.entities_written:,} entities, "
+        f"{stats.redirect_titles_written:,} redirect titles written, "
         f"{stats.redirects_skipped:,} redirects skipped, "
         f"{stats.ns0_total:,} ns0 total, {stats.pages_read:,} pages read)"
     )

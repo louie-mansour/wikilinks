@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"hash/fnv"
 	"strings"
@@ -10,10 +9,6 @@ import (
 	"github.com/louiemansour/wikilinks/service/internal/graph"
 )
 
-var (
-	ErrNoPath      = errors.New("no path found between the two articles")
-	ErrPathTooLong = errors.New("no path found within 6 degrees")
-)
 
 // ErrTitleNotFound is returned when a title is not in the graph.
 type ErrTitleNotFound struct{ Title string }
@@ -22,10 +17,11 @@ func (e ErrTitleNotFound) Error() string {
 	return fmt.Sprintf("article not found: %q", e.Title)
 }
 
-// SearchResult is the response payload for a successful BFS search.
+// SearchResult is the response payload for a BFS search (found or not found).
 type SearchResult struct {
 	Start          string         `json:"start"`
 	End            string         `json:"end"`
+	NoPathFound    bool           `json:"noPathFound,omitempty"`
 	PathsFound     int            `json:"pathsFound"`
 	MinHops        int            `json:"minHops"`
 	NodesExplored  int            `json:"nodesExplored"`
@@ -102,10 +98,17 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 	elapsed := time.Since(t0)
 
 	if !found {
-		if result.ExceededMaxDepth {
-			return nil, ErrPathTooLong
-		}
-		return nil, ErrNoPath
+		return &SearchResult{
+			Start:         from,
+			End:           to,
+			NoPathFound:   true,
+			NodesExplored: result.NodesExplored,
+			SearchTimeMs:  elapsed.Milliseconds(),
+			Paths:         []PathData{},
+			GraphData:     buildNoPathGraphData(from, to),
+			Records:       []RecordPeriod{},
+			ShareCode:     buildShareCode(from, to),
+		}, nil
 	}
 
 	allPaths := make([][]string, len(result.Paths))
@@ -142,6 +145,16 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 		Records:        []RecordPeriod{},
 		ShareCode:      buildShareCode(from, to),
 	}, nil
+}
+
+func buildNoPathGraphData(from, to string) GraphData {
+	return GraphData{
+		Nodes: []WikiNode{
+			{ID: from, Variant: "start", Label: from},
+			{ID: to, Variant: "end", Label: to},
+		},
+		Links: []WikiLink{},
+	}
 }
 
 func buildGraphData(allPaths [][]string) GraphData {

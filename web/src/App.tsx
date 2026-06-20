@@ -29,6 +29,7 @@ export function App() {
   const [startArticle, setStartArticle] = useState('');
   const [endArticle, setEndArticle] = useState('');
   const [result, setResult] = useState<SearchResult | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [isRouletting, setIsRouletting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [sortOrder, setSortOrder] = useState('interesting');
@@ -91,10 +92,16 @@ export function App() {
       }
 
       setIsSearching(true);
-      const data = await searchPaths(resolvedStart, resolvedEnd);
-      setResult(data);
-      setVisibleCount(PAGE_SIZE);
-      setSortOrder('interesting');
+      setSearchError(null);
+      try {
+        const data = await searchPaths(resolvedStart, resolvedEnd);
+        setResult(data);
+        setVisibleCount(PAGE_SIZE);
+        setSortOrder('interesting');
+      } catch (err) {
+        setResult(null);
+        setSearchError(err instanceof Error ? err.message : 'Search failed');
+      }
     } finally {
       setIsRouletting(false);
       setIsSearching(false);
@@ -145,15 +152,22 @@ export function App() {
 
       {isRouletting || isSearching ? (
         <LoadingState phase={isRouletting ? 'articles' : 'paths'} />
+      ) : searchError ? (
+        <EmptyState hint={searchError} />
+      ) : result?.noPathFound ? (
+        <div className={styles.sections} key={`${result.start}|${result.end}`}>
+          <GraphWiki graphData={result.graphData} />
+          <EmptyState hint={`No path found between "${result.start}" and "${result.end}" within 6 degrees of separation.`} />
+        </div>
       ) : result ? (
         <div className={styles.sections} key={`${result.start}|${result.end}`}>
           <GraphWiki graphData={result.graphData} />
 
           <BentoBox
             pathsFound={formatNumber(result.pathsFound)}
-            pathsSub={`${result.minHops} hops each — shortest possible`}
+            fromArticle={result.start}
+            toArticle={result.end}
             minHops={result.minHops}
-            hopsNote="fewest possible"
             nodesExplored={formatNumber(result.nodesExplored)}
             searchTime={formatSearchTime(result.searchTimeMs)}
             uniqueArticles={result.uniqueArticles}

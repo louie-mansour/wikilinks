@@ -20,15 +20,12 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     pathsFound: 247,
-    pathsSub: '4 hops each — shortest possible',
+    fromArticle: 'Philosophy',
+    toArticle: 'Banana',
     minHops: 4,
-    hopsNote: 'fewest possible',
     nodesExplored: '8,241',
-    nodesNote: 'across 3 BFS layers',
     searchTime: '1.2s',
-    timeNote: 'bidirectional BFS',
     uniqueArticles: 14,
-    articlesNote: 'in shortest paths',
   },
 };
 
@@ -38,9 +35,9 @@ export const Default: Story = {
 export const FewPaths: Story = {
   args: {
     pathsFound: 3,
-    pathsSub: '3 hops each',
+    fromArticle: 'Cat',
+    toArticle: 'Dog',
     minHops: 3,
-    hopsNote: 'fewest possible',
     nodesExplored: '412',
     searchTime: '0.3s',
     uniqueArticles: 5,
@@ -53,27 +50,30 @@ export const FewPaths: Story = {
 export const ManyPaths: Story = {
   args: {
     pathsFound: '1,024',
-    pathsSub: '5 hops each',
+    fromArticle: 'Mathematics',
+    toArticle: 'Music',
     minHops: 5,
-    hopsNote: 'fewest possible',
     nodesExplored: '24,831',
-    nodesNote: 'across 5 BFS layers',
     searchTime: '4.7s',
-    timeNote: 'bidirectional BFS',
     uniqueArticles: 38,
-    articlesNote: 'in shortest paths',
   },
 };
 
 /* ────────────────────────────────────────
-   NoNotes — all sub-text omitted
+   LongArticleNames — wrap stress test
 ──────────────────────────────────────── */
-export const NoNotes: Story = {
+export const LongArticleNames: Story = {
   args: {
-    pathsFound: 247,
+    pathsFound: 20,
+    fromArticle: 'International Covenant on Civil and Political Rights',
+    toArticle:
+      'History of the National Register of Historic Places listings in Manhattan above 59th to 110th Streets',
     minHops: 4,
-    nodesExplored: '8,241',
-    searchTime: '1.2s',
-    uniqueArticles: 14,
+    nodesExplored: '2,104',
+    searchTime: '0.9s',
+    uniqueArticles: 11,
+  },
+  parameters: {
+    viewport: { defaultViewport: 'mobile1' },
   },
 };

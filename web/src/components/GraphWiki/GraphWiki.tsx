@@ -222,6 +222,44 @@ function nodeDisplayName(node: WikiNode): string {
   return node.label ?? node.id;
 }
 
+function wikiUrl(title: string): string {
+  return `https://en.wikipedia.org/wiki/${encodeURIComponent(title).replace(/%20/g, '_')}`;
+}
+
+interface LabelLayout {
+  cx: number;
+  cy: number;
+  boxW: number;
+  boxH: number;
+}
+
+function computeLabelLayout(
+  node: SimNode,
+  ctx: CanvasRenderingContext2D,
+  globalScale: number,
+): LabelLayout | null {
+  if (node.x == null || node.y == null) return null;
+
+  const variant = resolveVariant(node);
+  const text = nodeDisplayName(node);
+  const isTerminal = variant === 'start' || variant === 'end';
+  const fontWeight = isTerminal ? 700 : 500;
+  const fontSize = LABEL_FONT_SIZE / globalScale;
+  const padY = LABEL_PAD_Y / globalScale;
+  const padX = LABEL_PAD_X / globalScale;
+
+  ctx.font = `${fontWeight} ${fontSize}px ${FONT_UI}`;
+  const textW = ctx.measureText(text).width;
+  const boxW = textW + padX * 2;
+  const boxH = fontSize * 1.2 + padY * 2;
+
+  const nodeR = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
+  const cx = node.x;
+  const cy = node.y - nodeR - boxH / 2 - SPACE_2 / globalScale;
+
+  return { cx, cy, boxW, boxH };
+}
+
 function roundRect(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -254,21 +292,12 @@ function drawLabel(
   const variant = resolveVariant(node);
   const text = nodeDisplayName(node);
   const isTerminal = variant === 'start' || variant === 'end';
-  const fontWeight = isTerminal ? 700 : 500;
-  const fontSize = LABEL_FONT_SIZE / globalScale;
-  const padY = LABEL_PAD_Y / globalScale;
-  const padX = LABEL_PAD_X / globalScale;
   const radius = (isTerminal ? RADIUS_MD : RADIUS_SM) / globalScale;
   const borderW = BORDER_STD / globalScale;
+  const layout = computeLabelLayout(node, ctx, globalScale);
+  if (!layout) return;
 
-  ctx.font = `${fontWeight} ${fontSize}px ${FONT_UI}`;
-  const textW = ctx.measureText(text).width;
-  const boxW = textW + padX * 2;
-  const boxH = fontSize * 1.2 + padY * 2;
-
-  const nodeR = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
-  const cx = node.x!;
-  const cy = node.y! - nodeR - boxH / 2 - SPACE_2 / globalScale;
+  const { cx, cy, boxW, boxH } = layout;
   const x = cx - boxW / 2;
   const y = cy - boxH / 2;
 
@@ -308,6 +337,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
   const initialFitDone = useRef(false);
   const badgeRefs      = useRef<Map<string, HTMLSpanElement>>(new Map());
+  const labelLinkRefs  = useRef<Map<string, HTMLAnchorElement>>(new Map());
   const [dims, setDims] = useState({ width: 800, height: 440 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredLink, setHoveredLink] = useState<{ source: string; target: string } | null>(null);
@@ -340,8 +370,13 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     [positionedData.nodes],
   );
 
+  const terminalNodes = useMemo(
+    () => positionedData.nodes.filter(n => resolveVariant(n) === 'start' || resolveVariant(n) === 'end'),
+    [positionedData.nodes],
+  );
+
   const handleRenderFramePost = useCallback(
-    (_ctx: CanvasRenderingContext2D, globalScale: number) => {
+    (ctx: CanvasRenderingContext2D, globalScale: number) => {
       const fg = fgRef.current;
       if (!fg) return;
       for (const node of newNodes) {
@@ -356,8 +391,22 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           el.style.visibility = 'visible';
         }
       }
+      for (const node of terminalNodes) {
+        const sim = node as SimNode;
+        const layout = computeLabelLayout(sim, ctx, globalScale);
+        const el = labelLinkRefs.current.get(node.id);
+        if (!layout || !el) continue;
+        const center = fg.graph2ScreenCoords(layout.cx, layout.cy);
+        const w = layout.boxW * globalScale;
+        const h = layout.boxH * globalScale;
+        el.style.left = `${center.x - w / 2}px`;
+        el.style.top = `${center.y - h / 2}px`;
+        el.style.width = `${w}px`;
+        el.style.height = `${h}px`;
+        el.style.visibility = 'visible';
+      }
     },
-    [newNodes],
+    [newNodes, terminalNodes],
   );
 
   useEffect(() => {
@@ -423,6 +472,25 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           />
         ))}
       </div>
+      <div className={styles.labelOverlay}>
+        {terminalNodes.map(node => {
+          const title = nodeDisplayName(node);
+          return (
+            <a
+              key={node.id}
+              href={wikiUrl(title)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.terminalLabelLink}
+              aria-label={`Open ${title} on Wikipedia`}
+              ref={(el) => {
+                if (el) labelLinkRefs.current.set(node.id, el);
+                else labelLinkRefs.current.delete(node.id);
+              }}
+            />
+          );
+        })}
+      </div>
       <ForceGraph2D
         ref={fgRef}
         width={dims.width}
@@ -487,12 +555,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
               : undefined;
         }}
         onNodeClick={(node) => {
-          const title = node.label ?? node.id;
-          window.open(
-            `https://en.wikipedia.org/wiki/${encodeURIComponent(title).replace(/%20/g, '_')}`,
-            '_blank',
-            'noopener,noreferrer',
-          );
+          window.open(wikiUrl(nodeDisplayName(node)), '_blank', 'noopener,noreferrer');
         }}
         onNodeHover={(node) => {
           setHoveredNodeId(node?.id ?? null);

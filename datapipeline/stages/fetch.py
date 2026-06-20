@@ -17,6 +17,7 @@ from datapipeline.lib.page_sql import (
     LINKTARGET_SQL_URL,
     PAGE_SQL_URL,
     PAGELINKS_SQL_URL,
+    REDIRECT_SQL_URL,
 )
 from datapipeline.lib.manifest import build_manifest, is_fetch_current, write_manifest
 from datapipeline.lib.paths import default_raw_dir
@@ -38,7 +39,8 @@ WIKI_DATASET = "enwiki"
 WIKI_PAGE_FILE = "enwiki-latest-page.sql.gz"
 WIKI_LINKTARGET_FILE = "enwiki-latest-linktarget.sql.gz"
 WIKI_PAGELINKS_FILE = "enwiki-latest-pagelinks.sql.gz"
-WIKI_REQUIRED_FILES = (WIKI_PAGE_FILE, WIKI_LINKTARGET_FILE, WIKI_PAGELINKS_FILE)
+WIKI_REDIRECT_FILE = "enwiki-latest-redirect.sql.gz"
+WIKI_REQUIRED_FILES = (WIKI_PAGE_FILE, WIKI_LINKTARGET_FILE, WIKI_PAGELINKS_FILE, WIKI_REDIRECT_FILE)
 
 
 def _find_file(root: Path, name: str) -> Path | None:
@@ -385,6 +387,7 @@ def _run_wikipedia(out_dir: Path, *, force: bool) -> None:
             (WIKI_PAGE_FILE, PAGE_SQL_URL),
             (WIKI_LINKTARGET_FILE, LINKTARGET_SQL_URL),
             (WIKI_PAGELINKS_FILE, PAGELINKS_SQL_URL),
+            (WIKI_REDIRECT_FILE, REDIRECT_SQL_URL),
         ):
             dest = out_dir / name
             if dest.is_file():

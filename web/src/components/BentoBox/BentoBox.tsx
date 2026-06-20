@@ -3,45 +3,45 @@ import styles from './BentoBox.module.css';
 interface SmallStatCardProps {
   label: string;
   value: React.ReactNode;
-  note?: string;
   cardClassName: string;
 }
 
-function SmallStatCard({ label, value, note, cardClassName }: SmallStatCardProps) {
+function SmallStatCard({ label, value, cardClassName }: SmallStatCardProps) {
   return (
     <article className={`${styles.bentoCard} ${styles.smallCard} ${cardClassName}`}>
       <span className={styles.statLabel}>{label}</span>
       <span className={styles.statSmallValue}>{value}</span>
-      <span className={styles.statNote}>{note ?? ''}</span>
     </article>
   );
 }
 
+function isSingularPath(pathsFound: number | string): boolean {
+  const count =
+    typeof pathsFound === 'number'
+      ? pathsFound
+      : parseInt(String(pathsFound).replace(/,/g, ''), 10);
+  return count === 1;
+}
+
 export interface BentoBoxProps {
   pathsFound: number | string;
-  pathsSub?: string;
+  fromArticle: string;
+  toArticle: string;
   minHops: number | string;
-  hopsNote?: string;
   nodesExplored: number | string;
-  nodesNote?: string;
   searchTime: string;
-  timeNote?: string;
   uniqueArticles: number | string;
-  articlesNote?: string;
   className?: string;
 }
 
 export function BentoBox({
   pathsFound,
-  pathsSub,
+  fromArticle,
+  toArticle,
   minHops,
-  hopsNote,
   nodesExplored,
-  nodesNote,
   searchTime,
-  timeNote,
   uniqueArticles,
-  articlesNote,
   className = '',
 }: BentoBoxProps) {
   return (
@@ -54,34 +54,34 @@ export function BentoBox({
       <article className={`${styles.bentoCard} ${styles.cardPaths}`}>
         <span className={styles.statLabel}>Paths found</span>
         <span className={styles.statPaths}>{pathsFound}</span>
-        {pathsSub && <span className={styles.statSub}>{pathsSub}</span>}
+        <span className={styles.statSub}>
+          Shortest path{isSingularPath(pathsFound) ? '' : 's'} from{' '}
+          <span className={styles.statSubArticle}>{fromArticle}</span> to{' '}
+          <span className={styles.statSubArticle}>{toArticle}</span>
+        </span>
       </article>
 
       <SmallStatCard
         label="Min hops"
         value={minHops}
-        note={hopsNote}
         cardClassName={styles.cardHops}
       />
 
       <SmallStatCard
         label="Nodes explored"
         value={nodesExplored}
-        note={nodesNote}
         cardClassName={styles.cardNodes}
       />
 
       <SmallStatCard
         label="Search time"
         value={searchTime}
-        note={timeNote}
         cardClassName={styles.cardTime}
       />
 
       <SmallStatCard
         label="Unique articles"
         value={uniqueArticles}
-        note={articlesNote}
         cardClassName={styles.cardArticles}
       />
     </section>
