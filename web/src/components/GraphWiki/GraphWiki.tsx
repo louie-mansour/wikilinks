@@ -174,6 +174,95 @@ function computeLayeredPositions(
   return positions;
 }
 
+interface GraphBounds {
+  xMin: number;
+  xMax: number;
+  yMin: number;
+  yMax: number;
+}
+
+/** Bounding box from the layered layout, expanded for terminal labels and badges. */
+function computeFitBounds(
+  nodes: WikiNode[],
+  links: WikiLink[],
+  width: number,
+  height: number,
+): GraphBounds | null {
+  const positions = computeLayeredPositions(nodes, links);
+  let xMin = Infinity;
+  let xMax = -Infinity;
+  let yMin = Infinity;
+  let yMax = -Infinity;
+
+  for (const node of nodes) {
+    const pos = positions.get(node.id);
+    if (!pos) continue;
+    const r = nodeRadius(resolveVariant(node));
+    xMin = Math.min(xMin, pos.x - r);
+    xMax = Math.max(xMax, pos.x + r);
+    yMin = Math.min(yMin, pos.y - r);
+    yMax = Math.max(yMax, pos.y + r);
+  }
+
+  if (!isFinite(xMin)) return null;
+
+  const nodeW = xMax - xMin;
+  const nodeH = yMax - yMin;
+  if (nodeW <= 0 || nodeH <= 0) return { xMin, xMax, yMin, yMax };
+
+  // First-pass zoom from node positions, then inflate bounds for canvas overlays.
+  const k = Math.min(
+    (width - FIT_PADDING * 2) / nodeW,
+    (height - FIT_PADDING * 2) / nodeH,
+  );
+
+  const labelTop = LABEL_FONT_SIZE * 1.2 + LABEL_PAD_Y * 2 + SPACE_2 + SPACE_2;
+  let labelHalfW = 0;
+  let hasTerminal = false;
+  let hasNew = false;
+
+  for (const node of nodes) {
+    const variant = resolveVariant(node);
+    if (variant === 'start' || variant === 'end') {
+      hasTerminal = true;
+      const text = nodeDisplayName(node);
+      labelHalfW = Math.max(labelHalfW, (text.length * 6.5 + LABEL_PAD_X * 2) / 2);
+    }
+    if (node.isNew) hasNew = true;
+  }
+
+  if (hasTerminal) yMin -= labelTop / k;
+  if (labelHalfW > 0) {
+    xMin -= labelHalfW / k;
+    xMax += labelHalfW / k;
+  }
+  if (hasNew) xMax += 40 / k;
+
+  return { xMin, xMax, yMin, yMax };
+}
+
+function fitGraphView(
+  fg: ForceGraphMethods<WikiNode, WikiLink>,
+  bounds: GraphBounds,
+  width: number,
+  height: number,
+  durationMs: number,
+): void {
+  const graphW = bounds.xMax - bounds.xMin;
+  const graphH = bounds.yMax - bounds.yMin;
+  if (graphW <= 0 || graphH <= 0) return;
+
+  const cx = (bounds.xMin + bounds.xMax) / 2;
+  const cy = (bounds.yMin + bounds.yMax) / 2;
+  const k = Math.min(
+    (width - FIT_PADDING * 2) / graphW,
+    (height - FIT_PADDING * 2) / graphH,
+  );
+
+  fg.centerAt(cx, cy, durationMs);
+  fg.zoom(k, durationMs);
+}
+
 /** Set initial positions without pinning — physics can move them freely after. */
 function setInitialPositions(
   nodes: WikiNode[],
@@ -335,7 +424,6 @@ function drawTerminalLabel(
 export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const wrapperRef     = useRef<HTMLDivElement>(null);
   const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
-  const initialFitDone = useRef(false);
   const badgeRefs      = useRef<Map<string, HTMLSpanElement>>(new Map());
   const labelLinkRefs  = useRef<Map<string, HTMLAnchorElement>>(new Map());
   const [dims, setDims] = useState({ width: 800, height: 440 });
@@ -359,6 +447,11 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     setInitialPositions(graphData.nodes, positions);
     return graphData;
   }, [graphData]);
+
+  const fitBounds = useMemo(
+    () => computeFitBounds(positionedData.nodes, positionedData.links, dims.width, dims.height),
+    [positionedData, dims],
+  );
 
   const hoveredNeighborIds = useMemo(
     () => (hoveredNodeId ? neighborIds(hoveredNodeId, positionedData.links) : null),
@@ -410,10 +503,24 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   );
 
   useEffect(() => {
+    if (!fitBounds) return;
+
+    let raf = 0;
+    const fit = () => {
+      const fg = fgRef.current;
+      if (!fg) {
+        raf = requestAnimationFrame(fit);
+        return;
+      }
+      fitGraphView(fg, fitBounds, dims.width, dims.height, 0);
+    };
+    fit();
+    return () => cancelAnimationFrame(raf);
+  }, [fitBounds, dims]);
+
+  useEffect(() => {
     const fg = fgRef.current;
     if (!fg) return;
-
-    initialFitDone.current = false;
 
     const positions = computeLayeredPositions(positionedData.nodes, positionedData.links);
 
@@ -441,14 +548,6 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     fg.d3Force('center', null);
     fg.d3ReheatSimulation();
   }, [positionedData]);
-
-  // Fit the view once after the simulation first settles.
-  const handleEngineStop = useCallback(() => {
-    if (!initialFitDone.current) {
-      initialFitDone.current = true;
-      fgRef.current?.zoomToFit(400, FIT_PADDING);
-    }
-  }, []);
 
   return (
     <div ref={wrapperRef} className={styles.wrapper} style={{ cursor: hoveredNodeId ? 'pointer' : 'default' }}>
@@ -566,7 +665,6 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           if (link) setHoveredNodeId(null);
         }}
         onRenderFramePost={handleRenderFramePost}
-        onEngineStop={handleEngineStop}
         d3AlphaDecay={0.015}
         d3VelocityDecay={0.2}
         autoPauseRedraw
