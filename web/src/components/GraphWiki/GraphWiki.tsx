@@ -29,11 +29,12 @@ const RADIUS_MD       = 18;  // --radius-md
 
 const NODE_REL_SIZE  = SPACE_1;
 const BORDER_STD     = 1.5;
-const LAYER_SPACING  = SPACE_7 * 14;  // horizontal gap between layers
-const NODE_V_SPACING = SPACE_7;       // max vertical gap; reduced adaptively for dense layers
+const LAYER_SPACING  = SPACE_7 * 14;  // gap between BFS layers along the primary axis
+const NODE_V_SPACING = SPACE_7;       // max cross-axis gap; reduced adaptively for dense layers
 const FIT_PADDING    = SPACE_7 * 2;
-const TARGET_ASPECT  = 1.8;           // desired width:height for graph bounding box
+const TARGET_ASPECT  = 1.8;           // desired width:height (horizontal layout)
 const MIN_V_SPACING  = 4;             // floor so nodes never fully overlap
+const MOBILE_LAYOUT_MAX_WIDTH = 520;  // matches design-system §4 breakpoint
 
 export type WikiNodeVariant = 'default' | 'start' | 'end' | 'path';
 
@@ -62,6 +63,13 @@ export interface WikiLink {
 export interface GraphData {
   nodes: WikiNode[];
   links: WikiLink[];
+}
+
+/** Left-to-right on desktop; top-to-bottom on narrow viewports. */
+export type GraphOrientation = 'horizontal' | 'vertical';
+
+function graphOrientation(viewportWidth: number): GraphOrientation {
+  return viewportWidth <= MOBILE_LAYOUT_MAX_WIDTH ? 'vertical' : 'horizontal';
 }
 
 function resolveVariant(node: WikiNode): WikiNodeVariant {
@@ -125,26 +133,30 @@ function computeBfsDepths(nodes: WikiNode[], links: WikiLink[]): Map<string, num
 
 /**
  * Assign every node a pinned (x, y):
- *  x — determined by BFS depth from start (depth 0 = leftmost)
- *  y — nodes within the same layer distributed evenly around the centre line
+ *  primary axis — BFS depth from start (depth 0 = start side)
+ *  cross axis — nodes within the same layer distributed evenly around centre
+ *
+ * Horizontal: depth → x (left→right), spread → y.
+ * Vertical:   depth → y (top→bottom), spread → x.
  *
  * The entire layout is centred at (0, 0) so zoomToFit works symmetrically.
  */
 function computeLayeredPositions(
   nodes: WikiNode[],
   links: WikiLink[],
+  orientation: GraphOrientation,
 ): Map<string, { x: number; y: number }> {
   const depths = computeBfsDepths(nodes, links);
   const { endId } = terminalIds(nodes);
 
-  // If end isn't reachable via links, place it one column past the deepest node.
+  // If end isn't reachable via links, place it one layer past the deepest node.
   const maxReachable = depths.size > 0 ? Math.max(...depths.values()) : 0;
   if (endId && !depths.has(endId)) {
     depths.set(endId, maxReachable + 1);
   }
 
   const totalDepth = depths.size > 0 ? Math.max(...depths.values()) : 0;
-  const xCenter    = (totalDepth * LAYER_SPACING) / 2;
+  const depthCenter = (totalDepth * LAYER_SPACING) / 2;
 
   // Group node IDs by layer depth.
   const layers = new Map<number, string[]>();
@@ -154,20 +166,26 @@ function computeLayeredPositions(
     layers.get(d)!.push(node.id);
   }
 
-  // Scale vertical spacing down so the layout bounding box stays wider than tall.
+  // Scale cross-axis spacing so the bounding box matches the target aspect ratio.
   const maxN = Math.max(...[...layers.values()].map(ids => ids.length), 1);
-  const layoutWidth = totalDepth * LAYER_SPACING;
-  const vSpacing = maxN <= 1
+  const depthSpan = totalDepth * LAYER_SPACING;
+  const targetAspect = orientation === 'horizontal' ? TARGET_ASPECT : 1 / TARGET_ASPECT;
+  const crossSpacing = maxN <= 1
     ? NODE_V_SPACING
-    : Math.max(MIN_V_SPACING, Math.min(NODE_V_SPACING, layoutWidth / TARGET_ASPECT / (maxN - 1)));
+    : Math.max(MIN_V_SPACING, Math.min(NODE_V_SPACING, depthSpan / targetAspect / (maxN - 1)));
 
   const positions = new Map<string, { x: number; y: number }>();
   for (const [depth, ids] of layers) {
-    const x = depth * LAYER_SPACING - xCenter;
+    const depthCoord = depth * LAYER_SPACING - depthCenter;
     const n = ids.length;
     for (let i = 0; i < n; i++) {
-      const y = n === 1 ? 0 : (i - (n - 1) / 2) * vSpacing;
-      positions.set(ids[i], { x, y });
+      const crossCoord = n === 1 ? 0 : (i - (n - 1) / 2) * crossSpacing;
+      positions.set(
+        ids[i],
+        orientation === 'horizontal'
+          ? { x: depthCoord, y: crossCoord }
+          : { x: crossCoord, y: depthCoord },
+      );
     }
   }
 
@@ -187,8 +205,9 @@ function computeFitBounds(
   links: WikiLink[],
   width: number,
   height: number,
+  orientation: GraphOrientation,
 ): GraphBounds | null {
-  const positions = computeLayeredPositions(nodes, links);
+  const positions = computeLayeredPositions(nodes, links, orientation);
   let xMin = Infinity;
   let xMax = -Infinity;
   let yMin = Infinity;
@@ -216,22 +235,33 @@ function computeFitBounds(
     (height - FIT_PADDING * 2) / nodeH,
   );
 
-  const labelTop = LABEL_FONT_SIZE * 1.2 + LABEL_PAD_Y * 2 + SPACE_2 + SPACE_2;
+  const labelExtent = LABEL_FONT_SIZE * 1.2 + LABEL_PAD_Y * 2 + SPACE_2 + SPACE_2;
   let labelHalfW = 0;
-  let hasTerminal = false;
+  let hasStart = false;
+  let hasEnd = false;
   let hasNew = false;
 
   for (const node of nodes) {
     const variant = resolveVariant(node);
-    if (variant === 'start' || variant === 'end') {
-      hasTerminal = true;
+    if (variant === 'start') {
+      hasStart = true;
+      const text = nodeDisplayName(node);
+      labelHalfW = Math.max(labelHalfW, (text.length * 6.5 + LABEL_PAD_X * 2) / 2);
+    }
+    if (variant === 'end') {
+      hasEnd = true;
       const text = nodeDisplayName(node);
       labelHalfW = Math.max(labelHalfW, (text.length * 6.5 + LABEL_PAD_X * 2) / 2);
     }
     if (node.isNew) hasNew = true;
   }
 
-  if (hasTerminal) yMin -= labelTop / k;
+  if (orientation === 'horizontal') {
+    if (hasStart || hasEnd) yMin -= labelExtent / k;
+  } else {
+    if (hasStart) yMin -= labelExtent / k;
+    if (hasEnd) yMax += labelExtent / k;
+  }
   if (labelHalfW > 0) {
     xMin -= labelHalfW / k;
     xMax += labelHalfW / k;
@@ -326,6 +356,7 @@ function computeLabelLayout(
   node: SimNode,
   ctx: CanvasRenderingContext2D,
   globalScale: number,
+  orientation: GraphOrientation,
 ): LabelLayout | null {
   if (node.x == null || node.y == null) return null;
 
@@ -343,8 +374,12 @@ function computeLabelLayout(
   const boxH = fontSize * 1.2 + padY * 2;
 
   const nodeR = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
+  const gap = SPACE_2 / globalScale;
   const cx = node.x;
-  const cy = node.y - nodeR - boxH / 2 - SPACE_2 / globalScale;
+  const labelBelow = orientation === 'vertical' && variant === 'end';
+  const cy = labelBelow
+    ? node.y + nodeR + boxH / 2 + gap
+    : node.y - nodeR - boxH / 2 - gap;
 
   return { cx, cy, boxW, boxH };
 }
@@ -375,6 +410,7 @@ function drawLabel(
   node: SimNode,
   ctx: CanvasRenderingContext2D,
   globalScale: number,
+  orientation: GraphOrientation,
   borderColor: string,
   bgColor: string,
 ): void {
@@ -383,7 +419,7 @@ function drawLabel(
   const isTerminal = variant === 'start' || variant === 'end';
   const radius = (isTerminal ? RADIUS_MD : RADIUS_SM) / globalScale;
   const borderW = BORDER_STD / globalScale;
-  const layout = computeLabelLayout(node, ctx, globalScale);
+  const layout = computeLabelLayout(node, ctx, globalScale, orientation);
   if (!layout) return;
 
   const { cx, cy, boxW, boxH } = layout;
@@ -408,17 +444,19 @@ function drawHighlightedLabel(
   node: SimNode,
   ctx: CanvasRenderingContext2D,
   globalScale: number,
+  orientation: GraphOrientation,
 ): void {
-  drawLabel(node, ctx, globalScale, C.terra, C.terraPale);
+  drawLabel(node, ctx, globalScale, orientation, C.terra, C.terraPale);
 }
 
 function drawTerminalLabel(
   node: SimNode,
   ctx: CanvasRenderingContext2D,
   globalScale: number,
+  orientation: GraphOrientation,
 ): void {
   const borderColor = nodeFill(resolveVariant(node));
-  drawLabel(node, ctx, globalScale, borderColor, C.white);
+  drawLabel(node, ctx, globalScale, orientation, borderColor, C.white);
 }
 
 export function GraphWiki({ graphData }: { graphData: GraphData }) {
@@ -429,6 +467,8 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const [dims, setDims] = useState({ width: 800, height: 440 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredLink, setHoveredLink] = useState<{ source: string; target: string } | null>(null);
+
+  const orientation = graphOrientation(dims.width);
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -443,14 +483,14 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
 
   // Set initial x/y without pinning — simulation starts from correct positions.
   const positionedData = useMemo(() => {
-    const positions = computeLayeredPositions(graphData.nodes, graphData.links);
+    const positions = computeLayeredPositions(graphData.nodes, graphData.links, orientation);
     setInitialPositions(graphData.nodes, positions);
     return graphData;
-  }, [graphData]);
+  }, [graphData, orientation]);
 
   const fitBounds = useMemo(
-    () => computeFitBounds(positionedData.nodes, positionedData.links, dims.width, dims.height),
-    [positionedData, dims],
+    () => computeFitBounds(positionedData.nodes, positionedData.links, dims.width, dims.height, orientation),
+    [positionedData, dims, orientation],
   );
 
   const hoveredNeighborIds = useMemo(
@@ -486,7 +526,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
       }
       for (const node of terminalNodes) {
         const sim = node as SimNode;
-        const layout = computeLabelLayout(sim, ctx, globalScale);
+        const layout = computeLabelLayout(sim, ctx, globalScale, orientation);
         const el = labelLinkRefs.current.get(node.id);
         if (!layout || !el) continue;
         const center = fg.graph2ScreenCoords(layout.cx, layout.cy);
@@ -499,7 +539,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         el.style.visibility = 'visible';
       }
     },
-    [newNodes, terminalNodes],
+    [newNodes, terminalNodes, orientation],
   );
 
   useEffect(() => {
@@ -522,7 +562,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     const fg = fgRef.current;
     if (!fg) return;
 
-    const positions = computeLayeredPositions(positionedData.nodes, positionedData.links);
+    const positions = computeLayeredPositions(positionedData.nodes, positionedData.links, orientation);
 
     // Springy link force — connects neighbors like rubber bands.
     fg.d3Force('link', forceLink<SimNode, WikiLink>()
@@ -534,20 +574,21 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     // Light repulsion so nodes don't collapse onto each other.
     fg.d3Force('charge', forceManyBody<SimNode>().strength(-120));
 
-    // Strong horizontal anchor keeps nodes locked to their BFS layer column.
+    // Depth-axis anchor (stronger) keeps nodes locked to their BFS layer.
+    const depthStrength = 0.7;
+    const crossStrength = 0.5;
     fg.d3Force('x', d3ForceX<SimNode>()
       .x((n) => positions.get(n.id)?.x ?? 0)
-      .strength(0.7),
+      .strength(orientation === 'horizontal' ? depthStrength : crossStrength),
     );
-    // Vertical anchor — stronger so charge repulsion can't spread dense layers.
     fg.d3Force('y', d3ForceY<SimNode>()
       .y((n) => positions.get(n.id)?.y ?? 0)
-      .strength(0.5),
+      .strength(orientation === 'horizontal' ? crossStrength : depthStrength),
     );
 
     fg.d3Force('center', null);
     fg.d3ReheatSimulation();
-  }, [positionedData]);
+  }, [positionedData, orientation]);
 
   return (
     <div ref={wrapperRef} className={styles.wrapper} style={{ cursor: hoveredNodeId ? 'pointer' : 'default' }}>
@@ -638,9 +679,9 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           const isTerminal = variant === 'start' || variant === 'end';
 
           if (isHovered) {
-            drawHighlightedLabel(node as SimNode, ctx, globalScale);
+            drawHighlightedLabel(node as SimNode, ctx, globalScale, orientation);
           } else if (isTerminal) {
-            drawTerminalLabel(node as SimNode, ctx, globalScale);
+            drawTerminalLabel(node as SimNode, ctx, globalScale, orientation);
           }
         }}
         nodeCanvasObjectMode={(node) => {

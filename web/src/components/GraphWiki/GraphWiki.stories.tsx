@@ -63,3 +63,11 @@ export const Degree5: Story = {
 export const Degree6: Story = {
   args: { graphData: buildGraphForDegrees(6, 8) },
 };
+
+/** Top-down layout at the mobile breakpoint (≤520px). */
+export const MobileVertical: Story = {
+  args: { graphData: buildGraphForDegrees(4, 8) },
+  parameters: {
+    viewport: { defaultViewport: 'mobile1' },
+  },
+};
