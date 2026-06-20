@@ -20,7 +20,7 @@
   border-bottom: 1.5px solid var(--sand-mid);
   flex-wrap: wrap;
   gap: 10px;
-  background: var(--sand);
+  background: var(--white);
 }
 
 /* "247 shortest paths — 4 hops each" */
