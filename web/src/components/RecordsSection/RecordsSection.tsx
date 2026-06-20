@@ -29,7 +29,7 @@ export function RecordsSection({ periods }: RecordsSectionProps) {
                 <span className={styles.key}>{row.key}</span>
                 <span className={styles.val}>
                   <span className={styles.badgeSlot}>
-                    {row.badge && <Badge variant="record" />}
+                    {row.badge && <Badge variant="new" />}
                   </span>
                   <span
                     className={`${styles.value} ${row.badge ? styles.valueRecord : ''}`}

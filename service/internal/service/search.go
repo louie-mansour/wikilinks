@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/louiemansour/wikilinks/service/internal/graph"
+	"github.com/louiemansour/wikilinks/service/internal/store"
 )
 
 
@@ -27,6 +28,7 @@ type SearchResult struct {
 	NodesExplored  int            `json:"nodesExplored"`
 	SearchTimeMs   int64          `json:"searchTimeMs"`
 	UniqueArticles int            `json:"uniqueArticles"`
+	NewArticles    int            `json:"newArticles"`
 	Paths          []PathData     `json:"paths"`
 	GraphData      GraphData      `json:"graphData"`
 	Records        []RecordPeriod `json:"records"`
@@ -42,6 +44,7 @@ type Crumb struct {
 	Href        string `json:"href"`
 	Label       string `json:"label"`
 	Highlighted bool   `json:"highlighted,omitempty"`
+	Tag         string `json:"tag,omitempty"`
 }
 
 type GraphData struct {
@@ -53,6 +56,7 @@ type WikiNode struct {
 	ID      string `json:"id"`
 	Variant string `json:"variant,omitempty"`
 	Label   string `json:"label,omitempty"`
+	IsNew   bool   `json:"isNew,omitempty"`
 }
 
 type WikiLink struct {
@@ -60,26 +64,18 @@ type WikiLink struct {
 	Target string `json:"target"`
 }
 
-type RecordPeriod struct {
-	Period string      `json:"period"`
-	Rows   []RecordRow `json:"rows"`
-}
-
-type RecordRow struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-	Badge bool   `json:"badge,omitempty"`
-}
+type RecordPeriod = store.RecordPeriod
+type RecordRow = store.RecordRow
 
 // Search is the service used by the search controller.
 type Search struct {
-	g *graph.WikipediaGraph
+	g  *graph.WikipediaGraph
+	st *store.Store
 }
 
-// NewSearch creates a Search service backed by the given graph.
-// The graph must already be loaded; Search holds a read-only reference.
-func NewSearch(g *graph.WikipediaGraph) *Search {
-	return &Search{g: g}
+// NewSearch creates a Search service backed by the given graph and store.
+func NewSearch(g *graph.WikipediaGraph, st *store.Store) *Search {
+	return &Search{g: g, st: st}
 }
 
 // Find performs bidirectional BFS from the article titled `from` to `to`.
@@ -120,9 +116,47 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 		allPaths[i] = path
 	}
 
+	graphData := buildGraphData(allPaths)
+
+	// Collect all unique titles from the graph nodes for hit tracking.
+	titles := make([]string, 0, len(graphData.Nodes))
+	for _, n := range graphData.Nodes {
+		titles = append(titles, n.ID)
+	}
+
+	meta := store.SearchMeta{
+		From:          from,
+		To:            to,
+		NodesExplored: result.NodesExplored,
+		MinHops:       len(allPaths[0]) - 1,
+		PathsFound:    len(allPaths),
+	}
+
+	prevRecords, err := s.st.QueryRecords()
+	if err != nil {
+		prevRecords = []RecordPeriod{}
+	}
+
+	newTitles, err := s.st.RecordSearch(titles, meta)
+	if err != nil {
+		return nil, fmt.Errorf("record search: %w", err)
+	}
+
+	newSet := make(map[string]struct{}, len(newTitles))
+	for _, t := range newTitles {
+		newSet[t] = struct{}{}
+	}
+
+	// Mark newly-seen graph nodes.
+	for i := range graphData.Nodes {
+		if _, ok := newSet[graphData.Nodes[i].ID]; ok {
+			graphData.Nodes[i].IsNew = true
+		}
+	}
+
 	pathDatas := make([]PathData, len(allPaths))
 	for i, path := range allPaths {
-		pathDatas[i] = PathData{ID: i + 1, Crumbs: buildCrumbs(path)}
+		pathDatas[i] = PathData{ID: i + 1, Crumbs: buildCrumbs(path, newSet)}
 	}
 
 	uniqueSet := make(map[string]struct{})
@@ -130,6 +164,13 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 		for _, title := range path {
 			uniqueSet[title] = struct{}{}
 		}
+	}
+
+	records, err := s.st.QueryRecords()
+	if err != nil {
+		records = []RecordPeriod{}
+	} else {
+		records = store.AnnotateRecordBadges(records, prevRecords, meta)
 	}
 
 	return &SearchResult{
@@ -140,9 +181,10 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 		NodesExplored:  result.NodesExplored,
 		SearchTimeMs:   elapsed.Milliseconds(),
 		UniqueArticles: len(uniqueSet),
+		NewArticles:    len(newTitles),
 		Paths:          pathDatas,
-		GraphData:      buildGraphData(allPaths),
-		Records:        []RecordPeriod{},
+		GraphData:      graphData,
+		Records:        records,
 		ShareCode:      buildShareCode(from, to),
 	}, nil
 }
@@ -191,13 +233,18 @@ func buildGraphData(allPaths [][]string) GraphData {
 	return GraphData{Nodes: nodes, Links: links}
 }
 
-func buildCrumbs(path []string) []Crumb {
+func buildCrumbs(path []string, newSet map[string]struct{}) []Crumb {
 	crumbs := make([]Crumb, len(path))
 	for i, title := range path {
+		var tag string
+		if _, ok := newSet[title]; ok {
+			tag = "new"
+		}
 		crumbs[i] = Crumb{
 			Href:        "https://en.wikipedia.org/wiki/" + strings.ReplaceAll(title, " ", "_"),
 			Label:       title,
 			Highlighted: i == 0 || i == len(path)-1,
+			Tag:         tag,
 		}
 	}
 	return crumbs

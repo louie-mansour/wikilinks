@@ -12,6 +12,7 @@ export interface SearchResult {
   nodesExplored: number;
   searchTimeMs: number;
   uniqueArticles: number;
+  newArticles: number;
   paths: PathData[];
   graphData: GraphData;
   records: RecordPeriod[];
@@ -32,6 +33,7 @@ const EINSTEIN_QUANTUM: SearchResult = {
   nodesExplored: 8241,
   searchTimeMs: 1200,
   uniqueArticles: 14,
+  newArticles: 3,
   shareCode: 'aE3f9k',
   graphData: buildGraphForDegrees(4, 8),
   paths: [
@@ -181,19 +183,19 @@ const EINSTEIN_QUANTUM: SearchResult = {
       ],
     },
     {
-      period: 'Past day',
-      rows: [
-        { key: 'Most paths', value: '300' },
-        { key: 'Most nodes', value: '3,892' },
-        { key: 'Longest path', value: '7 hops' },
-      ],
-    },
-    {
       period: 'Past week',
       rows: [
         { key: 'Most paths', value: '300' },
         { key: 'Most nodes', value: '5,211' },
         { key: 'Longest path', value: '8 hops' },
+      ],
+    },
+    {
+      period: 'Past day',
+      rows: [
+        { key: 'Most paths', value: '300' },
+        { key: 'Most nodes', value: '3,892' },
+        { key: 'Longest path', value: '7 hops' },
       ],
     },
   ],
@@ -255,6 +257,7 @@ function buildGenericResult(start: string, end: string): SearchResult {
   const nodesExplored = (s(3) % 4000) + 500;
   const searchTimeMs = (s(4) % 2800) + 200;
   const uniqueArticles = intermediates.length + 2 + (s(5) % 4);
+  const newArticles = (s(13) % 3) + 1;
 
   const graphData = assignGraphLabels(buildGraphForDegrees(hops, 8), start, end, seed);
 
@@ -279,31 +282,55 @@ function buildGenericResult(start: string, end: string): SearchResult {
   }
 
   // ── Records ───────────────────────────────────────────────────────────────
+  const prevAllTime = {
+    paths: pathsFound + (s(6) % 50) + 5,
+    nodes: nodesExplored + (s(7) % 5000) + 500,
+    hops: hops + (s(8) % 3) + 1,
+  };
+  const prevWeek = {
+    paths: pathsFound + (s(11) % 35),
+    nodes: nodesExplored + (s(12) % 2000),
+    hops: hops + 2,
+  };
+  const prevDay = {
+    paths: pathsFound + (s(9) % 20),
+    nodes: nodesExplored + (s(10) % 1000),
+    hops: hops + 1,
+  };
+
+  function recordPeriod(
+    period: string,
+    prev: { paths: number; nodes: number; hops: number },
+  ): RecordPeriod {
+    const pathsVal = Math.max(pathsFound, prev.paths);
+    const nodesVal = Math.max(nodesExplored, prev.nodes);
+    const hopsVal = Math.min(hops, prev.hops);
+    return {
+      period,
+      rows: [
+        {
+          key: 'Most paths',
+          value: String(pathsVal),
+          badge: pathsFound > prev.paths,
+        },
+        {
+          key: 'Most nodes',
+          value: String(nodesVal),
+          badge: nodesExplored > prev.nodes,
+        },
+        {
+          key: 'Longest path',
+          value: `${hopsVal} hops`,
+          badge: hops < prev.hops,
+        },
+      ],
+    };
+  }
+
   const records: RecordPeriod[] = [
-    {
-      period: 'All time',
-      rows: [
-        { key: 'Most paths', value: String(pathsFound + (s(6) % 50) + 10) },
-        { key: 'Most nodes', value: String(nodesExplored + (s(7) % 5000) + 1000), badge: true },
-        { key: 'Longest path', value: `${hops + (s(8) % 3)} hops` },
-      ],
-    },
-    {
-      period: 'Past day',
-      rows: [
-        { key: 'Most paths', value: String(pathsFound + (s(9) % 20)) },
-        { key: 'Most nodes', value: String(nodesExplored + (s(10) % 1000)) },
-        { key: 'Longest path', value: `${hops + 1} hops` },
-      ],
-    },
-    {
-      period: 'Past week',
-      rows: [
-        { key: 'Most paths', value: String(pathsFound + (s(11) % 35)) },
-        { key: 'Most nodes', value: String(nodesExplored + (s(12) % 2000)) },
-        { key: 'Longest path', value: `${hops + 2} hops` },
-      ],
-    },
+    recordPeriod('All time', prevAllTime),
+    recordPeriod('Past week', prevWeek),
+    recordPeriod('Past day', prevDay),
   ];
 
   return {
@@ -314,6 +341,7 @@ function buildGenericResult(start: string, end: string): SearchResult {
     nodesExplored,
     searchTimeMs,
     uniqueArticles,
+    newArticles,
     paths,
     graphData,
     records,

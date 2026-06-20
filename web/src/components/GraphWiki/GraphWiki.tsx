@@ -337,6 +337,40 @@ function linksEqual(a: WikiLink, b: { source: string; target: string }): boolean
   return source === b.source && target === b.target;
 }
 
+function linkKey(link: WikiLink): string {
+  const { source, target } = linkEndpoints(link);
+  return `${source}-${target}`;
+}
+
+function isLinkHighlighted(
+  link: WikiLink,
+  activeLink: { source: string; target: string } | null,
+  activeNodeId: string | null,
+): boolean {
+  return (activeLink != null && linksEqual(link, activeLink))
+    || (activeNodeId != null && linkTouchesNode(link, activeNodeId));
+}
+
+function positionHighlightedLink(
+  el: SVGLineElement,
+  link: WikiLink,
+  fg: ForceGraphMethods<WikiNode, WikiLink>,
+): void {
+  const start = link.source as SimNode;
+  const end = link.target as SimNode;
+  if (start.x == null || start.y == null || end.x == null || end.y == null) {
+    el.style.visibility = 'hidden';
+    return;
+  }
+  const p1 = fg.graph2ScreenCoords(start.x, start.y);
+  const p2 = fg.graph2ScreenCoords(end.x, end.y);
+  el.setAttribute('x1', String(p1.x));
+  el.setAttribute('y1', String(p1.y));
+  el.setAttribute('x2', String(p2.x));
+  el.setAttribute('y2', String(p2.y));
+  el.style.visibility = 'visible';
+}
+
 function nodeDisplayName(node: WikiNode): string {
   return node.label ?? node.id;
 }
@@ -485,6 +519,8 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
   const badgeRefs           = useRef<Map<string, HTMLSpanElement>>(new Map());
   const labelLinkRefs       = useRef<Map<string, HTMLAnchorElement>>(new Map());
+  const hoverLabelRefs      = useRef<Map<string, HTMLDivElement>>(new Map());
+  const linkLineRefs        = useRef<Map<string, SVGLineElement>>(new Map());
   const highlightedLabelRef = useRef<HTMLAnchorElement>(null);
   const [dims, setDims] = useState({ width: 800, height: 440 });
   const [canHover, setCanHover] = useState(deviceSupportsHover);
@@ -547,6 +583,27 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     return variant === 'start' || variant === 'end' ? null : node;
   }, [canHover, hoveredNodeId, positionedData.nodes]);
 
+  const hoveredLabelNodes = useMemo(() => {
+    if (!canHover) return [];
+    const ids = new Set<string>();
+    if (hoveredNodeId) {
+      ids.add(hoveredNodeId);
+      for (const id of neighborIds(hoveredNodeId, positionedData.links)) ids.add(id);
+    }
+    if (hoveredLink) {
+      ids.add(hoveredLink.source);
+      ids.add(hoveredLink.target);
+    }
+    return positionedData.nodes.filter(n => ids.has(n.id));
+  }, [canHover, hoveredNodeId, hoveredLink, positionedData.nodes, positionedData.links]);
+
+  const hoveredLinks = useMemo(
+    () => canHover
+      ? positionedData.links.filter(link => isLinkHighlighted(link, hoveredLink, hoveredNodeId))
+      : [],
+    [canHover, hoveredLink, hoveredNodeId, positionedData.links],
+  );
+
   const handleRenderFramePost = useCallback(
     (ctx: CanvasRenderingContext2D, globalScale: number) => {
       const fg = fgRef.current;
@@ -570,6 +627,24 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         if (!layout || !el) continue;
         positionLabelLink(el, layout, fg, globalScale);
       }
+      for (const link of hoveredLinks) {
+        const el = linkLineRefs.current.get(linkKey(link));
+        if (!el) continue;
+        positionHighlightedLink(el, link, fg);
+      }
+      for (const node of hoveredLabelNodes) {
+        const sim = node as SimNode;
+        const layout = computeLabelLayout(sim, ctx, globalScale, orientation);
+        const el = hoverLabelRefs.current.get(node.id);
+        if (!layout || !el) continue;
+        positionLabelLink(el, layout, fg, globalScale);
+      }
+      for (const id of hoverLabelRefs.current.keys()) {
+        if (!hoveredLabelNodes.some(n => n.id === id)) {
+          const el = hoverLabelRefs.current.get(id);
+          if (el) el.style.visibility = 'hidden';
+        }
+      }
       const highlightedEl = highlightedLabelRef.current;
       if (highlightedInteriorNode && highlightedEl) {
         const layout = computeLabelLayout(
@@ -583,7 +658,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         highlightedEl.style.visibility = 'hidden';
       }
     },
-    [newNodes, terminalNodes, orientation, highlightedInteriorNode],
+    [newNodes, terminalNodes, hoveredLinks, hoveredLabelNodes, orientation, highlightedInteriorNode],
   );
 
   useEffect(() => {
@@ -656,6 +731,21 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           />
         ))}
       </div>
+      {canHover && (
+        <svg className={styles.linkOverlay} aria-hidden="true">
+          {hoveredLinks.map(link => (
+            <line
+              key={linkKey(link)}
+              className={styles.highlightedLink}
+              ref={(el) => {
+                const key = linkKey(link);
+                if (el) linkLineRefs.current.set(key, el);
+                else linkLineRefs.current.delete(key);
+              }}
+            />
+          ))}
+        </svg>
+      )}
       <div className={styles.labelOverlay}>
         {terminalNodes.map(node => {
           const title = nodeDisplayName(node);
@@ -684,6 +774,19 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
             ref={highlightedLabelRef}
           />
         )}
+        {hoveredLabelNodes.map(node => (
+          <div
+            key={node.id}
+            className={styles.hoverLabel}
+            aria-hidden="true"
+            ref={(el) => {
+              if (el) hoverLabelRefs.current.set(node.id, el);
+              else hoverLabelRefs.current.delete(node.id);
+            }}
+          >
+            {nodeDisplayName(node)}
+          </div>
+        ))}
       </div>
       <ForceGraph2D
         ref={fgRef}
@@ -712,8 +815,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           ctx.stroke();
         }}
         linkCanvasObjectMode={(link) =>
-          (hoveredLink && linksEqual(link, hoveredLink))
-          || (hoveredNodeId && linkTouchesNode(link, hoveredNodeId))
+          !canHover && isLinkHighlighted(link, hoveredLink, hoveredNodeId)
             ? 'after'
             : undefined
         }
@@ -732,9 +834,9 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
             || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target));
           const isTerminal = variant === 'start' || variant === 'end';
 
-          if (isHovered) {
+          if (isHovered && !canHover) {
             drawHighlightedLabel(node as SimNode, ctx, globalScale, orientation);
-          } else if (isTerminal) {
+          } else if (isTerminal && !(canHover && isHovered)) {
             drawTerminalLabel(node as SimNode, ctx, globalScale, orientation);
           }
         }}

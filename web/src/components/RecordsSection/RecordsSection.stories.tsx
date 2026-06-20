@@ -11,19 +11,19 @@ const DEMO_PERIODS = [
     ],
   },
   {
-    period: 'Past day',
-    rows: [
-      { key: 'Most paths', value: '300' },
-      { key: 'Most nodes', value: '3,892' },
-      { key: 'Longest path', value: '7 hops' },
-    ],
-  },
-  {
     period: 'Past week',
     rows: [
       { key: 'Most paths', value: '300' },
       { key: 'Most nodes', value: '5,211' },
       { key: 'Longest path', value: '8 hops' },
+    ],
+  },
+  {
+    period: 'Past day',
+    rows: [
+      { key: 'Most paths', value: '300' },
+      { key: 'Most nodes', value: '3,892' },
+      { key: 'Longest path', value: '7 hops' },
     ],
   },
 ];

@@ -30,7 +30,7 @@ export interface BentoBoxProps {
   minHops: number | string;
   nodesExplored: number | string;
   searchTime: string;
-  uniqueArticles: number | string;
+  newArticles: number | string;
   className?: string;
 }
 
@@ -41,7 +41,7 @@ export function BentoBox({
   minHops,
   nodesExplored,
   searchTime,
-  uniqueArticles,
+  newArticles,
   className = '',
 }: BentoBoxProps) {
   return (
@@ -80,8 +80,8 @@ export function BentoBox({
       />
 
       <SmallStatCard
-        label="Unique articles"
-        value={uniqueArticles}
+        label="New articles"
+        value={newArticles}
         cardClassName={styles.cardArticles}
       />
     </section>

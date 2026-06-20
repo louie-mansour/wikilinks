@@ -10,9 +10,12 @@ import (
 	"syscall"
 	"time"
 
+	"path/filepath"
+
 	"github.com/louiemansour/wikilinks/service/internal/controller"
 	"github.com/louiemansour/wikilinks/service/internal/graph"
 	"github.com/louiemansour/wikilinks/service/internal/service"
+	"github.com/louiemansour/wikilinks/service/internal/store"
 )
 
 func main() {
@@ -32,7 +35,14 @@ func main() {
 		"endingNodes", len(g.EndingNodes()),
 	)
 
-	searchSvc := service.NewSearch(g)
+	st, err := store.New(filepath.Join(*dataDir, "wikilinks.db"))
+	if err != nil {
+		slog.Error("failed to open store", "err", err)
+		os.Exit(1)
+	}
+	defer st.Close()
+
+	searchSvc := service.NewSearch(g, st)
 	startingNodesSvc := service.NewStartingNodes(g)
 	endingNodesSvc := service.NewEndingNodes(g)
 	suggestSvc := service.NewSuggest(g)

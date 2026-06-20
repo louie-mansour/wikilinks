@@ -40,13 +40,55 @@
   color: var(--ink-muted);
 }
 
-.badgeOverlay,
-.labelOverlay {
+.badgeOverlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 1;
   overflow: hidden;
+}
+
+.linkOverlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  overflow: visible;
+}
+
+.highlightedLink {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  visibility: hidden;
+}
+
+.labelOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  overflow: visible;
+}
+
+.hoverLabel {
+  position: absolute;
+  visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink);
+  background: var(--terra-pale);
+  border: 1.5px solid var(--terra);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .terminalLabelLink {

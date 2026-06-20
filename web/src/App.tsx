@@ -170,7 +170,7 @@ export function App() {
             minHops={result.minHops}
             nodesExplored={formatNumber(result.nodesExplored)}
             searchTime={formatSearchTime(result.searchTimeMs)}
-            uniqueArticles={result.uniqueArticles}
+            newArticles={result.newArticles}
           />
 
           <RecordsSection periods={result.records} />
