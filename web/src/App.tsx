@@ -157,40 +157,54 @@ return 0; // 'interesting' = original order
         <EmptyState hint={searchError} />
       ) : result?.noPathFound ? (
         <div className={styles.sections} key={`${result.start}|${result.end}`}>
-          <GraphWiki graphData={result.graphData} />
-          <EmptyState hint={`No path found between "${result.start}" and "${result.end}" within ${result.maxHops} degrees of separation.`} />
+          <PanelEnter index={1}>
+            <GraphWiki graphData={result.graphData} />
+          </PanelEnter>
+          <PanelEnter index={2}>
+            <EmptyState hint={`No path found between "${result.start}" and "${result.end}" within ${result.maxHops} degrees of separation.`} />
+          </PanelEnter>
         </div>
       ) : result ? (
         <div className={styles.sections} key={`${result.start}|${result.end}`}>
-          <GraphWiki graphData={result.graphData} />
+          <PanelEnter index={1}>
+            <GraphWiki graphData={result.graphData} />
+          </PanelEnter>
 
-          <BentoBox
-            pathsFound={formatNumber(result.pathsFound)}
-            fromArticle={result.start}
-            toArticle={result.end}
-            minHops={result.minHops}
-            nodesExplored={formatNumber(result.nodesExplored)}
-            searchTime={formatSearchTime(result.searchTimeMs)}
-            newArticles={result.newArticles}
-          />
+          <PanelEnter index={2}>
+            <BentoBox
+              pathsFound={formatNumber(result.pathsFound)}
+              fromArticle={result.start}
+              toArticle={result.end}
+              minHops={result.minHops}
+              nodesExplored={formatNumber(result.nodesExplored)}
+              searchTime={formatSearchTime(result.searchTimeMs)}
+              newArticles={result.newArticles}
+            />
+          </PanelEnter>
 
-          <RecordsSection periods={result.records} />
+          <PanelEnter index={3}>
+            <RecordsSection periods={result.records} />
+          </PanelEnter>
 
-          <ShareBar
-            urlPrefix="wikilinks.app/s/"
-            urlCode={result.shareCode}
-          />
+          <PanelEnter index={4}>
+            <ShareBar
+              urlPrefix="wikilinks.app/s/"
+              urlCode={result.shareCode}
+            />
+          </PanelEnter>
 
-          <ShortestPaths
-            title={`${formatNumber(result.pathsFound)} shortest path${result.pathsFound !== 1 ? 's' : ''}`}
-            paths={visiblePaths}
-            sortOptions={SORT_OPTIONS}
-            sortValue={sortOrder}
-            onSortChange={(val) => { setSortOrder(val); setVisibleCount(PAGE_SIZE); }}
-            remainingCount={remainingCount > 0 ? Math.min(PAGE_SIZE, remainingCount) : undefined}
-            totalRemainingCount={remainingCount > 0 ? remainingCount : undefined}
-            onLoadMore={() => setVisibleCount((c) => c + PAGE_SIZE)}
-          />
+          <PanelEnter index={5}>
+            <ShortestPaths
+              title={`${formatNumber(result.pathsFound)} shortest path${result.pathsFound !== 1 ? 's' : ''}`}
+              paths={visiblePaths}
+              sortOptions={SORT_OPTIONS}
+              sortValue={sortOrder}
+              onSortChange={(val) => { setSortOrder(val); setVisibleCount(PAGE_SIZE); }}
+              remainingCount={remainingCount > 0 ? Math.min(PAGE_SIZE, remainingCount) : undefined}
+              totalRemainingCount={remainingCount > 0 ? remainingCount : undefined}
+              onLoadMore={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            />
+          </PanelEnter>
         </div>
       ) : (
         <EmptyState />
