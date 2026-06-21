@@ -1,34 +1,6 @@
 /* src/tokens.css — WikiLinks design system tokens. Only file that may contain raw values. */
+
 :root {
-  /* Surfaces */
-  --sand:        #f5ede0;
-  --sand-mid:    #e8d9c4;
-  --sand-dark:   #d4c0a4;
-
-  /* Text */
-  --ink:         #2c2416;
-  --ink-muted:   #7a6a52;
-  --ink-faint:   #b8a888;
-
-  /* Primary — Terracotta */
-  --terra:       #c4572a;
-  --terra-dark:  #a8461f;
-  --terra-light: #f2d5c8;
-  --terra-pale:  #faf0ea;
-
-  /* Secondary — Sage */
-  --sage:        #4a7c59;
-  --sage-light:  #c8dece;
-  --sage-pale:   #edf6ef;
-
-  /* Accent — Clay */
-  --clay:        #e8a05a;
-  --clay-border: #f5dbb0;
-  --clay-pale:   #fdf2e3;
-
-  /* Base */
-  --white:       #fefcf8;
-
   /* Border radius */
   --radius-sm:   10px;
   --radius-md:   18px;
@@ -47,6 +19,307 @@
   --font-display: 'Figtree', system-ui, sans-serif;
   --font-body:    'Figtree', system-ui, sans-serif;
   --font-ui:      'Figtree', system-ui, sans-serif;
+}
+
+/* ── Warm (default) ── */
+:root,
+[data-theme="warm"] {
+  color-scheme: light;
+
+  --sand:        #f5ede0;
+  --sand-mid:    #e8d9c4;
+  --sand-dark:   #d4c0a4;
+
+  --ink:         #2c2416;
+  --ink-muted:   #7a6a52;
+  --ink-faint:   #b8a888;
+
+  --terra:       #c4572a;
+  --terra-dark:  #a8461f;
+  --terra-light: #f2d5c8;
+  --terra-pale:  #faf0ea;
+
+  --sage:        #4a7c59;
+  --sage-light:  #c8dece;
+  --sage-pale:   #edf6ef;
+
+  --clay:        #e8a05a;
+  --clay-border: #f5dbb0;
+  --clay-pale:   #fdf2e3;
+
+  --white:       #fefcf8;
+
+  --graph-link:  #d4c0a4;
+}
+
+/* ── Ocean ── */
+[data-theme="ocean"] {
+  color-scheme: light;
+
+  --sand:        #e4edf2;
+  --sand-mid:    #c5d6e0;
+  --sand-dark:   #94abb8;
+
+  --ink:         #152028;
+  --ink-muted:   #4a6270;
+  --ink-faint:   #849aa8;
+
+  --terra:       #1e6b88;
+  --terra-dark:  #155570;
+  --terra-light: #b8d8e8;
+  --terra-pale:  #e8f2f8;
+
+  --sage:        #2a7a68;
+  --sage-light:  #aad8cc;
+  --sage-pale:   #e8f4f0;
+
+  --clay:        #4a90b8;
+  --clay-border: #a8cce0;
+  --clay-pale:   #e4f0f8;
+
+  --white:       #f6fafc;
+
+  --graph-link:  #94abb8;
+}
+
+/* ── Forest ── */
+[data-theme="forest"] {
+  color-scheme: light;
+
+  --sand:        #e8ebe4;
+  --sand-mid:    #ccd4c0;
+  --sand-dark:   #a8b498;
+
+  --ink:         #1c2018;
+  --ink-muted:   #4a5840;
+  --ink-faint:   #889878;
+
+  --terra:       #4a6828;
+  --terra-dark:  #3a5220;
+  --terra-light: #c8d8b0;
+  --terra-pale:  #eef2e8;
+
+  --sage:        #2a6848;
+  --sage-light:  #a8d4bc;
+  --sage-pale:   #e8f2ec;
+
+  --clay:        #c89030;
+  --clay-border: #e8c870;
+  --clay-pale:   #f8f0e0;
+
+  --white:       #f8faf6;
+
+  --graph-link:  #a8b498;
+}
+
+/* ── Wikipedia (Vector 2022 light) ── */
+[data-theme="wikipedia"] {
+  color-scheme: light;
+
+  --sand:        #f6f6f6;
+  --sand-mid:    #a2a9b1;
+  --sand-dark:   #72777d;
+
+  --ink:         #202122;
+  --ink-muted:   #54595d;
+  --ink-faint:   #72777d;
+
+  --terra:       #3366cc;
+  --terra-dark:  #2a4b8d;
+  --terra-light: #a3caff;
+  --terra-pale:  #eaf3ff;
+
+  --sage:        #14866d;
+  --sage-light:  #a3d4c9;
+  --sage-pale:   #eaf3f0;
+
+  --clay:        #996600;
+  --clay-border: #c8ccd1;
+  --clay-pale:   #fef6e7;
+
+  --white:       #ffffff;
+
+  --graph-link:  #72777d;
+}
+
+/* ── Midnight ── */
+[data-theme="midnight"] {
+  color-scheme: dark;
+
+  --sand:        #242018;
+  --sand-mid:    #3e3830;
+  --sand-dark:   #9a9080;
+
+  --ink:         #ece6d8;
+  --ink-muted:   #a89880;
+  --ink-faint:   #807060;
+
+  --terra:       #d87048;
+  --terra-dark:  #c05830;
+  --terra-light: #5a4038;
+  --terra-pale:  #3a3028;
+
+  --sage:        #58a878;
+  --sage-light:  #385040;
+  --sage-pale:   #283830;
+
+  --clay:        #d8a048;
+  --clay-border: #605038;
+  --clay-pale:   #383028;
+
+  --white:       #322e28;
+
+  --graph-link:  #c8c0b4;
+}
+
+/* ── Obsidian (cool charcoal) ── */
+[data-theme="obsidian"] {
+  color-scheme: dark;
+
+  --sand:        #1a2028;
+  --sand-mid:    #363d4a;
+  --sand-dark:   #8b949e;
+
+  --ink:         #e6edf3;
+  --ink-muted:   #9da7b3;
+  --ink-faint:   #7e8691;
+
+  --terra:       #539bf5;
+  --terra-dark:  #4184e4;
+  --terra-light: #2c4a6e;
+  --terra-pale:  #242c38;
+
+  --sage:        #3fb950;
+  --sage-light:  #2a4d34;
+  --sage-pale:   #1a2820;
+
+  --clay:        #d29922;
+  --clay-border: #4d4430;
+  --clay-pale:   #2c2820;
+
+  --white:       #282f3a;
+
+  --graph-link:  #8b949e;
+}
+
+/* ── Ember (warm crimson) ── */
+[data-theme="ember"] {
+  color-scheme: dark;
+
+  --sand:        #281818;
+  --sand-mid:    #402828;
+  --sand-dark:   #9a7070;
+
+  --ink:         #f0e8e8;
+  --ink-muted:   #b89898;
+  --ink-faint:   #806868;
+
+  --terra:       #e85555;
+  --terra-dark:  #c84040;
+  --terra-light: #5a3030;
+  --terra-pale:  #3a2424;
+
+  --sage:        #c87878;
+  --sage-light:  #4d3030;
+  --sage-pale:   #2a1818;
+
+  --clay:        #e8a040;
+  --clay-border: #605030;
+  --clay-pale:   #382c20;
+
+  --white:       #302020;
+
+  --graph-link:  #b89898;
+}
+
+/* ── Aurora (purple & teal) ── */
+[data-theme="aurora"] {
+  color-scheme: dark;
+
+  --sand:        #1a2430;
+  --sand-mid:    #2a3444;
+  --sand-dark:   #8898a8;
+
+  --ink:         #e8f0f8;
+  --ink-muted:   #98a8b8;
+  --ink-faint:   #708090;
+
+  --terra:       #9d7cf0;
+  --terra-dark:  #8560e0;
+  --terra-light: #403060;
+  --terra-pale:  #282040;
+
+  --sage:        #34d399;
+  --sage-light:  #2a5040;
+  --sage-pale:   #202a24;
+
+  --clay:        #f472b6;
+  --clay-border: #504050;
+  --clay-pale:   #302830;
+
+  --white:       #243040;
+
+  --graph-link:  #8898a8;
+}
+
+/* ── Deep Sea (dark navy) ── */
+[data-theme="deep-sea"] {
+  color-scheme: dark;
+
+  --sand:        #141c28;
+  --sand-mid:    #243040;
+  --sand-dark:   #7090a8;
+
+  --ink:         #e0eef8;
+  --ink-muted:   #90b0c8;
+  --ink-faint:   #6888a0;
+
+  --terra:       #38bdf8;
+  --terra-dark:  #28a0d8;
+  --terra-light: #2a4060;
+  --terra-pale:  #202838;
+
+  --sage:        #2dd4bf;
+  --sage-light:  #2a4848;
+  --sage-pale:   #202c2c;
+
+  --clay:        #60a5fa;
+  --clay-border: #385070;
+  --clay-pale:   #202838;
+
+  --white:       #1c2838;
+
+  --graph-link:  #7090a8;
+}
+
+/* ── Moss (dark green) ── */
+[data-theme="moss"] {
+  color-scheme: dark;
+
+  --sand:        #1a241c;
+  --sand-mid:    #2a3a30;
+  --sand-dark:   #88a090;
+
+  --ink:         #e8f0ea;
+  --ink-muted:   #98b0a0;
+  --ink-faint:   #688078;
+
+  --terra:       #6db87a;
+  --terra-dark:  #58a068;
+  --terra-light: #2a4830;
+  --terra-pale:  #202a22;
+
+  --sage:        #4ade80;
+  --sage-light:  #2a4030;
+  --sage-pale:   #1e2820;
+
+  --clay:        #c9a227;
+  --clay-border: #504830;
+  --clay-pale:   #2a2820;
+
+  --white:       #202c24;
+
+  --graph-link:  #88a090;
 }
 
 *, *::before, *::after {

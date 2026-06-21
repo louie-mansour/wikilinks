@@ -1,0 +1,124 @@
+@import '../../tokens.css';
+
+.root {
+  position: relative;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.trigger_light {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.trigger_dark {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.trigger:hover {
+  filter: brightness(1.04);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--terra);
+  outline-offset: 2px;
+}
+
+.swatchRow {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.swatch_light {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.swatch_dark {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 180px;
+  padding: 6px;
+  margin: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--white);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(44, 36, 22, 0.12);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option_light {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.option_dark {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.option:hover {
+  filter: brightness(1.06);
+}
+
+.option[aria-checked="true"] {
+  font-weight: 600;
+}
+
+.option .swatch {
+  width: 8px;
+  height: 8px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .trigger,
+  .option {
+    transition: filter 0.12s, border-color 0.12s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger:hover,
+  .option:hover {
+    filter: none;
+  }
+}

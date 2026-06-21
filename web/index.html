@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WikiLinks</title>
+    <script>
+      (function () {
+        var ids = ['warm', 'ocean', 'forest', 'wikipedia', 'midnight', 'obsidian', 'ember', 'aurora', 'deep-sea', 'moss'];
+        var id = 'warm';
+        try {
+          var stored = localStorage.getItem('wikilinks-theme');
+          if (stored && ids.indexOf(stored) !== -1) id = stored;
+        } catch (e) {}
+        document.documentElement.dataset.theme = id;
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">

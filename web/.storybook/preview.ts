@@ -1,7 +1,16 @@
 import type { Preview } from '@storybook/react';
+import React from 'react';
+import { ThemeProvider } from '../src/theme/ThemeProvider';
 import '../src/tokens.css';
 
 const preview: Preview = {
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
   parameters: {
     backgrounds: {
       default: 'sand',

@@ -1,5 +1,10 @@
 @import '../../tokens.css';
 
+.wrap {
+  position: relative;
+  display: inline-block;
+}
+
 /* §7.10 Select — custom-styled native select */
 
 .select {
@@ -7,24 +12,35 @@
   border: 1.5px solid var(--sand-mid);
   border-radius: var(--radius-sm);
   background-color: var(--white);
-  /* Custom chevron — ink-muted (#7a6a52) encoded for SVG data URI */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%237a6a52' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 10px 10px;
   color: var(--ink-muted);
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  /* §11 cross-browser: suppress platform native styling */
   appearance: none;
   -webkit-appearance: none;
+}
+
+.wrap::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.8px solid var(--ink-muted);
+  border-bottom: 1.8px solid var(--ink-muted);
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
 }
 
 .select:hover {
   border-color: var(--terra);
   color: var(--terra);
+}
+
+.wrap:has(.select:hover)::after {
+  border-color: var(--terra);
 }
 
 .select:focus-visible {
@@ -35,5 +51,9 @@
 @media (prefers-reduced-motion: no-preference) {
   .select {
     transition: border-color 0.12s, color 0.12s;
+  }
+
+  .wrap::after {
+    transition: border-color 0.12s;
   }
 }

@@ -1,5 +1,6 @@
 import { Combobox, type Suggestion } from '../Combobox/Combobox';
 import { Button } from '../Button/Button';
+import { ThemePicker } from '../ThemePicker/ThemePicker';
 import styles from './Header.module.css';
 
 const DEFAULT_TAGLINE =
@@ -41,6 +42,10 @@ export function Header({
 }: HeaderProps) {
   return (
     <header className={styles.topBar}>
+      <div className={styles.themePicker}>
+        <ThemePicker />
+      </div>
+
       <div className={styles.wordmark}>
         <span className={styles.wordmarkIcon} aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">

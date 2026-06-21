@@ -18,6 +18,12 @@
   z-index: 1;
 }
 
+.themePicker {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
 /* Wordmark — §9 Iconography */
 .wordmark {
   font-family: var(--font-display);

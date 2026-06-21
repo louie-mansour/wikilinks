@@ -3,16 +3,8 @@ import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d';
 import { forceLink, forceManyBody, forceX as d3ForceX, forceY as d3ForceY } from 'd3-force-3d';
 import styles from './GraphWiki.module.css';
 import { Badge } from '../Badge/Badge';
-
-// Canvas can't read CSS custom properties — mirror values from tokens.css.
-const C = {
-  white:     '#fefcf8',  // --white (canvas bg)
-  sandDark:  '#d4c0a4',  // --sand-dark (links)
-  ink:       '#2c2416',  // --ink (start)
-  sage:      '#4a7c59',  // --sage (end)
-  terra:     '#c4572a',  // --terra (interior nodes)
-  terraPale: '#faf0ea',  // --terra-pale (active node bg)
-} as const;
+import { useCanvasColors } from '../../theme/useTheme';
+import type { CanvasColors } from '../../theme/readCanvasColors';
 
 const FONT_UI = "'Figtree', system-ui, sans-serif";
 
@@ -79,10 +71,10 @@ function resolveVariant(node: WikiNode): WikiNodeVariant {
   return 'default';
 }
 
-function nodeFill(variant: WikiNodeVariant): string {
-  if (variant === 'start') return C.ink;
-  if (variant === 'end') return C.sage;
-  return C.terra;
+function nodeFill(variant: WikiNodeVariant, colors: CanvasColors): string {
+  if (variant === 'start') return colors.ink;
+  if (variant === 'end') return colors.sage;
+  return colors.terra;
 }
 
 function nodeRadius(variant: WikiNodeVariant): number {
@@ -356,8 +348,8 @@ function positionHighlightedLink(
   link: WikiLink,
   fg: ForceGraphMethods<WikiNode, WikiLink>,
 ): void {
-  const start = link.source as SimNode;
-  const end = link.target as SimNode;
+  const start = link.source as unknown as SimNode;
+  const end = link.target as unknown as SimNode;
   if (start.x == null || start.y == null || end.x == null || end.y == null) {
     el.style.visibility = 'hidden';
     return;
@@ -468,6 +460,7 @@ function drawLabel(
   orientation: GraphOrientation,
   borderColor: string,
   bgColor: string,
+  colors: CanvasColors,
 ): void {
   const variant = resolveVariant(node);
   const text = nodeDisplayName(node);
@@ -489,7 +482,7 @@ function drawLabel(
   ctx.lineWidth = borderW;
   ctx.stroke();
 
-  ctx.fillStyle = C.ink;
+  ctx.fillStyle = colors.ink;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, cx, cy);
@@ -500,8 +493,9 @@ function drawHighlightedLabel(
   ctx: CanvasRenderingContext2D,
   globalScale: number,
   orientation: GraphOrientation,
+  colors: CanvasColors,
 ): void {
-  drawLabel(node, ctx, globalScale, orientation, C.terra, C.terraPale);
+  drawLabel(node, ctx, globalScale, orientation, colors.terra, colors.terraPale, colors);
 }
 
 function drawTerminalLabel(
@@ -509,23 +503,22 @@ function drawTerminalLabel(
   ctx: CanvasRenderingContext2D,
   globalScale: number,
   orientation: GraphOrientation,
+  colors: CanvasColors,
 ): void {
-  const borderColor = nodeFill(resolveVariant(node));
-  drawLabel(node, ctx, globalScale, orientation, borderColor, C.white);
+  const borderColor = nodeFill(resolveVariant(node), colors);
+  drawLabel(node, ctx, globalScale, orientation, borderColor, colors.white, colors);
 }
 
 const BADGE_FONT_SIZE = 9;
 const BADGE_PAD_X     = 6;
 const BADGE_PAD_Y     = 2;
 const BADGE_RADIUS    = 6;
-const BADGE_BG        = '#fdf2e3';  // --clay-pale
-const BADGE_TEXT      = '#e8a05a';  // --clay
-const BADGE_BORDER    = '#f5dbb0';  // --clay-border
 
 function drawBadge(
   node: SimNode,
   ctx: CanvasRenderingContext2D,
   globalScale: number,
+  colors: CanvasColors,
 ): void {
   if (node.x == null || node.y == null) return;
   const variant = resolveVariant(node);
@@ -548,19 +541,20 @@ function drawBadge(
 
   ctx.beginPath();
   roundRect(ctx, x, y, boxW, boxH, bRadius);
-  ctx.fillStyle = BADGE_BG;
+  ctx.fillStyle = colors.clayPale;
   ctx.fill();
-  ctx.strokeStyle = BADGE_BORDER;
+  ctx.strokeStyle = colors.clayBorder;
   ctx.lineWidth = borderW;
   ctx.stroke();
 
-  ctx.fillStyle = BADGE_TEXT;
+  ctx.fillStyle = colors.clay;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, x + padX, node.y);
 }
 
 export function GraphWiki({ graphData }: { graphData: GraphData }) {
+  const colors = useCanvasColors();
   const wrapperRef     = useRef<HTMLDivElement>(null);
   const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
   const labelLinkRefs       = useRef<Map<string, HTMLAnchorElement>>(new Map());
@@ -654,7 +648,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
       const fg = fgRef.current;
       if (!fg) return;
       for (const node of newNodes) {
-        drawBadge(node as SimNode, ctx, globalScale);
+        drawBadge(node as SimNode, ctx, globalScale, colors);
       }
       for (const node of terminalNodes) {
         const sim = node as SimNode;
@@ -694,7 +688,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         highlightedEl.style.visibility = 'hidden';
       }
     },
-    [newNodes, terminalNodes, hoveredLinks, hoveredLabelNodes, orientation, highlightedInteriorNode],
+    [newNodes, terminalNodes, hoveredLinks, hoveredLabelNodes, orientation, highlightedInteriorNode, colors],
   );
 
   useEffect(() => {
@@ -815,39 +809,38 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         ref={fgRef}
         width={dims.width}
         height={dims.height}
-        backgroundColor={C.white}
+        backgroundColor={colors.white}
         nodeId="id"
         nodeLabel=""
         nodeAutoColorBy={null}
-        nodeColor={(n) => nodeFill(resolveVariant(n))}
+        nodeColor={(n) => nodeFill(resolveVariant(n), colors)}
         nodeVal={(n) => nodeVal(resolveVariant(n))}
         graphData={positionedData}
         nodeRelSize={NODE_REL_SIZE}
-        linkColor={C.sandDark}
+        linkColor={() => 'transparent'}
         linkWidth={BORDER_STD}
+        linkCanvasObjectMode={() => 'replace'}
         linkCanvasObject={(link, ctx, globalScale) => {
           const start = link.source as SimNode;
           const end = link.target as SimNode;
           if (start.x == null || start.y == null || end.x == null || end.y == null) return;
 
+          const touchHighlight =
+            !canHover && isLinkHighlighted(link, hoveredLink, hoveredNodeId);
+
           ctx.beginPath();
           ctx.moveTo(start.x, start.y);
           ctx.lineTo(end.x, end.y);
-          ctx.strokeStyle = C.ink;
+          ctx.strokeStyle = touchHighlight ? colors.ink : colors.graphLink;
           ctx.lineWidth = BORDER_STD / globalScale;
           ctx.stroke();
         }}
-        linkCanvasObjectMode={(link) =>
-          !canHover && isLinkHighlighted(link, hoveredLink, hoveredNodeId)
-            ? 'after'
-            : undefined
-        }
         nodeCanvasObject={(node, ctx, globalScale) => {
           const variant = resolveVariant(node);
           const r = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
           ctx.beginPath();
           ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);
-          ctx.strokeStyle = C.ink;
+          ctx.strokeStyle = colors.ink;
           ctx.lineWidth = BORDER_STD / globalScale;
           ctx.stroke();
 
@@ -858,9 +851,9 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           const isTerminal = variant === 'start' || variant === 'end';
 
           if (isHovered && !canHover) {
-            drawHighlightedLabel(node as SimNode, ctx, globalScale, orientation);
+            drawHighlightedLabel(node as SimNode, ctx, globalScale, orientation, colors);
           } else if (isTerminal && !(canHover && isHovered)) {
-            drawTerminalLabel(node as SimNode, ctx, globalScale, orientation);
+            drawTerminalLabel(node as SimNode, ctx, globalScale, orientation, colors);
           }
         }}
         nodeCanvasObjectMode={(node) => {
