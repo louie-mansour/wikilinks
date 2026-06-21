@@ -57,29 +57,29 @@
   color-scheme: light;
 
   --sand:        #e4edf2;
-  --sand-mid:    #c5d6e0;
-  --sand-dark:   #94abb8;
+  --sand-mid:    #ccdbe4;
+  --sand-dark:   #acc4d2;
 
-  --ink:         #152028;
-  --ink-muted:   #4a6270;
-  --ink-faint:   #849aa8;
+  --ink:         #18252e;
+  --ink-muted:   #536e7e;
+  --ink-faint:   #98aab6;
 
-  --terra:       #1e6b88;
-  --terra-dark:  #155570;
-  --terra-light: #b8d8e8;
-  --terra-pale:  #e8f2f8;
+  --terra:       #247fa2;
+  --terra-dark:  #217494;
+  --terra-light: #f9fdfe;
+  --terra-pale:  #f7fbfd;
 
   --sage:        #2a7a68;
-  --sage-light:  #aad8cc;
-  --sage-pale:   #e8f4f0;
+  --sage-light:  #f8fcfb;
+  --sage-pale:   #f5fcfa;
 
   --clay:        #4a90b8;
-  --clay-border: #a8cce0;
-  --clay-pale:   #e4f0f8;
+  --clay-border: #f9fcfd;
+  --clay-pale:   #f8fbfc;
 
   --white:       #f6fafc;
 
-  --graph-link:  #94abb8;
+  --graph-link:  #acc4d2;
 }
 
 /* ── Forest ── */
@@ -87,29 +87,29 @@
   color-scheme: light;
 
   --sand:        #e8ebe4;
-  --sand-mid:    #ccd4c0;
-  --sand-dark:   #a8b498;
+  --sand-mid:    #d5dbcb;
+  --sand-dark:   #bac5a9;
 
-  --ink:         #1c2018;
-  --ink-muted:   #4a5840;
-  --ink-faint:   #889878;
+  --ink:         #1f231b;
+  --ink-muted:   #5e6f51;
+  --ink-faint:   #9eab90;
 
-  --terra:       #4a6828;
-  --terra-dark:  #3a5220;
-  --terra-light: #c8d8b0;
-  --terra-pale:  #eef2e8;
+  --terra:       #5b8131;
+  --terra-dark:  #54772e;
+  --terra-light: #fbfcf8;
+  --terra-pale:  #f9fbf6;
 
   --sage:        #2a6848;
-  --sage-light:  #a8d4bc;
-  --sage-pale:   #e8f2ec;
+  --sage-light:  #f9fcfb;
+  --sage-pale:   #f6fbf9;
 
   --clay:        #c89030;
-  --clay-border: #e8c870;
-  --clay-pale:   #f8f0e0;
+  --clay-border: #fdfcf8;
+  --clay-pale:   #fcf9f4;
 
   --white:       #f8faf6;
 
-  --graph-link:  #a8b498;
+  --graph-link:  #bac5a9;
 }
 
 /* ── Wikipedia (Vector 2022 light) ── */
@@ -117,29 +117,29 @@
   color-scheme: light;
 
   --sand:        #f6f6f6;
-  --sand-mid:    #a2a9b1;
-  --sand-dark:   #72777d;
+  --sand-mid:    #dbdee1;
+  --sand-dark:   #c1c6cb;
 
-  --ink:         #202122;
-  --ink-muted:   #54595d;
-  --ink-faint:   #72777d;
+  --ink:         #292b2c;
+  --ink-muted:   #6b7277;
+  --ink-faint:   #adb1b4;
 
-  --terra:       #3366cc;
-  --terra-dark:  #2a4b8d;
-  --terra-light: #a3caff;
-  --terra-pale:  #eaf3ff;
+  --terra:       #4a77d2;
+  --terra-dark:  #3b6cce;
+  --terra-light: #fafbfe;
+  --terra-pale:  #fafbfe;
 
   --sage:        #14866d;
-  --sage-light:  #a3d4c9;
-  --sage-pale:   #eaf3f0;
+  --sage-light:  #f5fefc;
+  --sage-pale:   #f5fefc;
 
   --clay:        #996600;
-  --clay-border: #c8ccd1;
-  --clay-pale:   #fef6e7;
+  --clay-border: #fffcf5;
+  --clay-pale:   #fffcf5;
 
   --white:       #ffffff;
 
-  --graph-link:  #72777d;
+  --graph-link:  #c1c6cb;
 }
 
 /* ── Midnight ── */
@@ -147,29 +147,29 @@
   color-scheme: dark;
 
   --sand:        #242018;
-  --sand-mid:    #3e3830;
-  --sand-dark:   #9a9080;
+  --sand-mid:    #2a2621;
+  --sand-dark:   #524b40;
 
-  --ink:         #ece6d8;
-  --ink-muted:   #a89880;
-  --ink-faint:   #807060;
+  --ink:         #ede7da;
+  --ink-muted:   #988468;
+  --ink-faint:   #5a4e43;
 
-  --terra:       #d87048;
-  --terra-dark:  #c05830;
-  --terra-light: #5a4038;
-  --terra-pale:  #3a3028;
+  --terra:       #da7650;
+  --terra-dark:  #d66a41;
+  --terra-light: #3b1a0d;
+  --terra-pale:  #461e0f;
 
   --sage:        #58a878;
-  --sage-light:  #385040;
-  --sage-pale:   #283830;
+  --sage-light:  #14261b;
+  --sage-pale:   #182e20;
 
   --clay:        #d8a048;
-  --clay-border: #605038;
-  --clay-pale:   #383028;
+  --clay-border: #2b1d09;
+  --clay-pale:   #36250c;
 
   --white:       #322e28;
 
-  --graph-link:  #c8c0b4;
+  --graph-link:  #4f483d;
 }
 
 /* ── Obsidian (cool charcoal) ── */
@@ -177,29 +177,29 @@
   color-scheme: dark;
 
   --sand:        #1a2028;
-  --sand-mid:    #363d4a;
-  --sand-dark:   #8b949e;
+  --sand-mid:    #22262f;
+  --sand-dark:   #434b5c;
 
-  --ink:         #e6edf3;
-  --ink-muted:   #9da7b3;
-  --ink-faint:   #7e8691;
+  --ink:         #dee8ef;
+  --ink-muted:   #7a8798;
+  --ink-faint:   #4a4f57;
 
-  --terra:       #539bf5;
-  --terra-dark:  #4184e4;
-  --terra-light: #2c4a6e;
-  --terra-pale:  #242c38;
+  --terra:       #4493f4;
+  --terra-dark:  #358af3;
+  --terra-light: #04234a;
+  --terra-pale:  #052956;
 
   --sage:        #3fb950;
-  --sage-light:  #2a4d34;
-  --sage-pale:   #1a2820;
+  --sage-light:  #0d2711;
+  --sage-pale:   #102f15;
 
   --clay:        #d29922;
-  --clay-border: #4d4430;
-  --clay-pale:   #2c2820;
+  --clay-border: #2a1e07;
+  --clay-pale:   #352609;
 
   --white:       #282f3a;
 
-  --graph-link:  #8b949e;
+  --graph-link:  #404958;
 }
 
 /* ── Ember (warm crimson) ── */
@@ -207,29 +207,29 @@
   color-scheme: dark;
 
   --sand:        #281818;
-  --sand-mid:    #402828;
-  --sand-dark:   #9a7070;
+  --sand-mid:    #221616;
+  --sand-dark:   #5c3939;
 
-  --ink:         #f0e8e8;
-  --ink-muted:   #b89898;
-  --ink-faint:   #806868;
+  --ink:         #ebe0e0;
+  --ink-muted:   #a27979;
+  --ink-faint:   #594949;
 
-  --terra:       #e85555;
-  --terra-dark:  #c84040;
-  --terra-light: #5a3030;
-  --terra-pale:  #3a2424;
+  --terra:       #e85454;
+  --terra-dark:  #e64343;
+  --terra-light: #3b0808;
+  --terra-pale:  #450909;
 
   --sage:        #c87878;
-  --sage-light:  #4d3030;
-  --sage-pale:   #2a1818;
+  --sage-light:  #2d1212;
+  --sage-pale:   #351616;
 
   --clay:        #e8a040;
-  --clay-border: #605030;
-  --clay-pale:   #382c20;
+  --clay-border: #231604;
+  --clay-pale:   #2c1c05;
 
   --white:       #302020;
 
-  --graph-link:  #b89898;
+  --graph-link:  #573636;
 }
 
 /* ── Aurora (purple & teal) ── */
@@ -237,29 +237,29 @@
   color-scheme: dark;
 
   --sand:        #1a2430;
-  --sand-mid:    #2a3444;
-  --sand-dark:   #8898a8;
+  --sand-mid:    #202734;
+  --sand-dark:   #3e4c64;
 
-  --ink:         #e8f0f8;
-  --ink-muted:   #98a8b8;
-  --ink-faint:   #708090;
+  --ink:         #e3ecf6;
+  --ink-muted:   #768ca1;
+  --ink-faint:   #49535e;
 
-  --terra:       #9d7cf0;
-  --terra-dark:  #8560e0;
-  --terra-light: #403060;
-  --terra-pale:  #282040;
+  --terra:       #a080f0;
+  --terra-dark:  #9774ef;
+  --terra-light: #270c6b;
+  --terra-pale:  #2e0e7c;
 
   --sage:        #34d399;
-  --sage-light:  #2a5040;
-  --sage-pale:   #202a24;
+  --sage-light:  #09271c;
+  --sage-pale:   #0a3022;
 
   --clay:        #f472b6;
-  --clay-border: #504050;
-  --clay-pale:   #302830;
+  --clay-border: #450526;
+  --clay-pale:   #53072f;
 
   --white:       #243040;
 
-  --graph-link:  #8898a8;
+  --graph-link:  #3b4960;
 }
 
 /* ── Deep Sea (dark navy) ── */
@@ -267,29 +267,29 @@
   color-scheme: dark;
 
   --sand:        #141c28;
-  --sand-mid:    #243040;
-  --sand-dark:   #7090a8;
+  --sand-mid:    #161e28;
+  --sand-dark:   #35465d;
 
-  --ink:         #e0eef8;
-  --ink-muted:   #90b0c8;
-  --ink-faint:   #6888a0;
+  --ink:         #cfe4f4;
+  --ink-muted:   #5888ac;
+  --ink-faint:   #3b4f5d;
 
-  --terra:       #38bdf8;
-  --terra-dark:  #28a0d8;
-  --terra-light: #2a4060;
-  --terra-pale:  #202838;
+  --terra:       #0792d0;
+  --terra-dark:  #078ac5;
+  --terra-light: #02202e;
+  --terra-pale:  #022737;
 
   --sage:        #2dd4bf;
-  --sage-light:  #2a4848;
-  --sage-pale:   #202c2c;
+  --sage-light:  #07211d;
+  --sage-pale:   #082824;
 
   --clay:        #60a5fa;
-  --clay-border: #385070;
-  --clay-pale:   #202838;
+  --clay-border: #021a39;
+  --clay-pale:   #022248;
 
   --white:       #1c2838;
 
-  --graph-link:  #7090a8;
+  --graph-link:  #33435a;
 }
 
 /* ── Moss (dark green) ── */
@@ -297,29 +297,29 @@
   color-scheme: dark;
 
   --sand:        #1a241c;
-  --sand-mid:    #2a3a30;
-  --sand-dark:   #88a090;
+  --sand-mid:    #19221c;
+  --sand-dark:   #374b3e;
 
-  --ink:         #e8f0ea;
-  --ink-muted:   #98b0a0;
-  --ink-faint:   #688078;
+  --ink:         #e1ebe4;
+  --ink-muted:   #6e8f79;
+  --ink-faint:   #45554f;
 
-  --terra:       #6db87a;
-  --terra-dark:  #58a068;
-  --terra-light: #2a4830;
-  --terra-pale:  #202a22;
+  --terra:       #3c9f4d;
+  --terra-dark:  #399549;
+  --terra-light: #112314;
+  --terra-pale:  #142918;
 
   --sage:        #4ade80;
-  --sage-light:  #2a4030;
-  --sage-pale:   #1e2820;
+  --sage-light:  #062311;
+  --sage-pale:   #082a14;
 
   --clay:        #c9a227;
-  --clay-border: #504830;
-  --clay-pale:   #2a2820;
+  --clay-border: #221b07;
+  --clay-pale:   #2c2308;
 
   --white:       #202c24;
 
-  --graph-link:  #88a090;
+  --graph-link:  #35493c;
 }
 
 *, *::before, *::after {
