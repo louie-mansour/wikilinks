@@ -15,14 +15,24 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    urlPrefix: 'wikilinks.app/s/',
+    shareBaseUrl: 'https://wikilinks.app/s/',
     urlCode: 'aE3f9k',
+    onActivate: () => new Promise((resolve) => setTimeout(resolve, 800)),
   },
 };
 
 export const LongCode: Story = {
   args: {
-    urlPrefix: 'wikilinks.app/s/',
+    shareBaseUrl: 'https://wikilinks.app/s/',
     urlCode: 'xK2mP9qR4',
+    onActivate: () => new Promise((resolve) => setTimeout(resolve, 800)),
+  },
+};
+
+export const Localhost: Story = {
+  args: {
+    shareBaseUrl: 'http://localhost:5173/s/',
+    urlCode: 'aE3f9k',
+    onActivate: () => new Promise((resolve) => setTimeout(resolve, 800)),
   },
 };

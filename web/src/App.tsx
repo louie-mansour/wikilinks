@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header/Header';
 import { GraphWiki } from './components/GraphWiki/GraphWiki';
 import { BentoBox } from './components/BentoBox/BentoBox';
@@ -16,6 +16,8 @@ import { fetchRandom } from './api/random';
 import { useDebouncedSuggestions } from './hooks/useDebouncedSuggestions';
 import { formatSearchTime, formatNumber, type SearchResult } from './data/mockSearch';
 import { searchPaths } from './api/search';
+import { getShare, createShare } from './api/share';
+import { SHARE_BASE_URL } from './config';
 import styles from './App.module.css';
 
 const SORT_OPTIONS = [
@@ -34,6 +36,25 @@ export function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [sortOrder, setSortOrder] = useState('interesting');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [isSharedView, setIsSharedView] = useState(false);
+
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/s\/([A-Za-z0-9]+)$/);
+    if (!match) return;
+    const code = match[1];
+    setIsSharedView(true);
+    setIsSearching(true);
+    getShare(code)
+      .then((data) => {
+        setResult(data);
+        setStartArticle(data.start);
+        setEndArticle(data.end);
+      })
+      .catch((err: unknown) => {
+        setSearchError(err instanceof Error ? err.message : 'Share not found');
+      })
+      .finally(() => setIsSearching(false));
+  }, []);
 
   const startSuggestions = useDebouncedSuggestions('start', startArticle);
   const endSuggestions = useDebouncedSuggestions('end', endArticle);
@@ -98,6 +119,10 @@ export function App() {
         setResult(data);
         setVisibleCount(PAGE_SIZE);
         setSortOrder('interesting');
+        if (isSharedView) {
+          setIsSharedView(false);
+        }
+        window.history.pushState(null, '', '/');
       } catch (err) {
         setResult(null);
         setSearchError(err instanceof Error ? err.message : 'Search failed');
@@ -107,7 +132,7 @@ export function App() {
       setIsSearching(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startArticle, endArticle, isRouletting, isSearching]);
+  }, [startArticle, endArticle, isRouletting, isSearching, isSharedView]);
 
   const sortedPaths = result
     ? [...result.paths].sort((a, b) => {
@@ -146,6 +171,11 @@ return 0; // 'interesting' = original order
                 : isSearching
                   ? 'Finding paths…'
                   : 'Find paths'
+            }
+            sharedArticles={
+              isSharedView && startArticle && endArticle
+                ? { start: startArticle, end: endArticle }
+                : undefined
             }
           />
         </PanelEnter>
@@ -189,8 +219,12 @@ return 0; // 'interesting' = original order
 
           <PanelEnter index={4}>
             <ShareBar
-              urlPrefix="wikilinks.app/s/"
+              shareBaseUrl={SHARE_BASE_URL}
               urlCode={result.shareCode}
+              onActivate={async () => {
+                await createShare(result);
+                window.history.pushState(null, '', `/s/${result.shareCode}`);
+              }}
             />
           </PanelEnter>
 

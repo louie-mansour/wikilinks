@@ -181,24 +181,27 @@ const EINSTEIN_QUANTUM: SearchResult = {
     {
       period: 'All time',
       rows: [
-        { key: 'Most paths', value: '300', badge: true },
-        { key: 'Most nodes', value: '12,048', badge: true },
+        { key: 'Most paths found', value: '300', badge: true },
+        { key: 'Most articles in paths', value: '14', badge: true },
+        { key: 'Most articles explored', value: '12,048', badge: true },
         { key: 'Longest path', value: '9 hops', badge: true },
       ],
     },
     {
       period: 'Past week',
       rows: [
-        { key: 'Most paths', value: '300', badge: true },
-        { key: 'Most nodes', value: '5,211' },
+        { key: 'Most paths found', value: '300', badge: true },
+        { key: 'Most articles in paths', value: '11' },
+        { key: 'Most articles explored', value: '5,211' },
         { key: 'Longest path', value: '8 hops' },
       ],
     },
     {
       period: 'Past day',
       rows: [
-        { key: 'Most paths', value: '300' },
-        { key: 'Most nodes', value: '3,892', badge: true },
+        { key: 'Most paths found', value: '300' },
+        { key: 'Most articles in paths', value: '9', badge: true },
+        { key: 'Most articles explored', value: '3,892', badge: true },
         { key: 'Longest path', value: '7 hops', badge: true },
       ],
     },
@@ -232,17 +235,6 @@ function seededPick<T>(arr: T[], seed: number, count: number): T[] {
     copy.splice(idx, 1);
   }
   return result;
-}
-
-function generateShareCode(s: string): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let h = hash(s);
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars[h % chars.length];
-    h = (h * 1664525 + 1013904223) >>> 0;
-  }
-  return code;
 }
 
 function buildGenericResult(start: string, end: string): SearchResult {
@@ -287,39 +279,53 @@ function buildGenericResult(start: string, end: string): SearchResult {
   // ── Records ───────────────────────────────────────────────────────────────
   const prevAllTime = {
     paths: pathsFound + (s(6) % 50) + 5,
-    nodes: nodesExplored + (s(7) % 5000) + 500,
-    hops: hops + (s(8) % 3) + 1,
+    articlesInPaths: uniqueArticles + (s(7) % 5) + 1,
+    articlesExplored: nodesExplored + (s(8) % 5000) + 500,
+    hops: hops + (s(9) % 3) + 1,
   };
   const prevWeek = {
     paths: pathsFound + (s(11) % 35),
-    nodes: nodesExplored + (s(12) % 2000),
+    articlesInPaths: uniqueArticles + (s(12) % 3),
+    articlesExplored: nodesExplored + (s(13) % 2000),
     hops: hops + 2,
   };
   const prevDay = {
-    paths: pathsFound + (s(9) % 20),
-    nodes: nodesExplored + (s(10) % 1000),
+    paths: pathsFound + (s(14) % 20),
+    articlesInPaths: uniqueArticles + 1,
+    articlesExplored: nodesExplored + (s(15) % 1000),
     hops: hops + 1,
   };
 
   function recordPeriod(
     period: string,
-    prev: { paths: number; nodes: number; hops: number },
+    prev: {
+      paths: number;
+      articlesInPaths: number;
+      articlesExplored: number;
+      hops: number;
+    },
   ): RecordPeriod {
     const pathsVal = Math.max(pathsFound, prev.paths);
-    const nodesVal = Math.max(nodesExplored, prev.nodes);
+    const articlesInPathsVal = Math.max(uniqueArticles, prev.articlesInPaths);
+    const articlesExploredVal = Math.max(nodesExplored, prev.articlesExplored);
     const hopsVal = Math.max(hops, prev.hops);
     return {
       period,
       rows: [
         {
-          key: 'Most paths',
+          key: 'Most paths found',
           value: String(pathsVal),
           badge: pathsFound > prev.paths,
         },
         {
-          key: 'Most nodes',
-          value: String(nodesVal),
-          badge: nodesExplored > prev.nodes,
+          key: 'Most articles in paths',
+          value: String(articlesInPathsVal),
+          badge: uniqueArticles > prev.articlesInPaths,
+        },
+        {
+          key: 'Most articles explored',
+          value: String(articlesExploredVal),
+          badge: nodesExplored > prev.articlesExplored,
         },
         {
           key: 'Longest path',
@@ -354,7 +360,7 @@ function buildGenericResult(start: string, end: string): SearchResult {
     paths,
     graphData,
     records,
-    shareCode: generateShareCode(start + end),
+    shareCode: 'mock00',
     maxHops: 10,
     maxPaths: 1000,
   };

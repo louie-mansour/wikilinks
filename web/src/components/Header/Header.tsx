@@ -2,6 +2,9 @@ import { Combobox, type Suggestion } from '../Combobox/Combobox';
 import { Button } from '../Button/Button';
 import styles from './Header.module.css';
 
+const DEFAULT_TAGLINE =
+  'Find the shortest route between any two Wikipedia articles';
+
 interface HeaderProps {
   startSuggestions: Suggestion[];
   endSuggestions: Suggestion[];
@@ -16,6 +19,8 @@ interface HeaderProps {
   onSearch?: () => void;
   isSearching?: boolean;
   searchLabel?: string;
+  /** When set, replaces the default tagline (shared link view). */
+  sharedArticles?: { start: string; end: string };
 }
 
 export function Header({
@@ -32,6 +37,7 @@ export function Header({
   onSearch,
   isSearching = false,
   searchLabel = 'Find paths',
+  sharedArticles,
 }: HeaderProps) {
   return (
     <header className={styles.topBar}>
@@ -49,7 +55,20 @@ export function Header({
       </div>
 
       <p className={styles.tagline}>
-        Find the shortest route between any two Wikipedia articles
+        {sharedArticles ? (
+          <>
+            Welcome! Someone shared this search with you.
+            <br />
+            It shows shortest Wikipedia paths between{' '}
+            <strong>{sharedArticles.start}</strong> and{' '}
+            <strong>{sharedArticles.end}</strong>.
+            <br />
+            <br />
+            Enter articles below to find your own shortest paths.
+          </>
+        ) : (
+          DEFAULT_TAGLINE
+        )}
       </p>
 
       <div className={styles.searchForm}>

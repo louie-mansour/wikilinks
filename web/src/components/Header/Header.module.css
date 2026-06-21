@@ -49,6 +49,13 @@
   font-size: 14px;
   color: var(--ink-muted);
   margin: 0;
+  line-height: 1.5;
+}
+
+.tagline strong {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 /* Form block — grows with inputs; button stretches to match */

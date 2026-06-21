@@ -1,5 +1,14 @@
 /// <reference types="vite/client" />
 
+interface ImportMetaEnv {
+  readonly VITE_APP_URL?: string;
+  readonly VITE_API_BASE?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
 declare module 'd3-force-3d' {
   export function forceX<T>(x?: number | ((node: T, i: number, nodes: T[]) => number)): {
     (alpha: number): void;

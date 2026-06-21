@@ -161,6 +161,18 @@
   --card-value-color: var(--terra);
 }
 
+.cardArticles .statSmallSub {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.cardArticles .statSmallSubEmphasis {
+  font-style: normal;
+  font-weight: 800;
+}
+
 /* ────────────────────────────────────────
    Motion
    All transitions / animations inside prefers-reduced-motion: no-preference
@@ -184,6 +196,15 @@
   .bentoCard:hover .statPaths,
   .bentoCard:hover .statSmallValue {
     transform: scale(1.16);
+  }
+
+  .cardArticles .statSmallSubEmphasis {
+    display: inline-block;
+    transition: font-size 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .cardArticles:hover .statSmallSubEmphasis {
+    font-size: 16px;
   }
 }
 

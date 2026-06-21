@@ -21,6 +21,7 @@ import (
 func main() {
 	dataDir := flag.String("data-dir", "datapipeline/data", "path to graph bundle directory")
 	port := flag.String("port", "8080", "HTTP listen port")
+	shareTTL := flag.Duration("share-ttl", 365*24*time.Hour, "how long share snapshots are retained (0 = keep forever)")
 	flag.Parse()
 
 	slog.Info("loading graph", "dataDir", *dataDir)
@@ -35,7 +36,7 @@ func main() {
 		"endingNodes", len(g.EndingNodes()),
 	)
 
-	st, err := store.New(filepath.Join(*dataDir, "wikilinks.db"))
+	st, err := store.New(filepath.Join(*dataDir, "wikilinks.db"), *shareTTL)
 	if err != nil {
 		slog.Error("failed to open store", "err", err)
 		os.Exit(1)
@@ -50,6 +51,7 @@ func main() {
 	mux := http.NewServeMux()
 	controller.NewHealth().Register(mux)
 	controller.NewSearch(searchSvc).Register(mux)
+	controller.NewShare(st).Register(mux)
 	controller.NewStartingNodes(startingNodesSvc).Register(mux)
 	controller.NewEndingNodes(endingNodesSvc).Register(mux)
 	controller.NewSuggest(suggestSvc).Register(mux)
@@ -101,7 +103,7 @@ func chain(h http.Handler, middlewares ...func(http.Handler) http.Handler) http.
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)

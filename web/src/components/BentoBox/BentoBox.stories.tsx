@@ -47,6 +47,22 @@ export const FewPaths: Story = {
 };
 
 /* ────────────────────────────────────────
+   ManyFirstDiscoveries — clay subtext stress test
+──────────────────────────────────────── */
+export const ManyFirstDiscoveries: Story = {
+  args: {
+    pathsFound: 247,
+    fromArticle: 'Philosophy',
+    toArticle: 'Banana',
+    minHops: 4,
+    nodesExplored: '8,241',
+    searchTime: '1.2s',
+    pathArticles: 180,
+    firstArticles: 166,
+  },
+};
+
+/* ────────────────────────────────────────
    ManyPaths — dense graph result
 ──────────────────────────────────────── */
 export const ManyPaths: Story = {

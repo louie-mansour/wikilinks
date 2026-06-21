@@ -1,8 +1,8 @@
 package service
 
 import (
+	"crypto/rand"
 	"fmt"
-	"hash/fnv"
 	"strings"
 	"time"
 
@@ -96,7 +96,7 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 	elapsed := time.Since(t0)
 
 	if !found {
-		return &SearchResult{
+		sr := &SearchResult{
 			Start:         from,
 			End:           to,
 			NoPathFound:   true,
@@ -105,10 +105,11 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 			Paths:         []PathData{},
 			GraphData:     buildNoPathGraphData(from, to),
 			Records:       []RecordPeriod{},
-			ShareCode:     buildShareCode(from, to),
+			ShareCode:     randomShareKey(),
 			MaxHops:       graph.MaxDepth,
 			MaxPaths:      graph.MaxPaths,
-		}, nil
+		}
+		return sr, nil
 	}
 
 	allPaths := make([][]string, len(result.Paths))
@@ -122,6 +123,13 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 
 	graphData := buildGraphData(allPaths)
 
+	uniqueSet := make(map[string]struct{})
+	for _, path := range allPaths {
+		for _, title := range path {
+			uniqueSet[title] = struct{}{}
+		}
+	}
+
 	// Collect all unique titles from the graph nodes for hit tracking.
 	titles := make([]string, 0, len(graphData.Nodes))
 	for _, n := range graphData.Nodes {
@@ -129,11 +137,12 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 	}
 
 	meta := store.SearchMeta{
-		From:          from,
-		To:            to,
-		NodesExplored: result.NodesExplored,
-		MinHops:       len(allPaths[0]) - 1,
-		PathsFound:    len(allPaths),
+		From:            from,
+		To:              to,
+		NodesExplored:   result.NodesExplored,
+		ArticlesInPaths: len(uniqueSet),
+		MinHops:         len(allPaths[0]) - 1,
+		PathsFound:      len(allPaths),
 	}
 
 	prevRecords, err := s.st.QueryRecords()
@@ -163,13 +172,6 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 		pathDatas[i] = PathData{ID: i + 1, Crumbs: buildCrumbs(path, newSet)}
 	}
 
-	uniqueSet := make(map[string]struct{})
-	for _, path := range allPaths {
-		for _, title := range path {
-			uniqueSet[title] = struct{}{}
-		}
-	}
-
 	records, err := s.st.QueryRecords()
 	if err != nil {
 		records = []RecordPeriod{}
@@ -177,7 +179,7 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 		records = store.AnnotateRecordBadges(records, prevRecords, meta)
 	}
 
-	return &SearchResult{
+	sr := &SearchResult{
 		Start:          from,
 		End:            to,
 		PathsFound:     len(allPaths),
@@ -189,10 +191,11 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 		Paths:          pathDatas,
 		GraphData:      graphData,
 		Records:        records,
-		ShareCode:      buildShareCode(from, to),
+		ShareCode:      randomShareKey(),
 		MaxHops:        graph.MaxDepth,
 		MaxPaths:       graph.MaxPaths,
-	}, nil
+	}
+	return sr, nil
 }
 
 func buildNoPathGraphData(from, to string) GraphData {
@@ -256,18 +259,14 @@ func buildCrumbs(path []string, newSet map[string]struct{}) []Crumb {
 	return crumbs
 }
 
-// buildShareCode generates a deterministic 6-char alphanumeric code from two titles.
-func buildShareCode(start, end string) string {
-	h := fnv.New32a()
-	h.Write([]byte(start))
-	h.Write([]byte("|"))
-	h.Write([]byte(end))
+func randomShareKey() string {
 	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	n := h.Sum32()
-	code := make([]byte, 6)
-	for i := range code {
-		code[i] = chars[n%uint32(len(chars))]
-		n = n*1664525 + 1013904223
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		panic("crypto/rand unavailable: " + err.Error())
 	}
-	return string(code)
+	for i := range b {
+		b[i] = chars[b[i]%62]
+	}
+	return string(b)
 }

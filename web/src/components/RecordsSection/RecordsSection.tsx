@@ -18,8 +18,8 @@ interface RecordsSectionProps {
 
 export function RecordsSection({ periods }: RecordsSectionProps) {
   return (
-    <div className={styles.section} role="region" aria-label="Records">
-      <div className={styles.header}>Records</div>
+    <div className={styles.section} role="region" aria-label="Worldwide leaderboard">
+      <div className={styles.header}>Worldwide leaderboard</div>
       <div className={styles.cols}>
         {periods.map((p) => (
           <div key={p.period} className={styles.col}>

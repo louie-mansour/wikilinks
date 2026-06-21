@@ -1,18 +1,40 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '../Button/Button';
 import styles from './ShareBar.module.css';
 
 interface ShareBarProps {
-  urlPrefix: string;
+  shareBaseUrl: string;
   urlCode: string;
+  onActivate: () => Promise<void>;
   onCopy?: () => void;
 }
 
-export function ShareBar({ urlPrefix, urlCode, onCopy }: ShareBarProps) {
+export function ShareBar({ shareBaseUrl, urlCode, onActivate, onCopy }: ShareBarProps) {
   const [copied, setCopied] = useState(false);
-  const fullUrl = `https://${urlPrefix}${urlCode}`;
+  const [isActivating, setIsActivating] = useState(false);
+  const savedRef = useRef(false);
+  const fullUrl = `${shareBaseUrl}${urlCode}`;
+  const displayPrefix = shareBaseUrl.replace(/^https?:\/\//, '');
 
-  function handleCopy() {
+  async function activate() {
+    if (savedRef.current) return;
+    setIsActivating(true);
+    try {
+      await onActivate();
+      savedRef.current = true;
+    } finally {
+      setIsActivating(false);
+    }
+  }
+
+  async function handleLinkClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    await activate();
+    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  async function handleCopy() {
+    await activate();
     navigator.clipboard?.writeText(fullUrl).catch(() => {});
     setCopied(true);
     onCopy?.();
@@ -26,15 +48,15 @@ export function ShareBar({ urlPrefix, urlCode, onCopy }: ShareBarProps) {
         <a
           href={fullUrl}
           className={styles.url}
-          target="_blank"
-          rel="noopener noreferrer"
+          onClick={handleLinkClick}
         >
-          {urlPrefix}<strong>{urlCode}</strong>
+          {displayPrefix}<strong>{urlCode}</strong>
         </a>
       </span>
       <Button
         variant="permalink"
         onClick={handleCopy}
+        disabled={isActivating}
         className={copied ? styles.copied : ''}
       >
         {copied ? 'Copied!' : 'Copy link'}

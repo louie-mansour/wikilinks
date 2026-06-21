@@ -21,25 +21,36 @@ CREATE TABLE IF NOT EXISTS searches (
     to_article     TEXT    NOT NULL,
     nodes_explored INTEGER NOT NULL,
     min_hops       INTEGER NOT NULL,
-    paths_found    INTEGER NOT NULL,
-    new_articles   INTEGER NOT NULL
+    paths_found         INTEGER NOT NULL,
+    new_articles        INTEGER NOT NULL,
+    articles_in_paths   INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_searches_created_at ON searches(created_at);
+
+CREATE TABLE IF NOT EXISTS share_snapshots (
+    share_key   TEXT    PRIMARY KEY,
+    created_at  INTEGER NOT NULL,
+    result_json TEXT    NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_share_snapshots_created ON share_snapshots(created_at);
 `
 
 // Store is a SQLite-backed persistence layer for hit counts and search history.
 type Store struct {
-	db *sql.DB
+	db       *sql.DB
+	shareTTL time.Duration
 }
 
 // SearchMeta holds the per-search statistics recorded alongside hit counts.
 type SearchMeta struct {
 	From          string
 	To            string
-	NodesExplored int
-	MinHops       int
-	PathsFound    int
+	NodesExplored    int
+	ArticlesInPaths  int
+	MinHops          int
+	PathsFound       int
 }
 
 // RecordPeriod holds aggregated stats for one time window.
@@ -55,7 +66,8 @@ type RecordRow struct {
 }
 
 // New opens (or creates) the SQLite database at path and applies the schema.
-func New(path string) (*Store, error) {
+// shareTTL controls how long share snapshots are retained (0 = keep forever).
+func New(path string, shareTTL time.Duration) (*Store, error) {
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
@@ -69,7 +81,28 @@ func New(path string) (*Store, error) {
 		db.Close()
 		return nil, fmt.Errorf("apply schema: %w", err)
 	}
-	return &Store{db: db}, nil
+	if err := migrate(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("migrate schema: %w", err)
+	}
+	return &Store{db: db, shareTTL: shareTTL}, nil
+}
+
+func migrate(db *sql.DB) error {
+	var count int
+	if err := db.QueryRow(
+		`SELECT COUNT(*) FROM pragma_table_info('searches') WHERE name = 'articles_in_paths'`,
+	).Scan(&count); err != nil {
+		return err
+	}
+	if count == 0 {
+		if _, err := db.Exec(
+			`ALTER TABLE searches ADD COLUMN articles_in_paths INTEGER NOT NULL DEFAULT 0`,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Close releases the database connection.
@@ -107,9 +140,9 @@ func (s *Store) RecordSearch(titles []string, meta SearchMeta) ([]string, error)
 
 	newArticles := len(newTitles)
 	_, err = tx.Exec(`
-		INSERT INTO searches(created_at, from_article, to_article, nodes_explored, min_hops, paths_found, new_articles)
-		VALUES(?, ?, ?, ?, ?, ?, ?)
-	`, time.Now().Unix(), meta.From, meta.To, meta.NodesExplored, meta.MinHops, meta.PathsFound, newArticles)
+		INSERT INTO searches(created_at, from_article, to_article, nodes_explored, min_hops, paths_found, new_articles, articles_in_paths)
+		VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+	`, time.Now().Unix(), meta.From, meta.To, meta.NodesExplored, meta.MinHops, meta.PathsFound, newArticles, meta.ArticlesInPaths)
 	if err != nil {
 		return nil, fmt.Errorf("insert search: %w", err)
 	}
@@ -134,12 +167,12 @@ func (s *Store) QueryRecords() ([]RecordPeriod, error) {
 
 	periods := make([]RecordPeriod, 0, len(windows))
 	for _, w := range windows {
-		var maxPaths, maxNodes sql.NullInt64
+		var maxPaths, maxArticlesInPaths, maxArticlesExplored sql.NullInt64
 		var maxHops sql.NullInt64
 		err := s.db.QueryRow(`
-			SELECT MAX(paths_found), MAX(nodes_explored), MAX(min_hops)
+			SELECT MAX(paths_found), MAX(articles_in_paths), MAX(nodes_explored), MAX(min_hops)
 			FROM searches WHERE created_at >= ?
-		`, w.threshold).Scan(&maxPaths, &maxNodes, &maxHops)
+		`, w.threshold).Scan(&maxPaths, &maxArticlesInPaths, &maxArticlesExplored, &maxHops)
 		if err != nil {
 			return nil, fmt.Errorf("query records for %q: %w", w.period, err)
 		}
@@ -152,8 +185,9 @@ func (s *Store) QueryRecords() ([]RecordPeriod, error) {
 		periods = append(periods, RecordPeriod{
 			Period: w.period,
 			Rows: []RecordRow{
-				{Key: "Most paths", Value: fmt.Sprintf("%d", maxPaths.Int64)},
-				{Key: "Most nodes", Value: fmt.Sprintf("%d", maxNodes.Int64)},
+				{Key: "Most paths found", Value: fmt.Sprintf("%d", maxPaths.Int64)},
+				{Key: "Most articles in paths", Value: fmt.Sprintf("%d", maxArticlesInPaths.Int64)},
+				{Key: "Most articles explored", Value: fmt.Sprintf("%d", maxArticlesExplored.Int64)},
 				{Key: "Longest path", Value: fmt.Sprintf("%d hops", maxHops.Int64)},
 			},
 		})
@@ -199,9 +233,11 @@ func isNewRecord(key, displayed string, allTimePrev map[string]string, meta Sear
 
 func searchMatchesDisplayed(key, displayed string, meta SearchMeta) bool {
 	switch key {
-	case "Most paths":
+	case "Most paths found":
 		return meta.PathsFound == parseRecordInt(displayed)
-	case "Most nodes":
+	case "Most articles in paths":
+		return meta.ArticlesInPaths == parseRecordInt(displayed)
+	case "Most articles explored", "Most nodes":
 		return meta.NodesExplored == parseRecordInt(displayed)
 	case "Longest path", "Shortest path":
 		return meta.MinHops == parseRecordHops(displayed)
@@ -212,16 +248,25 @@ func searchMatchesDisplayed(key, displayed string, meta SearchMeta) bool {
 
 func beatsAllTimePrevious(key string, prev map[string]string, meta SearchMeta) bool {
 	switch key {
-	case "Most paths":
-		return meta.PathsFound > parseRecordInt(prev["Most paths"])
-	case "Most nodes":
-		return meta.NodesExplored > parseRecordInt(prev["Most nodes"])
+	case "Most paths found":
+		return meta.PathsFound > parseRecordInt(prev["Most paths found"])
+	case "Most articles in paths":
+		return meta.ArticlesInPaths > parseRecordInt(prev["Most articles in paths"])
+	case "Most articles explored", "Most nodes":
+		return meta.NodesExplored > parseRecordInt(prevArticlesExplored(prev))
 	case "Longest path", "Shortest path":
 		prevHops := prevPathHops(prev)
 		return meta.MinHops > prevHops
 	default:
 		return false
 	}
+}
+
+func prevArticlesExplored(prev map[string]string) string {
+	if v, ok := prev["Most articles explored"]; ok {
+		return v
+	}
+	return prev["Most nodes"]
 }
 
 func prevPathHops(prev map[string]string) int {
@@ -241,4 +286,35 @@ func parseRecordHops(s string) int {
 	var n int
 	fmt.Sscanf(s, "%d hops", &n)
 	return n
+}
+
+// StoreShareSnapshot saves a search result JSON snapshot under the given key.
+// On each call it opportunistically purges expired snapshots (if shareTTL > 0).
+func (s *Store) StoreShareSnapshot(key string, jsonBytes []byte) error {
+	if s.shareTTL > 0 {
+		cutoff := time.Now().Add(-s.shareTTL).Unix()
+		_, _ = s.db.Exec(`DELETE FROM share_snapshots WHERE created_at < ?`, cutoff)
+	}
+	_, err := s.db.Exec(
+		`INSERT OR IGNORE INTO share_snapshots(share_key, created_at, result_json) VALUES(?, ?, ?)`,
+		key, time.Now().Unix(), string(jsonBytes),
+	)
+	return err
+}
+
+// GetShareSnapshot returns the stored result JSON for the given key.
+// Returns sql.ErrNoRows if the key does not exist or has expired.
+func (s *Store) GetShareSnapshot(key string) ([]byte, error) {
+	var jsonStr string
+	var createdAt int64
+	err := s.db.QueryRow(
+		`SELECT result_json, created_at FROM share_snapshots WHERE share_key = ?`, key,
+	).Scan(&jsonStr, &createdAt)
+	if err != nil {
+		return nil, err
+	}
+	if s.shareTTL > 0 && createdAt < time.Now().Add(-s.shareTTL).Unix() {
+		return nil, sql.ErrNoRows
+	}
+	return []byte(jsonStr), nil
 }

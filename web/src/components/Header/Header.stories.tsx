@@ -115,6 +115,17 @@ export const WithValues: Story = {
   ),
 };
 
+export const SharedView: Story = {
+  name: 'Shared link view',
+  render: () => (
+    <HeaderDemo
+      initialStart="Albert Einstein"
+      initialEnd="Quantum mechanics"
+      sharedArticles={{ start: 'Albert Einstein', end: 'Quantum mechanics' }}
+    />
+  ),
+};
+
 export const Searching: Story = {
   name: 'Searching (loading button)',
   render: () => (
