@@ -3,13 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WikiLinks</title>
+    <title>WikiHop — Wikipedia Hop Finder</title>
+    <meta name="description" content="Find the fewest hops between any two Wikipedia articles. The WikiRace solver that shows every possible route — enter two pages and discover how many hops connect them.">
+    <link rel="canonical" href="https://wikihop.org/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://wikihop.org/">
+    <meta property="og:title" content="WikiHop — Wikipedia Hop Finder">
+    <meta property="og:description" content="Find the fewest hops between any two Wikipedia articles. The WikiRace solver that shows every possible route — enter two pages and discover how many hops connect them.">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="WikiHop — Wikipedia Hop Finder">
+    <meta name="twitter:description" content="Find the fewest hops between any two Wikipedia articles. The WikiRace solver that shows every possible route — enter two pages and discover how many hops connect them.">
     <script>
       (function () {
         var ids = ['warm', 'ocean', 'forest', 'wikipedia', 'midnight', 'obsidian', 'ember', 'aurora', 'deep-sea', 'moss'];
         var id = 'midnight';
         try {
-          var stored = localStorage.getItem('wikilinks-theme');
+          var stored = localStorage.getItem('wikihop-theme');
           if (stored && ids.indexOf(stored) !== -1) id = stored;
         } catch (e) {}
         document.documentElement.dataset.theme = id;

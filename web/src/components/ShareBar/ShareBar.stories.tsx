@@ -15,7 +15,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    shareBaseUrl: 'https://wikilinks.app/s/',
+    shareBaseUrl: 'https://wikihop.org/s/',
     urlCode: 'aE3f9k',
     onActivate: () => new Promise((resolve) => setTimeout(resolve, 800)),
   },
@@ -23,7 +23,7 @@ export const Default: Story = {
 
 export const LongCode: Story = {
   args: {
-    shareBaseUrl: 'https://wikilinks.app/s/',
+    shareBaseUrl: 'https://wikihop.org/s/',
     urlCode: 'xK2mP9qR4',
     onActivate: () => new Promise((resolve) => setTimeout(resolve, 800)),
   },

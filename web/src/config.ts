@@ -2,7 +2,7 @@ function resolveAppUrl(): string {
   const configured = import.meta.env.VITE_APP_URL?.replace(/\/$/, '');
   if (configured) return configured;
   return import.meta.env.PROD
-    ? 'https://wikilinks.app'
+    ? 'https://wikihop.org'
     : 'http://localhost:5173';
 }
 

@@ -22,6 +22,8 @@ func main() {
 	dataDir := flag.String("data-dir", "datapipeline/data", "path to graph bundle directory")
 	port := flag.String("port", "8080", "HTTP listen port")
 	shareTTL := flag.Duration("share-ttl", 365*24*time.Hour, "how long share snapshots are retained (0 = keep forever)")
+	staticDir := flag.String("static-dir", "", "path to built frontend directory (enables static file serving + SPA fallback)")
+	appURL := flag.String("app-url", "https://wikihop.org", "public app URL used in OG tags (no trailing slash)")
 	flag.Parse()
 
 	slog.Info("loading graph", "dataDir", *dataDir)
@@ -51,11 +53,18 @@ func main() {
 	mux := http.NewServeMux()
 	controller.NewHealth().Register(mux)
 	controller.NewSearch(searchSvc).Register(mux)
-	controller.NewShare(st).Register(mux)
+	controller.NewShare(st, *staticDir, *appURL).Register(mux)
 	controller.NewStartingNodes(startingNodesSvc).Register(mux)
 	controller.NewEndingNodes(endingNodesSvc).Register(mux)
 	controller.NewSuggest(suggestSvc).Register(mux)
 	controller.NewRandom(randomSvc).Register(mux)
+
+	if *staticDir != "" {
+		mux.Handle("GET /assets/", http.FileServer(http.Dir(*staticDir)))
+		mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, filepath.Join(*staticDir, "index.html"))
+		})
+	}
 
 	// Hard searches can take ~20s on the full graph; keep server timeouts above that.
 	const handlerTimeout = 60 * time.Second

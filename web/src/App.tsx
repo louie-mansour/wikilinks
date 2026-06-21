@@ -39,6 +39,14 @@ export function App() {
   const [isSharedView, setIsSharedView] = useState(false);
 
   useEffect(() => {
+    if (result && !result.noPathFound) {
+      document.title = `${result.start} → ${result.end} | WikiHop`;
+    } else {
+      document.title = 'WikiHop — Wikipedia Hop Finder';
+    }
+  }, [result]);
+
+  useEffect(() => {
     const match = window.location.pathname.match(/^\/s\/([A-Za-z0-9]+)$/);
     if (!match) return;
     const code = match[1];

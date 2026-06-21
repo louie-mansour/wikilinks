@@ -88,7 +88,7 @@ export const THEME_PRESETS: ThemePreset[] = [
 
 export const DEFAULT_THEME_ID: ThemeId = 'midnight';
 
-export const THEME_STORAGE_KEY = 'wikilinks-theme';
+export const THEME_STORAGE_KEY = 'wikihop-theme';
 
 export function isThemeId(value: string): value is ThemeId {
   return (THEME_IDS as readonly string[]).includes(value);
