@@ -1,5 +1,6 @@
 import { useId, useRef, useState, useEffect, useCallback } from 'react';
 import styles from './Combobox.module.css';
+import { trackComboboxSuggestionSelected } from '../../analytics';
 
 export interface Suggestion {
   title: string;
@@ -17,6 +18,7 @@ export interface ComboboxProps {
   onSelect?: (title: string) => void;
   onChange?: (value: string) => void;
   className?: string;
+  analyticsRole?: string;
 }
 
 /** Split `text` on all occurrences of `query` (case-insensitive), returning
@@ -45,6 +47,7 @@ export function Combobox({
   onSelect,
   onChange,
   className = '',
+  analyticsRole,
 }: ComboboxProps) {
   const isControlled = controlledValue !== undefined;
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
@@ -81,13 +84,20 @@ export function Combobox({
   }, []);
 
   const select = useCallback(
-    (title: string) => {
+    (title: string, index: number) => {
       updateValue(title);
       setOpen(false);
       setActiveIndex(-1);
       onSelect?.(title);
+      trackComboboxSuggestionSelected({
+        role: analyticsRole ?? '',
+        selected_article: title,
+        position_in_list: index,
+        query,
+        char_count: query.length,
+      });
     },
-    [onSelect, updateValue]
+    [onSelect, updateValue, analyticsRole, query]
   );
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -126,7 +136,7 @@ export function Combobox({
       case 'Enter':
         e.preventDefault();
         if (activeIndex >= 0 && visibleOptions[activeIndex]) {
-          select(visibleOptions[activeIndex].title);
+          select(visibleOptions[activeIndex].title, activeIndex);
         }
         break;
       case 'Escape':
@@ -197,7 +207,7 @@ export function Combobox({
                 onMouseDown={(e) => {
                   // prevent blur before click registers
                   e.preventDefault();
-                  select(option.title);
+                  select(option.title, i);
                 }}
                 onMouseEnter={() => setActiveIndex(i)}
               >

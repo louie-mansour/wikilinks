@@ -1,5 +1,6 @@
 import { Badge } from '../Badge/Badge';
 import styles from './PathItem.module.css';
+import { trackArticleLinkClicked } from '../../analytics';
 
 export interface Crumb {
   href: string;
@@ -14,6 +15,8 @@ interface PathItemProps {
 }
 
 export function PathItem({ number, crumbs }: PathItemProps) {
+  const pathTitles = crumbs.map((c) => c.label);
+
   return (
     <article className={styles.item}>
       <div className={styles.num}>#{number}</div>
@@ -29,6 +32,7 @@ export function PathItem({ number, crumbs }: PathItemProps) {
               target="_blank"
               rel="noopener noreferrer"
               className={`${styles.crumb} ${crumb.highlighted ? styles.crumbHl : ''}`}
+              onClick={() => trackArticleLinkClicked({ article_title: crumb.label, hop_index: i, path_titles: pathTitles })}
             >
               {crumb.label}
               {crumb.tag && (

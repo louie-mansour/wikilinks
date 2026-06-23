@@ -109,8 +109,9 @@ func migrate(db *sql.DB) error {
 func (s *Store) Close() error { return s.db.Close() }
 
 // RecordSearch increments hit counts for all titles in a single transaction,
-// inserts a search history row, and returns the titles whose prior count was 0.
-func (s *Store) RecordSearch(titles []string, meta SearchMeta) ([]string, error) {
+// inserts a search history row, and returns the hit count for every title
+// (including this search). Callers can identify new titles by count == 1.
+func (s *Store) RecordSearch(titles []string, meta SearchMeta) (map[string]int, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -127,18 +128,19 @@ func (s *Store) RecordSearch(titles []string, meta SearchMeta) ([]string, error)
 	}
 	defer upsert.Close()
 
-	var newTitles []string
+	hitCounts := make(map[string]int, len(titles))
+	newArticles := 0
 	for _, title := range titles {
 		var count int
 		if err := upsert.QueryRow(title).Scan(&count); err != nil {
 			return nil, fmt.Errorf("upsert %q: %w", title, err)
 		}
+		hitCounts[title] = count
 		if count == 1 {
-			newTitles = append(newTitles, title)
+			newArticles++
 		}
 	}
 
-	newArticles := len(newTitles)
 	_, err = tx.Exec(`
 		INSERT INTO searches(created_at, from_article, to_article, nodes_explored, min_hops, paths_found, new_articles, articles_in_paths)
 		VALUES(?, ?, ?, ?, ?, ?, ?, ?)
@@ -150,7 +152,7 @@ func (s *Store) RecordSearch(titles []string, meta SearchMeta) ([]string, error)
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("commit: %w", err)
 	}
-	return newTitles, nil
+	return hitCounts, nil
 }
 
 // QueryRecords returns best-ever stats for three time windows: all time, past week, past day.

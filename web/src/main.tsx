@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client';
 import './tokens.css';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { App } from './App';
+import { initAnalytics } from './analytics';
+
+initAnalytics();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

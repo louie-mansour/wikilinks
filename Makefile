@@ -2,6 +2,9 @@ WEB := web
 SERVICE := service
 PYTHON := datapipeline/.venv/bin/python3
 
+-include .env
+export POSTHOG_API_KEY
+
 .PHONY: install setup-pipeline dev build storybook build-storybook fetch extract-edges map-entities edges-to-int build-vocab build-title-index extract-wiki-edges build-adjacency pipeline-kaggle pipeline-konect pipeline-wikipedia test-pipeline service-build service-start service-dev service-test service-lint
 
 install:

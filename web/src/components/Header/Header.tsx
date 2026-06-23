@@ -90,6 +90,7 @@ export function Header({
               onSelect={onStartSelect}
               onChange={onStartChange}
               className={styles.combobox}
+              analyticsRole="start"
             />
           </div>
 
@@ -110,6 +111,7 @@ export function Header({
               onSelect={onEndSelect}
               onChange={onEndChange}
               className={styles.combobox}
+              analyticsRole="end"
             />
           </div>
         </div>

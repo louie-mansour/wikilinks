@@ -12,6 +12,7 @@ import (
 
 	"path/filepath"
 
+	"github.com/louiemansour/wikilinks/service/internal/analytics"
 	"github.com/louiemansour/wikilinks/service/internal/controller"
 	"github.com/louiemansour/wikilinks/service/internal/graph"
 	"github.com/louiemansour/wikilinks/service/internal/service"
@@ -25,6 +26,13 @@ func main() {
 	staticDir := flag.String("static-dir", "", "path to built frontend directory (enables static file serving + SPA fallback)")
 	appURL := flag.String("app-url", "https://wikihop.org", "public app URL used in OG tags (no trailing slash)")
 	flag.Parse()
+
+	posthogKey := os.Getenv("POSTHOG_API_KEY")
+	posthogHost := os.Getenv("POSTHOG_HOST")
+	a := analytics.New(posthogKey, posthogHost)
+	if posthogKey != "" {
+		slog.Info("analytics enabled", "host", posthogHost)
+	}
 
 	slog.Info("loading graph", "dataDir", *dataDir)
 	g, err := graph.Load(*dataDir)
@@ -52,7 +60,7 @@ func main() {
 	randomSvc := service.NewRandom(g)
 	mux := http.NewServeMux()
 	controller.NewHealth().Register(mux)
-	controller.NewSearch(searchSvc).Register(mux)
+	controller.NewSearch(searchSvc, a).Register(mux)
 	controller.NewShare(st, *staticDir, *appURL).Register(mux)
 	controller.NewStartingNodes(startingNodesSvc).Register(mux)
 	controller.NewEndingNodes(endingNodesSvc).Register(mux)

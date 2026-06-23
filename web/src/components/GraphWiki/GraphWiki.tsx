@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import { trackGraphNodeHighlighted, trackGraphNodeNavigated } from '../../analytics';
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d';
 import { forceLink, forceManyBody, forceX as d3ForceX, forceY as d3ForceY } from 'd3-force-3d';
 import styles from './GraphWiki.module.css';
@@ -367,6 +368,12 @@ function nodeDisplayName(node: WikiNode): string {
   return node.label ?? node.id;
 }
 
+function nodeRole(variant: WikiNodeVariant): 'start' | 'end' | 'intermediate' {
+  if (variant === 'start') return 'start';
+  if (variant === 'end') return 'end';
+  return 'intermediate';
+}
+
 function wikiUrl(title: string): string {
   return `https://en.wikipedia.org/wiki/${encodeURIComponent(title).replace(/%20/g, '_')}`;
 }
@@ -556,6 +563,7 @@ function drawBadge(
 export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const colors = useCanvasColors();
   const wrapperRef     = useRef<HTMLDivElement>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
   const labelLinkRefs       = useRef<Map<string, HTMLAnchorElement>>(new Map());
   const hoverLabelRefs      = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -567,6 +575,16 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const [hoveredLink, setHoveredLink] = useState<{ source: string; target: string } | null>(null);
 
   const orientation = graphOrientation(dims.width);
+
+  const bfsDepths = useMemo(
+    () => computeBfsDepths(graphData.nodes, graphData.links),
+    [graphData],
+  );
+
+  const totalLayers = useMemo(
+    () => (bfsDepths.size > 0 ? Math.max(...bfsDepths.values()) + 1 : 1),
+    [bfsDepths],
+  );
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -766,6 +784,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
       <div className={styles.labelOverlay}>
         {terminalNodes.map(node => {
           const title = nodeDisplayName(node);
+          const variant = resolveVariant(node);
           return (
             <a
               key={node.id}
@@ -774,6 +793,12 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
               rel="noopener noreferrer"
               className={styles.terminalLabelLink}
               aria-label={`Open ${title} on Wikipedia`}
+              onClick={() => trackGraphNodeNavigated({
+                article_name: title,
+                node_role: nodeRole(variant),
+                layer_index: bfsDepths.get(node.id) ?? 0,
+                total_layers: totalLayers,
+              })}
               ref={(el) => {
                 if (el) labelLinkRefs.current.set(node.id, el);
                 else labelLinkRefs.current.delete(node.id);
@@ -788,6 +813,12 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
             rel="noopener noreferrer"
             className={styles.terminalLabelLink}
             aria-label={`Open ${nodeDisplayName(highlightedInteriorNode)} on Wikipedia`}
+            onClick={() => trackGraphNodeNavigated({
+              article_name: nodeDisplayName(highlightedInteriorNode),
+              node_role: nodeRole(resolveVariant(highlightedInteriorNode)),
+              layer_index: bfsDepths.get(highlightedInteriorNode.id) ?? 0,
+              total_layers: totalLayers,
+            })}
             ref={highlightedLabelRef}
           />
         )}
@@ -867,11 +898,20 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
               : undefined;
         }}
         onNodeClick={(node) => {
+          const variant = resolveVariant(node);
+          const props = {
+            article_name: nodeDisplayName(node),
+            node_role: nodeRole(variant),
+            layer_index: bfsDepths.get(node.id) ?? 0,
+            total_layers: totalLayers,
+          };
           if (!canHover) {
+            trackGraphNodeHighlighted(props);
             setHoveredNodeId(node.id);
             setHoveredLink(null);
             return;
           }
+          trackGraphNodeNavigated(props);
           window.open(wikiUrl(nodeDisplayName(node)), '_blank', 'noopener,noreferrer');
         }}
         onBackgroundClick={() => {
@@ -883,7 +923,19 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         onNodeHover={(node) => {
           if (!canHover) return;
           setHoveredNodeId(node?.id ?? null);
-          if (node) setHoveredLink(null);
+          if (highlightTimer.current) clearTimeout(highlightTimer.current);
+          if (node) {
+            setHoveredLink(null);
+            const variant = resolveVariant(node);
+            highlightTimer.current = setTimeout(() => {
+              trackGraphNodeHighlighted({
+                article_name: nodeDisplayName(node),
+                node_role: nodeRole(variant),
+                layer_index: bfsDepths.get(node.id) ?? 0,
+                total_layers: totalLayers,
+              });
+            }, 1000);
+          }
         }}
         onLinkHover={(link) => {
           if (!canHover) return;

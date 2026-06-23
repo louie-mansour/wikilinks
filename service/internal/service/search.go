@@ -29,6 +29,7 @@ type SearchResult struct {
 	SearchTimeMs   int64          `json:"searchTimeMs"`
 	UniqueArticles int            `json:"uniqueArticles"`
 	NewArticles    int            `json:"newArticles"`
+	HitCounts      map[string]int `json:"-"`
 	Paths          []PathData     `json:"paths"`
 	GraphData      GraphData      `json:"graphData"`
 	Records        []RecordPeriod `json:"records"`
@@ -150,26 +151,28 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 		prevRecords = []RecordPeriod{}
 	}
 
-	newTitles, err := s.st.RecordSearch(titles, meta)
+	hitCounts, err := s.st.RecordSearch(titles, meta)
 	if err != nil {
 		return nil, fmt.Errorf("record search: %w", err)
 	}
 
-	newSet := make(map[string]struct{}, len(newTitles))
-	for _, t := range newTitles {
-		newSet[t] = struct{}{}
+	// Mark newly-seen graph nodes (hit_count == 1 means first time seen).
+	for i := range graphData.Nodes {
+		if hitCounts[graphData.Nodes[i].ID] == 1 {
+			graphData.Nodes[i].IsNew = true
+		}
 	}
 
-	// Mark newly-seen graph nodes.
-	for i := range graphData.Nodes {
-		if _, ok := newSet[graphData.Nodes[i].ID]; ok {
-			graphData.Nodes[i].IsNew = true
+	newArticleCount := 0
+	for _, count := range hitCounts {
+		if count == 1 {
+			newArticleCount++
 		}
 	}
 
 	pathDatas := make([]PathData, len(allPaths))
 	for i, path := range allPaths {
-		pathDatas[i] = PathData{ID: i + 1, Crumbs: buildCrumbs(path, newSet)}
+		pathDatas[i] = PathData{ID: i + 1, Crumbs: buildCrumbs(path, hitCounts)}
 	}
 
 	records, err := s.st.QueryRecords()
@@ -187,7 +190,8 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 		NodesExplored:  result.NodesExplored,
 		SearchTimeMs:   elapsed.Milliseconds(),
 		UniqueArticles: len(uniqueSet),
-		NewArticles:    len(newTitles),
+		NewArticles:    newArticleCount,
+		HitCounts:      hitCounts,
 		Paths:          pathDatas,
 		GraphData:      graphData,
 		Records:        records,
@@ -242,11 +246,11 @@ func buildGraphData(allPaths [][]string) GraphData {
 	return GraphData{Nodes: nodes, Links: links}
 }
 
-func buildCrumbs(path []string, newSet map[string]struct{}) []Crumb {
+func buildCrumbs(path []string, hitCounts map[string]int) []Crumb {
 	crumbs := make([]Crumb, len(path))
 	for i, title := range path {
 		var tag string
-		if _, ok := newSet[title]; ok {
+		if hitCounts[title] == 1 {
 			tag = "first"
 		}
 		crumbs[i] = Crumb{

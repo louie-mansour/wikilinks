@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Button } from '../Button/Button';
 import styles from './ShareBar.module.css';
+import { trackCopyLinkClicked, trackShareLinkClicked } from '../../analytics';
 
 interface ShareBarProps {
   shareBaseUrl: string;
@@ -29,11 +30,13 @@ export function ShareBar({ shareBaseUrl, urlCode, onActivate, onCopy }: ShareBar
 
   async function handleLinkClick(e: React.MouseEvent<HTMLAnchorElement>) {
     e.preventDefault();
+    trackShareLinkClicked({ share_url: fullUrl });
     await activate();
     window.open(fullUrl, '_blank', 'noopener,noreferrer');
   }
 
   async function handleCopy() {
+    trackCopyLinkClicked({ share_url: fullUrl });
     await activate();
     navigator.clipboard?.writeText(fullUrl).catch(() => {});
     setCopied(true);

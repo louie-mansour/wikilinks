@@ -7,6 +7,7 @@ import {
   type ThemePreset,
 } from '../../theme/themes';
 import styles from './ThemePicker.module.css';
+import { registerTheme } from '../../analytics';
 
 function Swatches({
   colors,
@@ -66,6 +67,8 @@ export function ThemePicker() {
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const active = presets.find((p) => p.id === themeId) ?? presets[0];
+
+  useEffect(() => { registerTheme(themeId); }, [themeId]);
 
   useEffect(() => {
     if (!open) return;

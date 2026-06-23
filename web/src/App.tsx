@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { trackSearchClicked, trackShareLinkOpened, trackLoadMoreClicked } from './analytics';
 import { Header } from './components/Header/Header';
 import { GraphWiki } from './components/GraphWiki/GraphWiki';
 import { BentoBox } from './components/BentoBox/BentoBox';
@@ -37,6 +38,9 @@ export function App() {
   const [sortOrder, setSortOrder] = useState('interesting');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [isSharedView, setIsSharedView] = useState(false);
+  const [isSelectedStart, setIsSelectedStart] = useState(false);
+  const [isSelectedEnd, setIsSelectedEnd] = useState(false);
+  const searchStartRef = useRef<number>(0);
 
   useEffect(() => {
     if (result && !result.noPathFound) {
@@ -52,6 +56,7 @@ export function App() {
     const code = match[1];
     setIsSharedView(true);
     setIsSearching(true);
+    trackShareLinkOpened({ share_id: code });
     getShare(code)
       .then((data) => {
         setResult(data);
@@ -80,6 +85,15 @@ export function App() {
 
     const needsStartRandom = !startArticle.trim();
     const needsEndRandom = !endArticle.trim();
+    trackSearchClicked({
+      start_article: startArticle.trim() || null,
+      end_article: endArticle.trim() || null,
+      is_random_start: needsStartRandom,
+      is_random_end: needsEndRandom,
+      is_selected_start: isSelectedStart,
+      is_selected_end: isSelectedEnd,
+    });
+    searchStartRef.current = Date.now();
 
     let startPool: string[] = [];
     let endPool: string[] = [];
@@ -167,10 +181,10 @@ return 0; // 'interesting' = original order
             endSuggestionsLoading={endSuggestions.isLoading}
             startValue={startArticle}
             endValue={endArticle}
-            onStartSelect={setStartArticle}
-            onEndSelect={setEndArticle}
-            onStartChange={setStartArticle}
-            onEndChange={setEndArticle}
+            onStartSelect={(v) => { setStartArticle(v); setIsSelectedStart(true); }}
+            onEndSelect={(v) => { setEndArticle(v); setIsSelectedEnd(true); }}
+            onStartChange={(v) => { setStartArticle(v); setIsSelectedStart(false); }}
+            onEndChange={(v) => { setEndArticle(v); setIsSelectedEnd(false); }}
             onSearch={handleSearch}
             isSearching={isRouletting || isSearching}
             searchLabel={
@@ -245,7 +259,10 @@ return 0; // 'interesting' = original order
               onSortChange={(val) => { setSortOrder(val); setVisibleCount(PAGE_SIZE); }}
               remainingCount={remainingCount > 0 ? Math.min(PAGE_SIZE, remainingCount) : undefined}
               totalRemainingCount={remainingCount > 0 ? remainingCount : undefined}
-              onLoadMore={() => setVisibleCount((c) => c + PAGE_SIZE)}
+              onLoadMore={() => {
+                trackLoadMoreClicked({ visible_count: visibleCount, remaining_count: remainingCount ?? 0 });
+                setVisibleCount((c) => c + PAGE_SIZE);
+              }}
             />
           </PanelEnter>
         </div>
