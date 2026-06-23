@@ -29,9 +29,13 @@ func main() {
 
 	posthogKey := os.Getenv("POSTHOG_API_KEY")
 	posthogHost := os.Getenv("POSTHOG_HOST")
-	a := analytics.New(posthogKey, posthogHost)
+	appEnv := os.Getenv("APP_ENV")
+	if appEnv == "" {
+		appEnv = "local"
+	}
+	a := analytics.New(posthogKey, posthogHost, appEnv)
 	if posthogKey != "" {
-		slog.Info("analytics enabled", "host", posthogHost)
+		slog.Info("analytics enabled", "host", posthogHost, "environment", appEnv)
 	}
 
 	slog.Info("loading graph", "dataDir", *dataDir)

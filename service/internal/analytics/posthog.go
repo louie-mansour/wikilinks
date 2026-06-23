@@ -11,19 +11,24 @@ import (
 // Client sends events to PostHog. All captures are fire-and-forget goroutines.
 // If APIKey is empty, all methods are no-ops.
 type Client struct {
-	apiKey string
-	host   string
-	http   *http.Client
+	apiKey      string
+	host        string
+	environment string
+	http        *http.Client
 }
 
-func New(apiKey, host string) *Client {
+func New(apiKey, host, environment string) *Client {
 	if host == "" {
 		host = "https://us.i.posthog.com"
 	}
+	if environment == "" {
+		environment = "local"
+	}
 	return &Client{
-		apiKey: apiKey,
-		host:   host,
-		http:   &http.Client{Timeout: 5 * time.Second},
+		apiKey:      apiKey,
+		host:        host,
+		environment: environment,
+		http:        &http.Client{Timeout: 5 * time.Second},
 	}
 }
 
@@ -35,12 +40,16 @@ func (c *Client) capture(event, distinctID string, props map[string]any) {
 }
 
 func (c *Client) send(event, distinctID string, props map[string]any) {
+	merged := map[string]any{"environment": c.environment}
+	for k, v := range props {
+		merged[k] = v
+	}
 	body := map[string]any{
 		"api_key":     c.apiKey,
 		"event":       event,
 		"distinct_id": distinctID,
 		"timestamp":   time.Now().UTC().Format(time.RFC3339),
-		"properties":  props,
+		"properties":  merged,
 	}
 	b, err := json.Marshal(body)
 	if err != nil {

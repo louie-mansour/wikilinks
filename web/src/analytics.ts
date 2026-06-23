@@ -2,6 +2,7 @@ import posthog from 'posthog-js';
 
 const key = import.meta.env.VITE_POSTHOG_KEY;
 const host = import.meta.env.VITE_POSTHOG_HOST;
+const environment = import.meta.env.VITE_APP_ENV ?? 'local';
 
 export function initAnalytics() {
   if (!key) return;
@@ -11,11 +12,12 @@ export function initAnalytics() {
     capture_pageview: true,
     capture_pageleave: true,
   });
+  posthog.register({ environment });
 }
 
 function capture(event: string, properties?: Record<string, unknown>) {
   if (!key) return;
-  posthog.capture(event, properties);
+  posthog.capture(event, { environment, ...properties });
 }
 
 export function registerTheme(themeId: string) {

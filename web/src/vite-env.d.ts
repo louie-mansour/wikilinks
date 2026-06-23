@@ -5,6 +5,8 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE?: string;
   readonly VITE_POSTHOG_KEY?: string;
   readonly VITE_POSTHOG_HOST?: string;
+  /** Analytics environment tag (default: local) */
+  readonly VITE_APP_ENV?: string;
 }
 
 interface ImportMeta {
