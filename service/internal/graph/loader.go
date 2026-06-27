@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"syscall"
 	"unsafe"
 )
@@ -17,7 +18,7 @@ func Load(dataDir string) (*WikipediaGraph, error) {
 		return nil, err
 	}
 
-	titles, titleToID, err := loadEntities(filepath.Join(dataDir, "entities.tsv"))
+	titles, sortedPerm, err := loadEntities(filepath.Join(dataDir, "entities.tsv"))
 	if err != nil {
 		return nil, fmt.Errorf("load entities: %w", err)
 	}
@@ -53,7 +54,7 @@ func Load(dataDir string) (*WikipediaGraph, error) {
 
 	g := &WikipediaGraph{
 		titles:       titles,
-		titleToID:    titleToID,
+		sortedPerm:   sortedPerm,
 		fwdOffsets:   fwdOff.u32s,
 		fwdNeighbors: fwdNbr.u32s,
 		revOffsets:   revOff.u32s,
@@ -83,7 +84,7 @@ func buildNodeTitles(g *WikipediaGraph, offsets []uint32, capHint int) []string 
 	return nodes
 }
 
-func loadEntities(path string) ([]string, map[string]uint32, error) {
+func loadEntities(path string) ([]string, []uint32, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, nil, err
@@ -91,14 +92,22 @@ func loadEntities(path string) ([]string, map[string]uint32, error) {
 	defer f.Close()
 
 	var titles []string
-	titleToID := make(map[string]uint32)
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		line := scanner.Text()
-		titleToID[line] = uint32(len(titles))
-		titles = append(titles, line)
+		titles = append(titles, scanner.Text())
 	}
-	return titles, titleToID, scanner.Err()
+	if err := scanner.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	sortedPerm := make([]uint32, len(titles))
+	for i := range sortedPerm {
+		sortedPerm[i] = uint32(i)
+	}
+	sort.Slice(sortedPerm, func(i, j int) bool {
+		return titles[sortedPerm[i]] < titles[sortedPerm[j]]
+	})
+	return titles, sortedPerm, nil
 }
 
 // mmapBin maps a .bin file into memory and returns the raw bytes alongside a

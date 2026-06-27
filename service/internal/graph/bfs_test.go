@@ -108,8 +108,8 @@ func TestBidirectionalBFS_multipleShortestPaths(t *testing.T) {
 }
 
 func TestBidirectionalBFS_exceededMaxDepth(t *testing.T) {
-	g := loadChainGraph(t, maxDepth+2)
-	result, ok := BidirectionalBFS(g, 0, uint32(maxDepth+1))
+	g := loadChainGraph(t, MaxDepth+2)
+	result, ok := BidirectionalBFS(g, 0, uint32(MaxDepth+1))
 	if ok {
 		t.Fatal("expected no path within maxDepth")
 	}

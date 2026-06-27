@@ -1,0 +1,4 @@
+wikihop.org, www.wikihop.org {
+    tls /etc/caddy/cf-origin.pem /etc/caddy/cf-origin.key
+    reverse_proxy localhost:8080
+}

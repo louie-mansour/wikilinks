@@ -1,0 +1,19 @@
+[Unit]
+Description=WikiHop server
+After=network.target
+
+[Service]
+Type=simple
+User=wikihop
+Group=wikihop
+WorkingDirectory=/opt/wikihop
+EnvironmentFile=/opt/wikihop/.env
+ExecStart=/opt/wikihop/bin/wikilinks-server \
+  --data-dir /opt/wikihop/data \
+  --static-dir /opt/wikihop/dist \
+  --app-url https://wikihop.org
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

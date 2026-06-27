@@ -74,6 +74,9 @@ You can now run any Makefile target below.
 | `make service-start` | Run the compiled binary |
 | `make service-test` | Run Go unit tests |
 | `make service-lint` | Run golangci-lint on the service |
+| `make server-setup` | One-time VPS provisioning via SSH (requires `VPS_IP` in `.env`) |
+| `make upload-data` | Rsync graph files to the production server |
+| `make reset-hits` | Clear article hit counts from the local SQLite database |
 
 ### Search service
 
@@ -142,6 +145,92 @@ datapipeline/.venv/bin/python -m datapipeline.run --source wikipedia
 ```
 
 Downloaded files land in `datapipeline/raw/` (gitignored). Processed outputs land in `datapipeline/data/` (gitignored). Pass `--force` to any stage to bypass cache.
+
+## Production deployment
+
+WikiHop runs on a Hetzner CX23 (4GB RAM, x86) behind Cloudflare. The Go server mmap's the graph files and serves HTTP on port 8080; Caddy handles TLS and reverse proxies from Cloudflare's origin cert.
+
+### First-time setup
+
+**1. Generate the deploy SSH key (once, locally):**
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/wikihop_deploy -N ""
+# ~/.ssh/wikihop_deploy     → add as GitHub secret DEPLOY_SSH_KEY
+# ~/.ssh/wikihop_deploy.pub → used by make server-setup
+```
+
+**2. Set your VPS IP in `.env`:**
+
+```bash
+VPS_IP=x.x.x.x
+```
+
+**3. Run server setup (SSHes in as root, installs Caddy + systemd, creates users):**
+
+```bash
+make server-setup
+```
+
+**4. Two manual steps on the server** (after `make server-setup` prints instructions):
+
+- Upload the Cloudflare origin certificate to `/etc/caddy/cf-origin.pem` and `/etc/caddy/cf-origin.key`  
+  (Generate at dash.cloudflare.com → SSL/TLS → Origin Server → Create Certificate → 15 years)
+- Create `/opt/wikihop/.env` with `POSTHOG_API_KEY`, `POSTHOG_HOST`, `APP_ENV=production`
+
+**5. Upload graph data files (~5GB, one time):**
+
+```bash
+make upload-data
+```
+
+**6. Start services on the server:**
+
+```bash
+ssh root@<VPS_IP> "systemctl restart caddy wikihop"
+```
+
+### GitHub Actions secrets
+
+Add these two secrets to the GitHub repo (Settings → Secrets → Actions):
+
+| Secret | Value |
+|--------|-------|
+| `DEPLOY_SSH_KEY` | Contents of `~/.ssh/wikihop_deploy` (private key) |
+| `VPS_IP` | Your Hetzner server IP |
+
+Every push to `main` runs tests then auto-deploys.
+
+### Makefile targets
+
+| Command | Description |
+|---------|-------------|
+| `make server-setup` | One-time VPS provisioning (run as root via SSH) |
+| `make upload-data` | Rsync graph files to `/opt/wikihop/data/` |
+| `make reset-hits` | Clear article hit counts from SQLite |
+
+### Admin operations
+
+```bash
+# Live logs
+ssh deploy@<VPS_IP> 'journalctl -u wikihop -f'
+
+# Service status
+ssh deploy@<VPS_IP> 'sudo systemctl status wikihop'
+
+# Reset hit counts
+make reset-hits  # local SQLite
+# or on server:
+ssh deploy@<VPS_IP> 'sudo -u wikihop sqlite3 /opt/wikihop/data/wikilinks.db "DELETE FROM article_hits;"'
+```
+
+### Verification
+
+```bash
+curl https://wikihop.org/health   # {"status":"ok"}
+```
+
+---
 
 ## Project layout
 

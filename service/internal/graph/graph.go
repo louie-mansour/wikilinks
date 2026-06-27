@@ -2,23 +2,24 @@ package graph
 
 import (
 	"math/rand/v2"
+	"sort"
 	"strings"
 )
 
 // WikipediaGraph holds the CSR adjacency graph in memory.
 // After Load returns, this struct is read-only and safe for concurrent access.
 type WikipediaGraph struct {
-	titles        []string          // id → article title
-	titleToID     map[string]uint32 // article title → id
-	fwdOffsets    []uint32          // CSR row pointers for forward edges
-	fwdNeighbors  []uint32          // CSR neighbor IDs for forward edges
-	revOffsets    []uint32          // CSR row pointers for reverse edges
-	revNeighbors  []uint32          // CSR neighbor IDs for reverse edges
-	startingNodes []string          // titles with out-degree > 0 (adj_fwd keys)
-	endingNodes   []string          // titles with in-degree > 0 (adj_rev keys)
-	startingIndex TitleIndex        // sorted startingNodes for prefix search
-	endingIndex   TitleIndex        // sorted endingNodes for prefix search
-	mmapRegions   [][]byte          // keep mmap'd slices alive for process lifetime
+	titles        []string // id → article title
+	sortedPerm    []uint32 // sortedPerm[i] = node ID of the i-th title in sorted order; used for binary-search title→ID lookup
+	fwdOffsets    []uint32 // CSR row pointers for forward edges
+	fwdNeighbors  []uint32 // CSR neighbor IDs for forward edges
+	revOffsets    []uint32 // CSR row pointers for reverse edges
+	revNeighbors  []uint32 // CSR neighbor IDs for reverse edges
+	startingNodes []string // titles with out-degree > 0 (adj_fwd keys)
+	endingNodes   []string // titles with in-degree > 0 (adj_rev keys)
+	startingIndex TitleIndex // sorted startingNodes for prefix search
+	endingIndex   TitleIndex // sorted endingNodes for prefix search
+	mmapRegions   [][]byte   // keep mmap'd slices alive for process lifetime
 }
 
 func (g *WikipediaGraph) EntityCount() int { return len(g.titles) }
@@ -26,8 +27,13 @@ func (g *WikipediaGraph) EntityCount() int { return len(g.titles) }
 func (g *WikipediaGraph) Title(id uint32) string { return g.titles[id] }
 
 func (g *WikipediaGraph) ResolveTitle(title string) (uint32, bool) {
-	id, ok := g.titleToID[title]
-	return id, ok
+	i := sort.Search(len(g.sortedPerm), func(j int) bool {
+		return g.titles[g.sortedPerm[j]] >= title
+	})
+	if i < len(g.sortedPerm) && g.titles[g.sortedPerm[i]] == title {
+		return g.sortedPerm[i], true
+	}
+	return 0, false
 }
 
 // FwdNeighbors returns the out-neighbors of id (nodes reachable via forward edges).
