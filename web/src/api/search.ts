@@ -1,6 +1,6 @@
 import type { SearchResult } from '../data/mockSearch';
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8080';
+const API_BASE = import.meta.env.VITE_API_BASE ?? (import.meta.env.PROD ? '' : 'http://localhost:8080');
 
 export async function searchPaths(start: string, end: string): Promise<SearchResult> {
   const params = new URLSearchParams({ from: start, to: end });

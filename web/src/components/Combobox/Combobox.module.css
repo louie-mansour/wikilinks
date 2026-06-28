@@ -29,8 +29,9 @@
   border: 0;
 }
 
-/* Input row — background + border; NO overflow:hidden (see §11) */
+/* Input row — background + border */
 .inputRow {
+  overflow: hidden;
   position: relative;
   display: flex;
   align-items: center;
@@ -52,7 +53,7 @@
     rgba(254, 252, 248, 0.55) 48%,
     transparent 58%
   );
-  transform: translateX(-120%);
+  transform: translateX(-50%);
   opacity: 0;
 }
 
@@ -199,10 +200,10 @@
 
   @keyframes combo-shine {
     from {
-      transform: translateX(-120%);
+      transform: translateX(-50%);
     }
     to {
-      transform: translateX(120%);
+      transform: translateX(55%);
     }
   }
 

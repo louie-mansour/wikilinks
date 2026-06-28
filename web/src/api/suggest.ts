@@ -1,6 +1,6 @@
 export type SuggestRole = 'start' | 'end';
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8080';
+const API_BASE = import.meta.env.VITE_API_BASE ?? (import.meta.env.PROD ? '' : 'http://localhost:8080');
 
 export async function fetchSuggest(
   role: SuggestRole,
