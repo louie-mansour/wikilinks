@@ -18,8 +18,8 @@ echo "${DEPLOY_PUBKEY}" >> /home/deploy/.ssh/authorized_keys
 sort -u /home/deploy/.ssh/authorized_keys -o /home/deploy/.ssh/authorized_keys
 chmod 700 /home/deploy/.ssh && chmod 600 /home/deploy/.ssh/authorized_keys
 chown -R deploy:deploy /home/deploy/.ssh
-chown deploy:wikihop /opt/wikihop/bin /opt/wikihop/dist
-chmod 775 /opt/wikihop/bin /opt/wikihop/dist
+chown deploy:wikihop /opt/wikihop/bin /opt/wikihop/dist /opt/wikihop/data
+chmod 775 /opt/wikihop/bin /opt/wikihop/dist /opt/wikihop/data
 echo 'deploy ALL=(ALL) NOPASSWD: /bin/systemctl restart wikihop, /bin/systemctl status wikihop' \
   > /etc/sudoers.d/wikihop-deploy
 chmod 440 /etc/sudoers.d/wikihop-deploy
@@ -27,7 +27,7 @@ chmod 440 /etc/sudoers.d/wikihop-deploy
 echo "==> Installing Caddy"
 apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
-  | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  | gpg --dearmor > /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
   | tee /etc/apt/sources.list.d/caddy-stable.list
 apt-get update && apt-get install -y caddy
@@ -43,6 +43,9 @@ ufw allow 22
 ufw allow 80
 ufw allow 443
 ufw --force enable
+
+echo "==> Starting Caddy"
+systemctl start caddy
 
 echo ""
 echo "Server setup complete. Two manual steps remain:"

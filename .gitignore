@@ -13,7 +13,7 @@ bin/
 .env
 .env.*
 !.env.example
-service/.env.example
+!service/.env.example
 
 # Logs & debug
 logs/
