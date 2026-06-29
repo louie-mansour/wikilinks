@@ -15,10 +15,27 @@
   --space-6:     16px;
   --space-7:     20px;
 
-  /* Typography */
+  /* Typography — families */
   --font-display: 'Figtree', system-ui, sans-serif;
   --font-body:    'Figtree', system-ui, sans-serif;
   --font-ui:      'Figtree', system-ui, sans-serif;
+
+  /* Typography — type scale (design-system §3) */
+  --text-badge:         10px;  /* tag / badge */
+  --text-caption:       11px;  /* legend / stat label */
+  --text-label:         12px;  /* input label, live pill, action button */
+  --text-small:         13px;  /* record key, copy button, select */
+  --text-ui:            14px;  /* dropdown option, crumb, record value */
+  --text-body:          15px;  /* body, inputs, tagline, primary button */
+  --text-title:         17px;  /* path list title, control button */
+  --text-connector:     19px;  /* arrow connector between inputs */
+  --text-wordmark:      23px;  /* wordmark */
+  --text-stat-sm:       27px;  /* stat — small (nodes, articles) */
+  --text-stat-md:       29px;  /* stat — time */
+  --text-stat-lg:       33px;  /* stat — medium (hops) */
+  --text-stat-xl:       61px;  /* stat — large (paths found) */
+  --text-stat-xl-sm:    49px;  /* stat — large, mobile */
+  --text-stat-emphasis: 17px;  /* stat subtitle emphasis on hover */
 }
 
 /* ── Warm (default) ── */
@@ -52,96 +69,6 @@
   --graph-link:  #d4c0a4;
 }
 
-/* ── Ocean ── */
-[data-theme="ocean"] {
-  color-scheme: light;
-
-  --sand:        #e4edf2;
-  --sand-mid:    #ccdbe4;
-  --sand-dark:   #acc4d2;
-
-  --ink:         #18252e;
-  --ink-muted:   #536e7e;
-  --ink-faint:   #98aab6;
-
-  --terra:       #247fa2;
-  --terra-dark:  #217494;
-  --terra-light: #f9fdfe;
-  --terra-pale:  #f7fbfd;
-
-  --sage:        #2a7a68;
-  --sage-light:  #f8fcfb;
-  --sage-pale:   #f5fcfa;
-
-  --clay:        #4a90b8;
-  --clay-border: #f9fcfd;
-  --clay-pale:   #f8fbfc;
-
-  --white:       #f6fafc;
-
-  --graph-link:  #acc4d2;
-}
-
-/* ── Forest ── */
-[data-theme="forest"] {
-  color-scheme: light;
-
-  --sand:        #e8ebe4;
-  --sand-mid:    #d5dbcb;
-  --sand-dark:   #bac5a9;
-
-  --ink:         #1f231b;
-  --ink-muted:   #5e6f51;
-  --ink-faint:   #9eab90;
-
-  --terra:       #5b8131;
-  --terra-dark:  #54772e;
-  --terra-light: #fbfcf8;
-  --terra-pale:  #f9fbf6;
-
-  --sage:        #2a6848;
-  --sage-light:  #f9fcfb;
-  --sage-pale:   #f6fbf9;
-
-  --clay:        #c89030;
-  --clay-border: #fdfcf8;
-  --clay-pale:   #fcf9f4;
-
-  --white:       #f8faf6;
-
-  --graph-link:  #bac5a9;
-}
-
-/* ── Wikipedia (Vector 2022 light) ── */
-[data-theme="wikipedia"] {
-  color-scheme: light;
-
-  --sand:        #f6f6f6;
-  --sand-mid:    #dbdee1;
-  --sand-dark:   #c1c6cb;
-
-  --ink:         #292b2c;
-  --ink-muted:   #6b7277;
-  --ink-faint:   #adb1b4;
-
-  --terra:       #4a77d2;
-  --terra-dark:  #3b6cce;
-  --terra-light: #fafbfe;
-  --terra-pale:  #fafbfe;
-
-  --sage:        #14866d;
-  --sage-light:  #f5fefc;
-  --sage-pale:   #f5fefc;
-
-  --clay:        #996600;
-  --clay-border: #fffcf5;
-  --clay-pale:   #fffcf5;
-
-  --white:       #ffffff;
-
-  --graph-link:  #c1c6cb;
-}
-
 /* ── Midnight ── */
 [data-theme="midnight"] {
   color-scheme: dark;
@@ -172,156 +99,6 @@
   --graph-link:  #4f483d;
 }
 
-/* ── Obsidian (cool charcoal) ── */
-[data-theme="obsidian"] {
-  color-scheme: dark;
-
-  --sand:        #1a2028;
-  --sand-mid:    #22262f;
-  --sand-dark:   #434b5c;
-
-  --ink:         #dee8ef;
-  --ink-muted:   #7a8798;
-  --ink-faint:   #4a4f57;
-
-  --terra:       #4493f4;
-  --terra-dark:  #358af3;
-  --terra-light: #04234a;
-  --terra-pale:  #052956;
-
-  --sage:        #3fb950;
-  --sage-light:  #0d2711;
-  --sage-pale:   #102f15;
-
-  --clay:        #d29922;
-  --clay-border: #2a1e07;
-  --clay-pale:   #352609;
-
-  --white:       #282f3a;
-
-  --graph-link:  #404958;
-}
-
-/* ── Ember (warm crimson) ── */
-[data-theme="ember"] {
-  color-scheme: dark;
-
-  --sand:        #281818;
-  --sand-mid:    #221616;
-  --sand-dark:   #5c3939;
-
-  --ink:         #ebe0e0;
-  --ink-muted:   #a27979;
-  --ink-faint:   #594949;
-
-  --terra:       #e85454;
-  --terra-dark:  #e64343;
-  --terra-light: #3b0808;
-  --terra-pale:  #450909;
-
-  --sage:        #c87878;
-  --sage-light:  #2d1212;
-  --sage-pale:   #351616;
-
-  --clay:        #e8a040;
-  --clay-border: #231604;
-  --clay-pale:   #2c1c05;
-
-  --white:       #302020;
-
-  --graph-link:  #573636;
-}
-
-/* ── Aurora (purple & teal) ── */
-[data-theme="aurora"] {
-  color-scheme: dark;
-
-  --sand:        #1a2430;
-  --sand-mid:    #202734;
-  --sand-dark:   #3e4c64;
-
-  --ink:         #e3ecf6;
-  --ink-muted:   #768ca1;
-  --ink-faint:   #49535e;
-
-  --terra:       #a080f0;
-  --terra-dark:  #9774ef;
-  --terra-light: #270c6b;
-  --terra-pale:  #2e0e7c;
-
-  --sage:        #34d399;
-  --sage-light:  #09271c;
-  --sage-pale:   #0a3022;
-
-  --clay:        #f472b6;
-  --clay-border: #450526;
-  --clay-pale:   #53072f;
-
-  --white:       #243040;
-
-  --graph-link:  #3b4960;
-}
-
-/* ── Deep Sea (dark navy) ── */
-[data-theme="deep-sea"] {
-  color-scheme: dark;
-
-  --sand:        #141c28;
-  --sand-mid:    #161e28;
-  --sand-dark:   #35465d;
-
-  --ink:         #cfe4f4;
-  --ink-muted:   #5888ac;
-  --ink-faint:   #3b4f5d;
-
-  --terra:       #0792d0;
-  --terra-dark:  #078ac5;
-  --terra-light: #02202e;
-  --terra-pale:  #022737;
-
-  --sage:        #2dd4bf;
-  --sage-light:  #07211d;
-  --sage-pale:   #082824;
-
-  --clay:        #60a5fa;
-  --clay-border: #021a39;
-  --clay-pale:   #022248;
-
-  --white:       #1c2838;
-
-  --graph-link:  #33435a;
-}
-
-/* ── Moss (dark green) ── */
-[data-theme="moss"] {
-  color-scheme: dark;
-
-  --sand:        #1a241c;
-  --sand-mid:    #19221c;
-  --sand-dark:   #374b3e;
-
-  --ink:         #e1ebe4;
-  --ink-muted:   #6e8f79;
-  --ink-faint:   #45554f;
-
-  --terra:       #3c9f4d;
-  --terra-dark:  #399549;
-  --terra-light: #112314;
-  --terra-pale:  #142918;
-
-  --sage:        #4ade80;
-  --sage-light:  #062311;
-  --sage-pale:   #082a14;
-
-  --clay:        #c9a227;
-  --clay-border: #221b07;
-  --clay-pale:   #2c2308;
-
-  --white:       #202c24;
-
-  --graph-link:  #35493c;
-}
-
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -333,7 +110,7 @@ body {
 
 body {
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--ink);
   background: var(--sand);

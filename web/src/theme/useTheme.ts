@@ -1,5 +1,6 @@
 import { useContext, useMemo } from 'react';
 import { readCanvasColors, type CanvasColors } from './readCanvasColors';
+import { readTypographySizes, type TypographySizes } from './readTypographySizes';
 import { ThemeContext } from './ThemeProvider';
 
 export function useTheme() {
@@ -13,4 +14,9 @@ export function useTheme() {
 export function useCanvasColors(): CanvasColors {
   const { themeId } = useTheme();
   return useMemo(() => readCanvasColors(), [themeId]);
+}
+
+export function useTypographySizes(): TypographySizes {
+  const { themeId } = useTheme();
+  return useMemo(() => readTypographySizes(), [themeId]);
 }

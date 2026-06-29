@@ -179,12 +179,12 @@ const EINSTEIN_QUANTUM: SearchResult = {
   ],
   records: [
     {
-      period: 'All time',
+      period: 'Past day',
       rows: [
-        { key: 'Most paths found', value: '300', badge: true },
-        { key: 'Most articles in paths', value: '14', badge: true },
-        { key: 'Most articles explored', value: '12,048', badge: true },
-        { key: 'Longest path', value: '9 hops', badge: true },
+        { key: 'Most paths found', value: '300' },
+        { key: 'Most articles in paths', value: '9', badge: true },
+        { key: 'Most articles explored', value: '3,892', badge: true },
+        { key: 'Longest path', value: '7 hops', badge: true },
       ],
     },
     {
@@ -197,12 +197,12 @@ const EINSTEIN_QUANTUM: SearchResult = {
       ],
     },
     {
-      period: 'Past day',
+      period: 'All time',
       rows: [
-        { key: 'Most paths found', value: '300' },
-        { key: 'Most articles in paths', value: '9', badge: true },
-        { key: 'Most articles explored', value: '3,892', badge: true },
-        { key: 'Longest path', value: '7 hops', badge: true },
+        { key: 'Most paths found', value: '300', badge: true },
+        { key: 'Most articles in paths', value: '14', badge: true },
+        { key: 'Most articles explored', value: '12,048', badge: true },
+        { key: 'Longest path', value: '9 hops', badge: true },
       ],
     },
   ],
@@ -337,9 +337,9 @@ function buildGenericResult(start: string, end: string): SearchResult {
   }
 
   const records: RecordPeriod[] = [
-    recordPeriod('All time', prevAllTime),
-    recordPeriod('Past week', prevWeek),
     recordPeriod('Past day', prevDay),
+    recordPeriod('Past week', prevWeek),
+    recordPeriod('All time', prevAllTime),
   ];
 
   const newArticles = new Set(

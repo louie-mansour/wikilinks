@@ -4,7 +4,7 @@ import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d';
 import { forceLink, forceManyBody, forceX as d3ForceX, forceY as d3ForceY } from 'd3-force-3d';
 import styles from './GraphWiki.module.css';
 import { Badge } from '../Badge/Badge';
-import { useCanvasColors } from '../../theme/useTheme';
+import { useCanvasColors, useTypographySizes } from '../../theme/useTheme';
 import type { CanvasColors } from '../../theme/readCanvasColors';
 
 const FONT_UI = "'Figtree', system-ui, sans-serif";
@@ -13,7 +13,6 @@ const SPACE_1 = 4;   // --space-1
 const SPACE_2 = 6;   // --space-2
 const SPACE_7 = 20;  // --space-7
 
-const LABEL_FONT_SIZE = 11;
 const LABEL_PAD_Y     = 5;
 const LABEL_PAD_X     = 12;
 const RADIUS_SM       = 10;  // --radius-sm
@@ -199,6 +198,7 @@ function computeFitBounds(
   width: number,
   height: number,
   orientation: GraphOrientation,
+  labelFontSize: number,
 ): GraphBounds | null {
   const positions = computeLayeredPositions(nodes, links, orientation);
   let xMin = Infinity;
@@ -228,7 +228,7 @@ function computeFitBounds(
     (height - FIT_PADDING * 2) / nodeH,
   );
 
-  const labelExtent = LABEL_FONT_SIZE * 1.2 + LABEL_PAD_Y * 2 + SPACE_2 + SPACE_2;
+  const labelExtent = labelFontSize * 1.2 + LABEL_PAD_Y * 2 + SPACE_2 + SPACE_2;
   let labelHalfW = 0;
   let hasStart = false;
   let hasEnd = false;
@@ -411,6 +411,7 @@ function computeLabelLayout(
   ctx: CanvasRenderingContext2D,
   globalScale: number,
   orientation: GraphOrientation,
+  labelFontSize: number,
 ): LabelLayout | null {
   if (node.x == null || node.y == null) return null;
 
@@ -418,7 +419,7 @@ function computeLabelLayout(
   const text = nodeDisplayName(node);
   const isTerminal = variant === 'start' || variant === 'end';
   const fontWeight = isTerminal ? 700 : 500;
-  const fontSize = LABEL_FONT_SIZE / globalScale;
+  const fontSize = labelFontSize / globalScale;
   const padY = LABEL_PAD_Y / globalScale;
   const padX = LABEL_PAD_X / globalScale;
 
@@ -468,13 +469,14 @@ function drawLabel(
   borderColor: string,
   bgColor: string,
   colors: CanvasColors,
+  labelFontSize: number,
 ): void {
   const variant = resolveVariant(node);
   const text = nodeDisplayName(node);
   const isTerminal = variant === 'start' || variant === 'end';
   const radius = (isTerminal ? RADIUS_MD : RADIUS_SM) / globalScale;
   const borderW = BORDER_STD / globalScale;
-  const layout = computeLabelLayout(node, ctx, globalScale, orientation);
+  const layout = computeLabelLayout(node, ctx, globalScale, orientation, labelFontSize);
   if (!layout) return;
 
   const { cx, cy, boxW, boxH } = layout;
@@ -501,8 +503,9 @@ function drawHighlightedLabel(
   globalScale: number,
   orientation: GraphOrientation,
   colors: CanvasColors,
+  labelFontSize: number,
 ): void {
-  drawLabel(node, ctx, globalScale, orientation, colors.terra, colors.terraPale, colors);
+  drawLabel(node, ctx, globalScale, orientation, colors.terra, colors.terraPale, colors, labelFontSize);
 }
 
 function drawTerminalLabel(
@@ -511,12 +514,12 @@ function drawTerminalLabel(
   globalScale: number,
   orientation: GraphOrientation,
   colors: CanvasColors,
+  labelFontSize: number,
 ): void {
   const borderColor = nodeFill(resolveVariant(node), colors);
-  drawLabel(node, ctx, globalScale, orientation, borderColor, colors.white, colors);
+  drawLabel(node, ctx, globalScale, orientation, borderColor, colors.white, colors, labelFontSize);
 }
 
-const BADGE_FONT_SIZE = 9;
 const BADGE_PAD_X     = 6;
 const BADGE_PAD_Y     = 2;
 const BADGE_RADIUS    = 6;
@@ -526,11 +529,12 @@ function drawBadge(
   ctx: CanvasRenderingContext2D,
   globalScale: number,
   colors: CanvasColors,
+  badgeFontSize: number,
 ): void {
   if (node.x == null || node.y == null) return;
   const variant = resolveVariant(node);
   const r        = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
-  const fontSize = BADGE_FONT_SIZE / globalScale;
+  const fontSize = badgeFontSize / globalScale;
   const padX     = BADGE_PAD_X / globalScale;
   const padY     = BADGE_PAD_Y / globalScale;
   const gap      = SPACE_1 / globalScale;
@@ -562,6 +566,7 @@ function drawBadge(
 
 export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const colors = useCanvasColors();
+  const typography = useTypographySizes();
   const wrapperRef     = useRef<HTMLDivElement>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
@@ -613,8 +618,15 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   }, [graphData, orientation]);
 
   const fitBounds = useMemo(
-    () => computeFitBounds(positionedData.nodes, positionedData.links, dims.width, dims.height, orientation),
-    [positionedData, dims, orientation],
+    () => computeFitBounds(
+      positionedData.nodes,
+      positionedData.links,
+      dims.width,
+      dims.height,
+      orientation,
+      typography.label,
+    ),
+    [positionedData, dims, orientation, typography.label],
   );
 
   const hoveredNeighborIds = useMemo(
@@ -666,11 +678,11 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
       const fg = fgRef.current;
       if (!fg) return;
       for (const node of newNodes) {
-        drawBadge(node as SimNode, ctx, globalScale, colors);
+        drawBadge(node as SimNode, ctx, globalScale, colors, typography.badge);
       }
       for (const node of terminalNodes) {
         const sim = node as SimNode;
-        const layout = computeLabelLayout(sim, ctx, globalScale, orientation);
+        const layout = computeLabelLayout(sim, ctx, globalScale, orientation, typography.label);
         const el = labelLinkRefs.current.get(node.id);
         if (!layout || !el) continue;
         positionLabelLink(el, layout, fg, globalScale);
@@ -682,7 +694,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
       }
       for (const node of hoveredLabelNodes) {
         const sim = node as SimNode;
-        const layout = computeLabelLayout(sim, ctx, globalScale, orientation);
+        const layout = computeLabelLayout(sim, ctx, globalScale, orientation, typography.label);
         const el = hoverLabelRefs.current.get(node.id);
         if (!layout || !el) continue;
         positionLabelLink(el, layout, fg, globalScale);
@@ -700,13 +712,14 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           ctx,
           globalScale,
           orientation,
+          typography.label,
         );
         if (layout) positionLabelLink(highlightedEl, layout, fg, globalScale);
       } else if (highlightedEl) {
         highlightedEl.style.visibility = 'hidden';
       }
     },
-    [newNodes, terminalNodes, hoveredLinks, hoveredLabelNodes, orientation, highlightedInteriorNode, colors],
+    [newNodes, terminalNodes, hoveredLinks, hoveredLabelNodes, orientation, highlightedInteriorNode, colors, typography],
   );
 
   useEffect(() => {
@@ -882,9 +895,9 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           const isTerminal = variant === 'start' || variant === 'end';
 
           if (isHovered && !canHover) {
-            drawHighlightedLabel(node as SimNode, ctx, globalScale, orientation, colors);
+            drawHighlightedLabel(node as SimNode, ctx, globalScale, orientation, colors, typography.label);
           } else if (isTerminal && !(canHover && isHovered)) {
-            drawTerminalLabel(node as SimNode, ctx, globalScale, orientation, colors);
+            drawTerminalLabel(node as SimNode, ctx, globalScale, orientation, colors, typography.label);
           }
         }}
         nodeCanvasObjectMode={(node) => {

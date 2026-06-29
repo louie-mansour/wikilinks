@@ -155,16 +155,16 @@ func (s *Store) RecordSearch(titles []string, meta SearchMeta) (map[string]int, 
 	return hitCounts, nil
 }
 
-// QueryRecords returns best-ever stats for three time windows: all time, past week, past day.
+// QueryRecords returns best-ever stats for three time windows: past day, past week, all time.
 func (s *Store) QueryRecords() ([]RecordPeriod, error) {
 	now := time.Now().Unix()
 	windows := []struct {
 		period    string
 		threshold int64
 	}{
-		{"All time", 0},
-		{"Past week", now - 7*86400},
 		{"Past day", now - 86400},
+		{"Past week", now - 7*86400},
+		{"All time", 0},
 	}
 
 	periods := make([]RecordPeriod, 0, len(windows))

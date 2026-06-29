@@ -14,7 +14,7 @@
   background-color: var(--white);
   color: var(--ink-muted);
   font-family: var(--font-ui);
-  font-size: 12px;
+  font-size: var(--text-small);
   font-weight: 500;
   cursor: pointer;
   appearance: none;

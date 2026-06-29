@@ -49,7 +49,7 @@
   border: 1.5px solid var(--sand-mid);
   border-radius: var(--radius-sm);
   padding: 5px 12px;
-  font-size: 11px;
+  font-size: var(--text-label);
   font-weight: 500;
   white-space: nowrap;
   color: var(--ink-muted);
@@ -81,7 +81,7 @@
 /* Rarity tags — §7.4 */
 .nodeTag {
   display: inline-block;
-  font-size: 9px;
+  font-size: var(--text-badge);
   font-weight: 700;
   padding: 1px 6px;
   margin-left: 4px;
@@ -132,7 +132,7 @@
 }
 
 .legendTitle {
-  font-size: 10px;
+  font-size: var(--text-caption);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -146,7 +146,7 @@
   align-items: center;
   gap: 7px;
   margin-bottom: 5px;
-  font-size: 11px;
+  font-size: var(--text-label);
   color: var(--ink-muted);
   font-family: var(--font-ui);
 }
@@ -187,7 +187,7 @@
   background: var(--white);
   border: 1.5px solid var(--sand-mid);
   border-radius: var(--radius-sm);
-  font-size: 16px;
+  font-size: var(--text-title);
   font-weight: 700;
   color: var(--ink-muted);
   cursor: pointer;
@@ -195,7 +195,7 @@
 }
 
 .ctrlBtnFit {
-  font-size: 10px;
+  font-size: var(--text-caption);
 }
 
 @media (prefers-reduced-motion: no-preference) {

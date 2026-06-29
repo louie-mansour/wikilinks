@@ -12,7 +12,7 @@
   border: 1.5px solid var(--sand-mid);
   border-radius: var(--radius-sm);
   font-family: var(--font-ui);
-  font-size: 11px;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
@@ -82,7 +82,7 @@
   border: 1.5px solid transparent;
   border-radius: 8px;
   font-family: var(--font-ui);
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 500;
   text-align: left;
   cursor: pointer;

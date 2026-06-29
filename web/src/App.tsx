@@ -236,10 +236,6 @@ return 0; // 'interesting' = original order
           </PanelEnter>
 
           <PanelEnter index={3}>
-            <RecordsSection periods={result.records} />
-          </PanelEnter>
-
-          <PanelEnter index={4}>
             <ShareBar
               shareBaseUrl={SHARE_BASE_URL}
               urlCode={result.shareCode}
@@ -248,6 +244,10 @@ return 0; // 'interesting' = original order
                 window.history.pushState(null, '', `/s/${result.shareCode}`);
               }}
             />
+          </PanelEnter>
+
+          <PanelEnter index={4}>
+            <RecordsSection periods={result.records} />
           </PanelEnter>
 
           <PanelEnter index={5}>

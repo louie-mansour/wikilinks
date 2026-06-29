@@ -15,8 +15,8 @@
     <meta name="twitter:description" content="Find the fewest hops between any two Wikipedia articles. The WikiRace solver that shows every possible route — enter two pages and discover how many hops connect them.">
     <script>
       (function () {
-        var ids = ['warm', 'ocean', 'forest', 'wikipedia', 'midnight', 'obsidian', 'ember', 'aurora', 'deep-sea', 'moss'];
-        var id = 'midnight';
+        var ids = ['warm', 'midnight'];
+        var id = 'warm';
         try {
           var stored = localStorage.getItem('wikihop-theme');
           if (stored && ids.indexOf(stored) !== -1) id = stored;

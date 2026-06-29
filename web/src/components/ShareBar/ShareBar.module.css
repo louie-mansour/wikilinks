@@ -15,7 +15,7 @@
 
 /* "SHARE" label */
 .label {
-  font-size: 10px;
+  font-size: var(--text-caption);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -33,7 +33,7 @@
 .url {
   display: inline-block;
   max-width: 100%;
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 600;
   color: var(--terra);
   text-decoration: none;

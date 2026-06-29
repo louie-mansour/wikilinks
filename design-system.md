@@ -116,30 +116,22 @@ Lora is dropped in favour of Figtree throughout. Italic weight (400i) is loaded 
 
 ### Type Scale
 
-| Role | Size | Weight | Style | Notes |
-|---|---|---|---|---|
-| Wordmark | 22px | 800 | normal | `letter-spacing: -0.5px` |
-| Path list title | 16px | 700 | normal | Section header |
-| Body / inputs | 14px | 400 | normal | Base `font-size` on `body` |
-| Tagline | 14px | 400 | italic | |
-| Input value | 14px | 600 | normal | Filled input state |
-| Stat subtitle | 13px | 400 | italic | `--ink-muted` |
-| Dropdown option | 13px | 500 | normal | |
-| Crumb link | 13px | 500 | normal | 700 when `.hl` |
-| Path number | 13px | 700 | normal | `--sand-dark` color |
-| Record value | 13px | 700 | normal | |
-| Permalink URL | 13px | 600 | normal | `--terra` color |
-| Record key | 12px | 400 | normal | `--ink-muted` |
-| Copy button | 12px | 600 | normal | |
-| Combo option meta | 11px | 400 | normal | Right-aligned, `--ink-faint` |
-| Action button | 11px | 600 | normal | |
-| Input label | 11px | 700 | normal | Uppercase, `letter-spacing: 0.07em` |
-| Legend / stat label | 10px | 700 | normal | Uppercase, `letter-spacing: 0.07em` |
-| Tag / badge | 9px | 700 | normal | Pill label |
-| Stat — large (paths found) | 60px | 800 | normal | `letter-spacing: -3px`, sage color |
-| Stat — medium (hops) | 32px | 800 | normal | `letter-spacing: -1px` |
-| Stat — small (nodes, articles) | 26px | 800 | normal | `letter-spacing: -1px` |
-| Stat — time | 28px | 800 | normal | `--clay` color |
+Sizes are defined as CSS custom properties in `tokens.css` and referenced via `var(--text-*)` throughout components.
+
+| Token | Size | Role | Weight | Style | Notes |
+|---|---|---|---|---|---|
+| `--text-wordmark` | 23px | Wordmark | 800 | normal | `letter-spacing: -0.5px` |
+| `--text-title` | 17px | Path list title | 700 | normal | Section header |
+| `--text-body` | 15px | Body / inputs | 400 | normal | Base `font-size` on `body` |
+| `--text-ui` | 14px | Tagline, crumb, dropdown | 400–700 | normal/italic | Tagline uses italic |
+| `--text-small` | 13px | Record key, copy button | 400–600 | normal | |
+| `--text-label` | 12px | Input label, live pill | 600–700 | normal | Uppercase labels use `letter-spacing: 0.07em` |
+| `--text-caption` | 11px | Legend / stat label | 700 | normal | Uppercase, `letter-spacing: 0.07em` |
+| `--text-badge` | 10px | Tag / badge | 700 | normal | Pill label |
+| `--text-stat-xl` | 61px | Stat — large (paths found) | 800 | normal | `letter-spacing: -3px`, sage color |
+| `--text-stat-lg` | 33px | Stat — medium (hops) | 800 | normal | `letter-spacing: -1px` |
+| `--text-stat-sm` | 27px | Stat — small (nodes, articles) | 800 | normal | `letter-spacing: -1px` |
+| `--text-stat-md` | 29px | Stat — time | 800 | normal | `--clay` color |
 
 ---
 
@@ -213,25 +205,25 @@ Standard border width is **1.5px** throughout. This is an intentional design dec
 
 ### 7.1 Primary Button (`.btn`)
 
-- **Base:** `background: var(--terra)`, `color: var(--white)`, `padding: 12px 28px`, `border-radius: var(--radius-md)`, `font: 14px/700 var(--font-ui)`, `letter-spacing: 0.01em`, full-width up to 440px max, `::before` shine overlay and `::after` arrow both hidden
+- **Base:** `background: var(--terra)`, `color: var(--white)`, `padding: 12px 28px`, `border-radius: var(--radius-md)`, `font: var(--text-body)/700 var(--font-ui)`, `letter-spacing: 0.01em`, full-width up to 440px max, `::before` shine overlay and `::after` arrow both hidden
 - **Hover** *(motion only):* `background: var(--terra-dark)`, `transform: translateY(-2px)`, box-shadow `0 6px 20px rgba(196,87,42,0.30)`, `letter-spacing: 0.04em`; `::before` sweeps shine (`translateX(-100%)` → `translateX(100%)`, 0.45s ease); `::after` arrow fades in
 - **Active** *(motion only):* `transform: translateY(0)`, box-shadow `0 2px 8px rgba(196,87,42,0.20)`
 - **Focus:** `outline: 2px solid var(--terra)`, `outline-offset: 3px` (via `:focus-visible`)
 
 ### 7.2 Autocomplete Combobox (`.combo-wrap`)
 
-- **Base:** Input row `background: var(--sand)`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-md)`; input `font: 14px/600 var(--font-ui)`, `padding: 12px 10px 12px 16px`; chevron `color: var(--ink-faint)`
+- **Base:** Input row `background: var(--sand)`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-md)`; input `font: var(--text-body)/600 var(--font-ui)`, `padding: 12px 10px 12px 16px`; chevron `color: var(--ink-faint)`
 - **Focus-within:** `border-color: var(--terra)`, `box-shadow: 0 0 0 3px var(--terra-light)`
 - **Dropdown:** `background: var(--white)`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-md)`, `box-shadow: 0 8px 24px rgba(44,36,22,0.10)`, `z-index: 100`
-- **Option base:** `padding: 10px 14px`, `font: 13px/500 var(--font-ui)`, `color: var(--ink-muted)`, bottom border `1px solid var(--sand-mid)`
+- **Option base:** `padding: 10px 14px`, `font: var(--text-ui)/500 var(--font-ui)`, `color: var(--ink-muted)`, bottom border `1px solid var(--sand-mid)`
 - **Option hover / aria-selected:** `background: var(--terra-pale)`, `color: var(--terra)`
 - **Option match highlight (`<mark>`):** `background: none`, `color: var(--terra)`, `font-weight: 700`
-- **No results:** italic, 12px, `var(--ink-faint)`, centered
+- **No results:** italic, `var(--text-small)`, `var(--ink-faint)`, centered
 - **ARIA:** `role="combobox"`, `aria-expanded`, `aria-controls`, `aria-autocomplete="list"` on input; `role="listbox"` on `<ul>`; `aria-selected` managed per option; keyboard: `ArrowDown/Up` navigate, `Enter` selects, `Escape` closes
 
 ### 7.3 Graph Node (`.node`)
 
-- **Default:** `background: var(--sand)`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-sm)`, `padding: 5px 12px`, `font: 11px/500 var(--font-ui)`, `color: var(--ink-muted)`
+- **Default:** `background: var(--sand)`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-sm)`, `padding: 5px 12px`, `font: var(--text-label)/500 var(--font-ui)`, `color: var(--ink-muted)`
 - **Variant — start:** `border: 2px solid var(--ink)`, `color: var(--ink)`, `font-weight: 700`, `background: var(--white)`, `border-radius: var(--radius-md)`
 - **Variant — end:** `border: 2px dashed var(--ink-muted)`, `color: var(--ink)`, `font-weight: 700`, `background: var(--white)`, `border-radius: var(--radius-md)`
 - **Variant — active:** `border-color: var(--terra)`, `color: var(--ink)`, `background: var(--terra-pale)`
@@ -247,26 +239,26 @@ Pills applied inline inside node labels and path crumbs.
 | `rare` | `--sage` | `#fff` |
 | `uncommon` | `--sand-mid` | `--ink-muted` |
 
-Base: `font: 9px/700 var(--font-ui)`, `padding: 1px 6px`, `border-radius: 8px`, `display: inline-block`, `vertical-align: middle`.
+Base: `font: var(--text-badge)/700 var(--font-ui)`, `padding: 1px 6px`, `border-radius: 8px`, `display: inline-block`, `vertical-align: middle`.
 
 ### 7.5 Bento Stat Cards (`.bento-card`)
 
 - **Base:** `background: var(--white)`, `border-radius: var(--radius-md)`, `border: 1.5px solid var(--sand-mid)`
-- **Variant — paths (large):** `background: var(--sage-pale)`, `border-color: var(--sage-light)`; stat number uses `var(--sage)`, `60px/800`, `letter-spacing: -3px`; spans 2 grid rows on desktop
+- **Variant — paths (large):** `background: var(--sage-pale)`, `border-color: var(--sage-light)`; stat number uses `var(--sage)`, `var(--text-stat-xl)/800`, `letter-spacing: -3px`; spans 2 grid rows on desktop
 - **Variant — hops:** `background: var(--terra-pale)`, `border-color: var(--terra-light)`; stat number uses `var(--terra)`
-- **Variant — time:** `background: var(--clay-pale)`, `border-color: var(--clay-border)`; stat number uses `var(--clay)`, `28px`
-- **Variant — nodes explored:** `background: var(--sand)`, `border-color: var(--sand-dark)`; stat number `26px`, `var(--ink)`
-- **Variant — unique articles:** `background: var(--white)`; stat number `26px`, `var(--ink-muted)`
+- **Variant — time:** `background: var(--clay-pale)`, `border-color: var(--clay-border)`; stat number uses `var(--clay)`, `var(--text-stat-md)`
+- **Variant — nodes explored:** `background: var(--sand)`, `border-color: var(--sand-dark)`; stat number `var(--text-stat-sm)`, `var(--ink)`
+- **Variant — unique articles:** `background: var(--white)`; stat number `var(--text-stat-sm)`, `var(--ink-muted)`
 
 ### 7.6 Live Pill (`.bento-live-pill`)
 
-- `background: var(--sage-light)`, `border-radius: 20px`, `padding: 4px 10px`, `font: 11px/700 var(--font-ui)`, `color: var(--sage)`
+- `background: var(--sage-light)`, `border-radius: 20px`, `padding: 4px 10px`, `font: var(--text-label)/700 var(--font-ui)`, `color: var(--sage)`
 - Contains a `6px` circle dot (`background: var(--sage)`)
 - Animates via `live-pulse` (see §8)
 
 ### 7.7 Control Button (`.ctrl-btn`)
 
-- **Base:** `34×34px`, `background: var(--white)`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-sm)`, `font: 16px/700 var(--font-ui)`, `color: var(--ink-muted)`
+- **Base:** `34×34px`, `background: var(--white)`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-sm)`, `font: var(--text-title)/700 var(--font-ui)`, `color: var(--ink-muted)`
 - **Hover** *(motion only):* `border-color: var(--terra)`, `color: var(--terra)`
 - Transition: `border-color 0.12s, color 0.12s`
 
@@ -274,7 +266,7 @@ Base: `font: 9px/700 var(--font-ui)`, `padding: 1px 6px`, `border-radius: 8px`, 
 
 - **Base:** `padding: 14px 20px`, `border-bottom: 1.5px solid var(--sand-mid)`, flex row with `gap: 14px`
 - **Hover** *(motion only):* `background: var(--sand)`
-- **Crumb link base:** `font: 13px/500 var(--font-ui)`, `color: var(--ink-muted)`, `padding: 2px 5px`, `border-radius: 6px`
+- **Crumb link base:** `font: var(--text-ui)/500 var(--font-ui)`, `color: var(--ink-muted)`, `padding: 2px 5px`, `border-radius: 6px`
 - **Crumb hover:** `background: var(--terra-pale)`, `color: var(--terra)`
 - **Crumb highlighted (`.hl`):** `color: var(--ink)`, `font-weight: 700`
 - **Mobile (≤600px):** Stack vertically; `.crumb-sep` (`›`) hidden; `.crumb-arrow` (`↓`) shown between crumbs
@@ -289,12 +281,12 @@ Shared pattern across three components:
 
 ### 7.10 Select (`.path-list-controls select`)
 
-- `padding: 6px 10px`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-sm)`, `background: var(--white)`, `color: var(--ink-muted)`, `font: 12px/500 var(--font-ui)`
+- `padding: 6px 10px`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-sm)`, `background: var(--white)`, `color: var(--ink-muted)`, `font: var(--text-small)/500 var(--font-ui)`
 - **Cross-browser note:** Native `<select>` appearance varies. Use `appearance: none; -webkit-appearance: none` and add a custom chevron via background-image SVG if visual consistency across browsers is required.
 
 ### 7.11 Record Badge (`.rec-badge`)
 
-- `font: 9px/700 var(--font-ui)`, `padding: 2px 6px`, `background: var(--clay-pale)`, `color: var(--clay)`, `border: 1px solid var(--clay-border)`, `border-radius: 6px`
+- `font: var(--text-badge)/700 var(--font-ui)`, `padding: 2px 6px`, `background: var(--clay-pale)`, `color: var(--clay)`, `border: 1px solid var(--clay-border)`, `border-radius: 6px`
 
 ---
 

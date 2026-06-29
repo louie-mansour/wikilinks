@@ -13,7 +13,7 @@
 
 /* "RECORDS" label */
 .header {
-  font-size: 10px;
+  font-size: var(--text-caption);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -40,10 +40,10 @@
   padding-right: 0;
 }
 
-/* Period label — "All time", "Past day", "Past week" */
+/* Period label — "Past day", "Past week", "All time" */
 .period {
   font-family: var(--font-display);
-  font-size: 11px;
+  font-size: var(--text-label);
   font-weight: 700;
   color: var(--ink);
   margin-bottom: 8px;
@@ -63,8 +63,12 @@
 }
 
 .key {
-  font-size: 12px;
+  font-size: var(--text-small);
   color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .val {
@@ -84,7 +88,7 @@
 
 .value {
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 700;
   color: var(--ink);
   text-align: right;

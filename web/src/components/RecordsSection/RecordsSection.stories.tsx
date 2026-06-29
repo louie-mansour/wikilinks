@@ -3,12 +3,12 @@ import { RecordsSection } from './RecordsSection';
 
 const DEMO_PERIODS = [
   {
-    period: 'All time',
+    period: 'Past day',
     rows: [
-      { key: 'Most paths found', value: '300', badge: true },
-      { key: 'Most articles in paths', value: '14', badge: true },
-      { key: 'Most articles explored', value: '12,048', badge: true },
-      { key: 'Longest path', value: '9 hops', badge: true },
+      { key: 'Most paths found', value: '300' },
+      { key: 'Most articles in paths', value: '9', badge: true },
+      { key: 'Most articles explored', value: '3,892', badge: true },
+      { key: 'Longest path', value: '7 hops', badge: true },
     ],
   },
   {
@@ -21,12 +21,12 @@ const DEMO_PERIODS = [
     ],
   },
   {
-    period: 'Past day',
+    period: 'All time',
     rows: [
-      { key: 'Most paths found', value: '300' },
-      { key: 'Most articles in paths', value: '9', badge: true },
-      { key: 'Most articles explored', value: '3,892', badge: true },
-      { key: 'Longest path', value: '7 hops', badge: true },
+      { key: 'Most paths found', value: '300', badge: true },
+      { key: 'Most articles in paths', value: '14', badge: true },
+      { key: 'Most articles explored', value: '12,048', badge: true },
+      { key: 'Longest path', value: '9 hops', badge: true },
     ],
   },
 ];

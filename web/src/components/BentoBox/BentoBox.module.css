@@ -28,7 +28,7 @@
 ──────────────────────────────────────── */
 .statLabel {
   display: block;
-  font-size: 10px;
+  font-size: var(--text-caption);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -55,7 +55,7 @@
 .statPaths {
   display: block;
   font-family: var(--font-display);
-  font-size: 60px;
+  font-size: var(--text-stat-xl);
   font-weight: 800;
   letter-spacing: -3px;
   color: var(--sage);
@@ -66,7 +66,7 @@
   display: block;
   font-family: var(--font-body);
   font-style: italic;
-  font-size: 13px;
+  font-size: var(--text-ui);
   color: var(--ink-muted);
   margin-top: 5px;
   line-height: 1.45;
@@ -95,7 +95,7 @@
 .statSmallValue {
   display: block;
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: var(--text-stat-lg);
   font-weight: 800;
   letter-spacing: -1px;
   line-height: 1;
@@ -106,7 +106,7 @@
 .statSmallSub {
   display: block;
   font-family: var(--font-ui);
-  font-size: 11px;
+  font-size: var(--text-label);
   color: var(--ink-muted);
   margin-top: 3px;
   line-height: 1.35;
@@ -150,7 +150,7 @@
 }
 
 .cardTime .statSmallValue {
-  font-size: 28px;
+  font-size: var(--text-stat-md);
 }
 
 .cardArticles {
@@ -204,7 +204,7 @@
   }
 
   .cardArticles:hover .statSmallSubEmphasis {
-    font-size: 16px;
+    font-size: var(--text-stat-emphasis);
   }
 }
 
@@ -233,6 +233,6 @@
   }
 
   .statPaths {
-    font-size: 48px;
+    font-size: var(--text-stat-xl-sm);
   }
 }

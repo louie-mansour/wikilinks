@@ -241,25 +241,25 @@ export const AllVariants: Story = {
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '20px', padding: '24px' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', maxWidth: 440 }}>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Primary</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--text-label)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Primary</span>
         <Button variant="primary">Find paths</Button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', maxWidth: 440 }}>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Primary / Loading</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--text-label)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Primary / Loading</span>
         <Button variant="primary" loading>
           Finding paths…
         </Button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Action</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--text-label)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Action</span>
         <Button variant="action">Copy</Button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Permalink</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--text-label)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Permalink</span>
         <Button variant="permalink">Copy link</Button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Secondary</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--text-label)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>Secondary</span>
         <Button variant="secondary">Load 242 more paths</Button>
       </div>
     </div>
