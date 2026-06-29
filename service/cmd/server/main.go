@@ -73,6 +73,12 @@ func main() {
 
 	if *staticDir != "" {
 		mux.Handle("GET /assets/", http.FileServer(http.Dir(*staticDir)))
+		for _, name := range []string{"robots.txt", "sitemap.xml", "favicon.ico", "favicon.png"} {
+			name := name
+			mux.HandleFunc("GET /"+name, func(w http.ResponseWriter, r *http.Request) {
+				http.ServeFile(w, r, filepath.Join(*staticDir, name))
+			})
+		}
 		mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, filepath.Join(*staticDir, "index.html"))
 		})
