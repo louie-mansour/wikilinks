@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback, type RefObject } from 'react';
 import { trackGraphNodeHighlighted, trackGraphNodeNavigated } from '../../analytics';
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d';
 import { forceLink, forceManyBody, forceX as d3ForceX, forceY as d3ForceY } from 'd3-force-3d';
@@ -383,6 +383,69 @@ function deviceSupportsHover(): boolean {
   return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
+/** force-graph only pans on left-click; middle-button drag pans anywhere on the graph. */
+function useMiddleButtonPan(
+  wrapperRef: RefObject<HTMLDivElement | null>,
+  fgRef: RefObject<ForceGraphMethods<WikiNode, WikiLink> | undefined>,
+  onPanningChange: (panning: boolean) => void,
+): void {
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    let panStart: { x: number; y: number; center: { x: number; y: number } } | null = null;
+
+    const endPan = () => {
+      if (!panStart) return;
+      panStart = null;
+      onPanningChange(false);
+    };
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 1) return;
+      if ((e.target as HTMLElement).closest('a')) return;
+      e.preventDefault();
+      const fg = fgRef.current;
+      if (!fg) return;
+      panStart = { x: e.clientX, y: e.clientY, center: fg.centerAt() };
+      onPanningChange(true);
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!panStart) return;
+      const fg = fgRef.current;
+      if (!fg) return;
+      const k = fg.zoom();
+      const dx = e.clientX - panStart.x;
+      const dy = e.clientY - panStart.y;
+      fg.centerAt(
+        panStart.center.x - dx / k,
+        panStart.center.y - dy / k,
+        0,
+      );
+    };
+
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button === 1) endPan();
+    };
+
+    const onAuxClick = (e: MouseEvent) => {
+      if (e.button === 1) e.preventDefault();
+    };
+
+    wrapper.addEventListener('mousedown', onMouseDown);
+    wrapper.addEventListener('auxclick', onAuxClick);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      wrapper.removeEventListener('mousedown', onMouseDown);
+      wrapper.removeEventListener('auxclick', onAuxClick);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [wrapperRef, fgRef, onPanningChange]);
+}
+
 function positionLabelLink(
   el: HTMLElement,
   layout: LabelLayout,
@@ -578,8 +641,11 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const [canHover, setCanHover] = useState(deviceSupportsHover);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredLink, setHoveredLink] = useState<{ source: string; target: string } | null>(null);
+  const [isMiddlePanning, setIsMiddlePanning] = useState(false);
 
   const orientation = graphOrientation(dims.width);
+
+  useMiddleButtonPan(wrapperRef, fgRef, setIsMiddlePanning);
 
   const bfsDepths = useMemo(
     () => computeBfsDepths(graphData.nodes, graphData.links),
@@ -771,7 +837,17 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   }, [positionedData, orientation]);
 
   return (
-    <div ref={wrapperRef} className={styles.wrapper} style={{ cursor: canHover && hoveredNodeId ? 'pointer' : 'default' }}>
+    <div
+      ref={wrapperRef}
+      className={styles.wrapper}
+      style={{
+        cursor: isMiddlePanning
+          ? 'grabbing'
+          : canHover && hoveredNodeId
+            ? 'pointer'
+            : 'default',
+      }}
+    >
       <div className={styles.legend}>
         <div className={styles.legendTitle}>Legend</div>
         <div className={styles.legendRow}>
