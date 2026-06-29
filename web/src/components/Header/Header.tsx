@@ -20,6 +20,10 @@ interface HeaderProps {
   onSearch?: () => void;
   isSearching?: boolean;
   searchLabel?: string;
+  onStartRandomize?: () => void;
+  onEndRandomize?: () => void;
+  isStartRandomizing?: boolean;
+  isEndRandomizing?: boolean;
   /** When set, replaces the default tagline (shared link view). */
   sharedArticles?: { start: string; end: string };
 }
@@ -38,6 +42,10 @@ export function Header({
   onSearch,
   isSearching = false,
   searchLabel = 'Find paths',
+  onStartRandomize,
+  onEndRandomize,
+  isStartRandomizing = false,
+  isEndRandomizing = false,
   sharedArticles,
 }: HeaderProps) {
   return (
@@ -89,6 +97,8 @@ export function Header({
               isLoading={startSuggestionsLoading}
               onSelect={onStartSelect}
               onChange={onStartChange}
+              onRandomize={onStartRandomize}
+              isRandomizing={isStartRandomizing}
               className={styles.combobox}
               analyticsRole="start"
             />
@@ -110,6 +120,8 @@ export function Header({
               isLoading={endSuggestionsLoading}
               onSelect={onEndSelect}
               onChange={onEndChange}
+              onRandomize={onEndRandomize}
+              isRandomizing={isEndRandomizing}
               className={styles.combobox}
               analyticsRole="end"
             />

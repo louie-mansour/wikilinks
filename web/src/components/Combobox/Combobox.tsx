@@ -1,4 +1,5 @@
 import { useId, useRef, useState, useEffect, useCallback } from 'react';
+import { Trash2, Shuffle } from 'lucide-react';
 import styles from './Combobox.module.css';
 import { trackComboboxSuggestionSelected } from '../../analytics';
 
@@ -17,6 +18,8 @@ export interface ComboboxProps {
   isLoading?: boolean;
   onSelect?: (title: string) => void;
   onChange?: (value: string) => void;
+  onRandomize?: () => void;
+  isRandomizing?: boolean;
   className?: string;
   analyticsRole?: string;
 }
@@ -46,6 +49,8 @@ export function Combobox({
   isLoading = false,
   onSelect,
   onChange,
+  onRandomize,
+  isRandomizing = false,
   className = '',
   analyticsRole,
 }: ComboboxProps) {
@@ -99,6 +104,13 @@ export function Combobox({
     },
     [onSelect, updateValue, analyticsRole, query]
   );
+
+  function handleClear() {
+    updateValue('');
+    setOpen(false);
+    setActiveIndex(-1);
+    inputRef.current?.focus();
+  }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = e.target.value;
@@ -181,6 +193,29 @@ export function Combobox({
           onFocus={handleInputFocus}
           onKeyDown={handleKeyDown}
         />
+
+        <button
+          type="button"
+          className={styles.iconBtn}
+          aria-label="Clear"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={handleClear}
+        >
+          <Trash2 size={14} strokeWidth={2.5} aria-hidden="true" />
+        </button>
+
+        {onRandomize && (
+          <button
+            type="button"
+            className={`${styles.iconBtn} ${styles.iconBtnRight}`}
+            aria-label="Pick random article"
+            disabled={isRandomizing}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={onRandomize}
+          >
+            <Shuffle size={14} strokeWidth={2.5} aria-hidden="true" />
+          </button>
+        )}
 
       </div>
 

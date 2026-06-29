@@ -34,6 +34,8 @@ export function App() {
   const [result, setResult] = useState<SearchResult | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isRouletting, setIsRouletting] = useState(false);
+  const [isStartRouletting, setIsStartRouletting] = useState(false);
+  const [isEndRouletting, setIsEndRouletting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [sortOrder, setSortOrder] = useState('interesting');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -81,7 +83,7 @@ export function App() {
   };
 
   const handleSearch = useCallback(async () => {
-    if (isRouletting || isSearching) return;
+    if (isRouletting || isSearching || isStartRouletting || isEndRouletting) return;
 
     const needsStartRandom = !startArticle.trim();
     const needsEndRandom = !endArticle.trim();
@@ -154,7 +156,33 @@ export function App() {
       setIsSearching(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startArticle, endArticle, isRouletting, isSearching, isSharedView]);
+  }, [startArticle, endArticle, isRouletting, isSearching, isSharedView, isStartRouletting, isEndRouletting]);
+
+  const handleStartRandomize = useCallback(async () => {
+    if (isStartRouletting || isRouletting || isSearching) return;
+    setIsStartRouletting(true);
+    try {
+      const pool = await fetchRandom('start', 20).catch(() => fallbackTitles);
+      const pick = pickRandom(pool, endArticle.trim() || undefined);
+      await animateRoulette(pick, setStartArticle, pool);
+    } finally {
+      setIsStartRouletting(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStartRouletting, isRouletting, isSearching, endArticle]);
+
+  const handleEndRandomize = useCallback(async () => {
+    if (isEndRouletting || isRouletting || isSearching) return;
+    setIsEndRouletting(true);
+    try {
+      const pool = await fetchRandom('end', 20).catch(() => fallbackTitles);
+      const pick = pickRandom(pool, startArticle.trim() || undefined);
+      await animateRoulette(pick, setEndArticle, pool);
+    } finally {
+      setIsEndRouletting(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEndRouletting, isRouletting, isSearching, startArticle]);
 
   const sortedPaths = result
     ? [...result.paths].sort((a, b) => {
@@ -187,6 +215,10 @@ return 0; // 'interesting' = original order
             onEndChange={(v) => { setEndArticle(v); setIsSelectedEnd(false); }}
             onSearch={handleSearch}
             isSearching={isRouletting || isSearching}
+            onStartRandomize={handleStartRandomize}
+            onEndRandomize={handleEndRandomize}
+            isStartRandomizing={isStartRouletting}
+            isEndRandomizing={isEndRouletting}
             searchLabel={
               isRouletting
                 ? 'Picking articles…'
