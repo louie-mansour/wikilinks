@@ -70,10 +70,21 @@ export function Combobox({
 
   const listboxId = useId();
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const query = value.trim();
   const visibleOptions = suggestions.slice(0, 7);
+
+  const adjustHeight = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  useEffect(() => {
+    adjustHeight();
+  }, [value, adjustHeight]);
   const canShowList = query.length > 0;
 
   // Close on outside click
@@ -112,7 +123,7 @@ export function Combobox({
     inputRef.current?.focus();
   }
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const next = e.target.value;
     updateValue(next);
     setOpen(next.trim().length > 0);
@@ -123,7 +134,8 @@ export function Combobox({
     if (canShowList) setOpen(true);
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter') e.preventDefault();
     if (!open) {
       if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && canShowList) {
         setOpen(true);
@@ -176,10 +188,10 @@ export function Combobox({
 
       {/* Input row */}
       <div className={styles.inputRow}>
-        <input
+        <textarea
           ref={inputRef}
           id={id}
-          type="text"
+          rows={1}
           role="combobox"
           aria-expanded={open}
           aria-controls={listboxId}

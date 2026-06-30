@@ -83,7 +83,7 @@
 /* Inputs row — wraps on mobile; comboboxes share remaining width */
 .inputsRow {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
   justify-content: center;
@@ -134,8 +134,6 @@
   color: var(--sand-dark);
   flex-shrink: 0;
   box-sizing: border-box;
-  /* Match combobox input row: 12px + 14px + 12px padding/font + 3px border */
-  height: 41px;
 }
 
 /* §4 Breakpoints — mobile ≤520px */
