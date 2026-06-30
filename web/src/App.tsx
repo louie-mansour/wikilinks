@@ -26,7 +26,7 @@ const SORT_OPTIONS = [
   { value: 'alpha', label: 'Sort: alphabetical' },
 ];
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 20;
 
 export function App() {
   const [startArticle, setStartArticle] = useState('');
