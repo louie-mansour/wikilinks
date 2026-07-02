@@ -1,5 +1,5 @@
 import { useId, useRef, useState, useEffect, useCallback } from 'react';
-import { Trash2, Shuffle } from 'lucide-react';
+import { Search, Trash2, Shuffle } from 'lucide-react';
 import styles from './Combobox.module.css';
 import { trackComboboxSuggestionSelected } from '../../analytics';
 
@@ -188,6 +188,10 @@ export function Combobox({
 
       {/* Input row */}
       <div className={styles.inputRow}>
+        <span className={styles.searchIcon} aria-hidden="true">
+          <Search size={14} strokeWidth={2.5} />
+        </span>
+
         <textarea
           ref={inputRef}
           id={id}

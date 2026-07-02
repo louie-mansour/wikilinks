@@ -212,7 +212,7 @@ Standard border width is **1.5px** throughout. This is an intentional design dec
 
 ### 7.2 Autocomplete Combobox (`.combo-wrap`)
 
-- **Base:** Input row `background: var(--sand)`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-md)`; input `font: var(--text-body)/600 var(--font-ui)`, `padding: 12px 10px 12px 16px`; chevron `color: var(--ink-faint)`
+- **Base:** Input row `background: var(--sand)`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-md)`; input `font: var(--text-body)/600 var(--font-ui)`, `padding: 12px 10px 12px 16px`; leading search icon (`color: var(--ink-faint)`, always visible) signals the field accepts text input; chevron `color: var(--ink-faint)`
 - **Focus-within:** `border-color: var(--terra)`, `box-shadow: 0 0 0 3px var(--terra-light)`
 - **Dropdown:** `background: var(--white)`, `border: 1.5px solid var(--sand-mid)`, `border-radius: var(--radius-md)`, `box-shadow: 0 8px 24px rgba(44,36,22,0.10)`, `z-index: 100`
 - **Option base:** `padding: 10px 14px`, `font: var(--text-ui)/500 var(--font-ui)`, `color: var(--ink-muted)`, bottom border `1px solid var(--sand-mid)`
