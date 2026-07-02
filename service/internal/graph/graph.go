@@ -83,10 +83,13 @@ func suggest(idx TitleIndex, prefix string, limit int) []string {
 	if len(exact) >= limit {
 		return exact
 	}
-	// Word-boundary and fuzzy tiers only apply to multi-word queries (queries
-	// containing a space). Single-token queries use prefix search only to
-	// avoid spurious matches from short tokens like "a" matching every title.
-	if !strings.ContainsRune(prefix, ' ') {
+	// Word-boundary and fuzzy tiers apply to multi-word queries OR to single
+	// tokens ≥4 chars (e.g. "Hitler" → "Adolf Hitler"). Short single tokens
+	// like "a" are excluded to avoid flooding results.
+	isMultiWord := strings.ContainsRune(prefix, ' ')
+	tokens := titleTokens(prefix)
+	isSingleLongToken := !isMultiWord && len(tokens) == 1 && len(tokens[0]) >= 4
+	if !isMultiWord && !isSingleLongToken {
 		return exact
 	}
 	wordPrefix := idx.wordPrefixSearch(prefix, limit-len(exact), exact)
@@ -95,7 +98,18 @@ func suggest(idx TitleIndex, prefix string, limit int) []string {
 		return combined
 	}
 	fuzzy := idx.levenshteinSearch(prefix, limit-len(combined), combined)
-	return append(combined, fuzzy...)
+	combined = append(combined, fuzzy...)
+	if len(combined) >= limit {
+		return combined
+	}
+	// Stop-word tier: strip common function words and retry with meaningful
+	// tokens only. Catches sentence-like queries such as
+	// "Conference in San Francisco over the weekend".
+	if isMultiWord {
+		filtered := idx.stopWordSearch(prefix, limit-len(combined), combined)
+		combined = append(combined, filtered...)
+	}
+	return combined
 }
 
 // RandomStartNodes returns count distinct random start-eligible article titles.

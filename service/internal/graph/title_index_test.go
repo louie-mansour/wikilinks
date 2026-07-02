@@ -60,6 +60,34 @@ func TestTitleIndexWordPrefixSearch(t *testing.T) {
 	}
 }
 
+func TestTitleIndexStopWordSearch(t *testing.T) {
+	idx := NewTitleIndex([]string{
+		"San Francisco",
+		"San Francisco Conference",
+		"San Jose",
+		"Conference on Artificial Intelligence",
+	})
+
+	tests := []struct {
+		query   string
+		limit   int
+		exclude []string
+		want    []string
+	}{
+		// sentence-like query: stop words stripped → ["conference", "san", "francisco"]
+		{query: "conference in san francisco over the weekend", limit: 10, exclude: nil, want: []string{"San Francisco Conference"}},
+		// single meaningful token after stripping
+		{query: "the san francisco", limit: 10, exclude: nil, want: []string{"San Francisco", "San Francisco Conference"}},
+		// all stop words → nil
+		{query: "in the over", limit: 10, exclude: nil, want: nil},
+	}
+
+	for _, tc := range tests {
+		got := idx.stopWordSearch(tc.query, tc.limit, tc.exclude)
+		checkStringSlice(t, "stopWordSearch("+tc.query+")", got, tc.want)
+	}
+}
+
 func TestTitleIndexLevenshteinSearch(t *testing.T) {
 	idx := NewTitleIndex([]string{
 		"Robert_Munsch",

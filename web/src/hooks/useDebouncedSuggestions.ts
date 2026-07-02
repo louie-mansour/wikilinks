@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Suggestion } from '../components/Combobox/Combobox';
 import { fetchSuggest, type SuggestRole } from '../api/suggest';
 
-const DEBOUNCE_MS = 300;
+const DEBOUNCE_MS = 150;
 
 export interface DebouncedSuggestions {
   suggestions: Suggestion[];

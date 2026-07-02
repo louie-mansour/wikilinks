@@ -104,6 +104,75 @@ func (idx TitleIndex) levenshteinSearch(query string, limit int, exclude []strin
 	return results
 }
 
+// stopWordSearch strips common function words from query and retries with the
+// remaining tokens. For 4+ meaningful tokens it allows 1 unmatched token
+// (≥75% match), handling sentence-like queries such as
+// "Conference in San Francisco over the weekend".
+func (idx TitleIndex) stopWordSearch(query string, limit int, exclude []string) []string {
+	tokens := filterStopWords(titleTokens(query))
+	if len(tokens) == 0 || limit <= 0 {
+		return nil
+	}
+	// Allow 1 miss for queries with 4+ meaningful tokens; otherwise require all.
+	minMatch := len(tokens) - len(tokens)/4
+	if minMatch < 1 {
+		minMatch = 1
+	}
+	excluded := excludeSet(exclude)
+	results := make([]string, 0, limit)
+	for _, title := range idx.titles {
+		if len(results) >= limit {
+			break
+		}
+		lower := strings.ToLower(title)
+		if _, skip := excluded[lower]; skip {
+			continue
+		}
+		if softPrefixMatch(tokens, splitWords(lower), minMatch) {
+			results = append(results, title)
+		}
+	}
+	return results
+}
+
+// softPrefixMatch counts how many tokens are a prefix of at least one word,
+// returning true if the count meets minMatch.
+func softPrefixMatch(tokens, words []string, minMatch int) bool {
+	matched := 0
+	for _, tok := range tokens {
+		for _, w := range words {
+			if strings.HasPrefix(w, tok) {
+				matched++
+				break
+			}
+		}
+	}
+	return matched >= minMatch
+}
+
+// stopWords is a conservative set of English function words that are unlikely
+// to be the meaningful part of a Wikipedia article title.
+var stopWords = map[string]struct{}{
+	"a": {}, "an": {}, "the": {}, "and": {}, "or": {}, "but": {}, "nor": {},
+	"in": {}, "on": {}, "at": {}, "to": {}, "for": {}, "of": {}, "by": {},
+	"with": {}, "from": {}, "as": {}, "into": {}, "onto": {}, "over": {},
+	"under": {}, "about": {}, "above": {}, "than": {}, "up": {}, "out": {},
+	"is": {}, "are": {}, "was": {}, "were": {}, "be": {}, "been": {}, "being": {},
+	"it": {}, "its": {}, "this": {}, "that": {}, "these": {}, "those": {},
+	"i": {}, "me": {}, "my": {}, "we": {}, "our": {}, "you": {}, "your": {},
+	"he": {}, "she": {}, "they": {}, "them": {}, "his": {}, "her": {}, "their": {},
+}
+
+func filterStopWords(tokens []string) []string {
+	out := make([]string, 0, len(tokens))
+	for _, t := range tokens {
+		if _, isStop := stopWords[t]; !isStop {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
 // titleTokens splits a query on whitespace and underscores, lowercased.
 func titleTokens(query string) []string {
 	return strings.FieldsFunc(strings.ToLower(query), func(r rune) bool {
