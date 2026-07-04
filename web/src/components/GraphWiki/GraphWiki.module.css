@@ -53,9 +53,8 @@
 }
 
 .legendDotNew {
-  border: none;
-  background: radial-gradient(circle at 35% 30%, var(--clay-pale), var(--clay));
-  box-shadow: 0 0 6px 1px var(--clay);
+  border: 1.5px solid var(--clay-border);
+  background: var(--clay);
 }
 
 .legendDotDefault {

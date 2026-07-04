@@ -85,6 +85,7 @@ export function BentoBox({
         label="First discoveries"
         value={firstArticles}
         cardClassName={styles.cardFirst}
+        subtext="You're the first to uncover these"
       />
     </section>
   );

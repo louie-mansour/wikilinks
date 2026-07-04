@@ -78,7 +78,7 @@ function nodeFill(variant: WikiNodeVariant, isNew: boolean | undefined, colors: 
 }
 
 function nodeRadius(variant: WikiNodeVariant): number {
-  return variant === 'start' || variant === 'end' ? SPACE_2 + SPACE_1 : SPACE_2;
+  return variant === 'start' || variant === 'end' ? SPACE_2 + SPACE_1 + SPACE_1 : SPACE_2 + SPACE_1;
 }
 
 function nodeVal(variant: WikiNodeVariant): number {
@@ -940,20 +940,13 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           const isTerminalVariant = variant === 'start' || variant === 'end';
 
           if (node.isNew && !isTerminalVariant) {
-            const shine = ctx.createRadialGradient(
-              node.x! - r * 0.35, node.y! - r * 0.35, r * 0.05,
-              node.x!, node.y!, r,
-            );
-            shine.addColorStop(0, colors.clayPale);
-            shine.addColorStop(1, colors.clay);
             ctx.beginPath();
             ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);
-            ctx.shadowColor = colors.clay;
-            ctx.shadowBlur = r * 2.2;
-            ctx.fillStyle = shine;
+            ctx.fillStyle = colors.clay;
             ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.shadowColor = 'transparent';
+            ctx.strokeStyle = colors.clayBorder;
+            ctx.lineWidth = BORDER_STD / globalScale;
+            ctx.stroke();
           } else {
             ctx.beginPath();
             ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);

@@ -9,6 +9,7 @@ export interface CanvasColors {
   terraPale: string;
   clay: string;
   clayPale: string;
+  clayBorder: string;
 }
 
 export function readCanvasColors(el: HTMLElement = document.documentElement): CanvasColors {
@@ -25,5 +26,6 @@ export function readCanvasColors(el: HTMLElement = document.documentElement): Ca
     terraPale: token('--terra-pale'),
     clay: token('--clay'),
     clayPale: token('--clay-pale'),
+    clayBorder: token('--clay-border'),
   };
 }
