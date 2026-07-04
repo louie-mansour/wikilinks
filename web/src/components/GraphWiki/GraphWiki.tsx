@@ -26,6 +26,7 @@ const FIT_PADDING    = SPACE_7 * 2;
 const TARGET_ASPECT  = 1.8;           // desired width:height (horizontal layout)
 const MIN_V_SPACING  = 4;             // floor so nodes never fully overlap
 const MOBILE_LAYOUT_MAX_WIDTH = 520;  // matches design-system §4 breakpoint
+const HOVER_DEBOUNCE_MS = 60;         // swallow hover flicker from fast cursor passes
 
 export type WikiNodeVariant = 'default' | 'start' | 'end' | 'path';
 
@@ -121,6 +122,17 @@ function computeBfsDepths(nodes: WikiNode[], links: WikiLink[]): Map<string, num
   }
 
   return depths;
+}
+
+function pickRandom<T>(items: T[]): T | null {
+  if (items.length === 0) return null;
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+/** Auto-highlight target: prefer a node two hops from start, else one hop from start. */
+function pickAutoHoverNode(nodes: WikiNode[], depths: Map<string, number>): WikiNode | null {
+  const atDepth = (depth: number) => nodes.filter(n => depths.get(n.id) === depth);
+  return pickRandom(atDepth(2)) ?? pickRandom(atDepth(1));
 }
 
 /**
@@ -327,11 +339,6 @@ function linksEqual(a: WikiLink, b: { source: string; target: string }): boolean
   return source === b.source && target === b.target;
 }
 
-function linkKey(link: WikiLink): string {
-  const { source, target } = linkEndpoints(link);
-  return `${source}-${target}`;
-}
-
 function isLinkHighlighted(
   link: WikiLink,
   activeLink: { source: string; target: string } | null,
@@ -339,26 +346,6 @@ function isLinkHighlighted(
 ): boolean {
   return (activeLink != null && linksEqual(link, activeLink))
     || (activeNodeId != null && linkTouchesNode(link, activeNodeId));
-}
-
-function positionHighlightedLink(
-  el: SVGLineElement,
-  link: WikiLink,
-  fg: ForceGraphMethods<WikiNode, WikiLink>,
-): void {
-  const start = link.source as unknown as SimNode;
-  const end = link.target as unknown as SimNode;
-  if (start.x == null || start.y == null || end.x == null || end.y == null) {
-    el.style.visibility = 'hidden';
-    return;
-  }
-  const p1 = fg.graph2ScreenCoords(start.x, start.y);
-  const p2 = fg.graph2ScreenCoords(end.x, end.y);
-  el.setAttribute('x1', String(p1.x));
-  el.setAttribute('y1', String(p1.y));
-  el.setAttribute('x2', String(p2.x));
-  el.setAttribute('y2', String(p2.y));
-  el.style.visibility = 'visible';
 }
 
 function nodeDisplayName(node: WikiNode): string {
@@ -613,10 +600,10 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const typography = useTypographySizes();
   const wrapperRef     = useRef<HTMLDivElement>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
   const labelLinkRefs       = useRef<Map<string, HTMLAnchorElement>>(new Map());
   const hoverLabelRefs      = useRef<Map<string, HTMLDivElement>>(new Map());
-  const linkLineRefs        = useRef<Map<string, SVGLineElement>>(new Map());
   const highlightedLabelRef = useRef<HTMLAnchorElement>(null);
   const [dims, setDims] = useState({ width: 800, height: 440 });
   const [canHover, setCanHover] = useState(deviceSupportsHover);
@@ -638,6 +625,14 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     () => (bfsDepths.size > 0 ? Math.max(...bfsDepths.values()) + 1 : 1),
     [bfsDepths],
   );
+
+  // Default hover target so the graph reads as "explored" before the user moves the cursor.
+  useEffect(() => {
+    const node = pickAutoHoverNode(graphData.nodes, bfsDepths);
+    if (!node) return;
+    setHoveredNodeId(node.id);
+    setHoveredLink(null);
+  }, [graphData, bfsDepths]);
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -709,13 +704,6 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     return positionedData.nodes.filter(n => ids.has(n.id));
   }, [canHover, hoveredNodeId, hoveredLink, positionedData.nodes, positionedData.links]);
 
-  const hoveredLinks = useMemo(
-    () => canHover
-      ? positionedData.links.filter(link => isLinkHighlighted(link, hoveredLink, hoveredNodeId))
-      : [],
-    [canHover, hoveredLink, hoveredNodeId, positionedData.links],
-  );
-
   const handleRenderFramePost = useCallback(
     (ctx: CanvasRenderingContext2D, globalScale: number) => {
       const fg = fgRef.current;
@@ -726,11 +714,6 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         const el = labelLinkRefs.current.get(node.id);
         if (!layout || !el) continue;
         positionLabelLink(el, layout, fg, globalScale);
-      }
-      for (const link of hoveredLinks) {
-        const el = linkLineRefs.current.get(linkKey(link));
-        if (!el) continue;
-        positionHighlightedLink(el, link, fg);
       }
       for (const node of hoveredLabelNodes) {
         const sim = node as SimNode;
@@ -759,7 +742,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         highlightedEl.style.visibility = 'hidden';
       }
     },
-    [terminalNodes, hoveredLinks, hoveredLabelNodes, orientation, highlightedInteriorNode, colors, typography],
+    [terminalNodes, hoveredLabelNodes, orientation, highlightedInteriorNode, colors, typography],
   );
 
   useEffect(() => {
@@ -833,21 +816,6 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           Connecting article
         </div>
       </div>
-      {canHover && (
-        <svg className={styles.linkOverlay} aria-hidden="true">
-          {hoveredLinks.map(link => (
-            <line
-              key={linkKey(link)}
-              className={styles.highlightedLink}
-              ref={(el) => {
-                const key = linkKey(link);
-                if (el) linkLineRefs.current.set(key, el);
-                else linkLineRefs.current.delete(key);
-              }}
-            />
-          ))}
-        </svg>
-      )}
       <div className={styles.labelOverlay}>
         {terminalNodes.map(node => {
           const title = nodeDisplayName(node);
@@ -918,19 +886,20 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         enableZoomInteraction={(e) => (e as WheelEvent).ctrlKey}
         linkColor={() => 'transparent'}
         linkWidth={BORDER_STD}
-        linkCanvasObjectMode={() => 'replace'}
+        linkCanvasObjectMode={(link) =>
+          isLinkHighlighted(link, hoveredLink, hoveredNodeId) ? 'after' : 'replace'
+        }
         linkCanvasObject={(link, ctx, globalScale) => {
           const start = link.source as SimNode;
           const end = link.target as SimNode;
           if (start.x == null || start.y == null || end.x == null || end.y == null) return;
 
-          const touchHighlight =
-            !canHover && isLinkHighlighted(link, hoveredLink, hoveredNodeId);
+          const highlighted = isLinkHighlighted(link, hoveredLink, hoveredNodeId);
 
           ctx.beginPath();
           ctx.moveTo(start.x, start.y);
           ctx.lineTo(end.x, end.y);
-          ctx.strokeStyle = touchHighlight ? colors.ink : colors.graphLink;
+          ctx.strokeStyle = highlighted ? colors.ink : colors.graphLink;
           ctx.lineWidth = BORDER_STD / globalScale;
           ctx.stroke();
         }}
@@ -1002,26 +971,32 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           }
         }}
         onNodeHover={(node) => {
-          if (!canHover) return;
-          setHoveredNodeId(node?.id ?? null);
-          if (highlightTimer.current) clearTimeout(highlightTimer.current);
-          if (node) {
+          if (!canHover || !node) return;
+          if (hoverDebounceTimer.current) clearTimeout(hoverDebounceTimer.current);
+          hoverDebounceTimer.current = setTimeout(() => {
+            setHoveredNodeId(node.id);
             setHoveredLink(null);
-            const variant = resolveVariant(node);
-            highlightTimer.current = setTimeout(() => {
-              trackGraphNodeHighlighted({
-                article_name: nodeDisplayName(node),
-                node_role: nodeRole(variant),
-                layer_index: bfsDepths.get(node.id) ?? 0,
-                total_layers: totalLayers,
-              });
-            }, 1000);
-          }
+          }, HOVER_DEBOUNCE_MS);
+
+          if (highlightTimer.current) clearTimeout(highlightTimer.current);
+          const variant = resolveVariant(node);
+          highlightTimer.current = setTimeout(() => {
+            trackGraphNodeHighlighted({
+              article_name: nodeDisplayName(node),
+              node_role: nodeRole(variant),
+              layer_index: bfsDepths.get(node.id) ?? 0,
+              total_layers: totalLayers,
+            });
+          }, 1000);
         }}
         onLinkHover={(link) => {
-          if (!canHover) return;
-          setHoveredLink(link ? linkEndpoints(link) : null);
-          if (link) setHoveredNodeId(null);
+          if (!canHover || !link) return;
+          if (hoverDebounceTimer.current) clearTimeout(hoverDebounceTimer.current);
+          const endpoints = linkEndpoints(link);
+          hoverDebounceTimer.current = setTimeout(() => {
+            setHoveredLink(endpoints);
+            setHoveredNodeId(null);
+          }, HOVER_DEBOUNCE_MS);
         }}
         onRenderFramePost={handleRenderFramePost}
         d3AlphaDecay={0.015}
