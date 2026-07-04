@@ -40,6 +40,28 @@
   color: var(--ink-muted);
 }
 
+.legendRow + .legendRow {
+  margin-top: 6px;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  flex-shrink: 0;
+}
+
+.legendDotNew {
+  border: none;
+  background: radial-gradient(circle at 35% 30%, var(--clay-pale), var(--clay));
+  box-shadow: 0 0 6px 1px var(--clay);
+}
+
+.legendDotDefault {
+  background: var(--terra);
+}
+
 .linkOverlay {
   position: absolute;
   inset: 0;

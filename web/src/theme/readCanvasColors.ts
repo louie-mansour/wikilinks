@@ -7,9 +7,8 @@ export interface CanvasColors {
   sage: string;
   terra: string;
   terraPale: string;
-  clayPale: string;
   clay: string;
-  clayBorder: string;
+  clayPale: string;
 }
 
 export function readCanvasColors(el: HTMLElement = document.documentElement): CanvasColors {
@@ -24,8 +23,7 @@ export function readCanvasColors(el: HTMLElement = document.documentElement): Ca
     sage: token('--sage'),
     terra: token('--terra'),
     terraPale: token('--terra-pale'),
-    clayPale: token('--clay-pale'),
     clay: token('--clay'),
-    clayBorder: token('--clay-border'),
+    clayPale: token('--clay-pale'),
   };
 }

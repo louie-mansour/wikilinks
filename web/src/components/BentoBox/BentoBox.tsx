@@ -17,17 +17,6 @@ function SmallStatCard({ label, value, cardClassName, subtext }: SmallStatCardPr
   );
 }
 
-function firstArticlesSubtext(count: number): React.ReactNode | undefined {
-  if (count <= 0) return undefined;
-  if (count === 1) return "You're the first in the world to discover this one";
-  return (
-    <>
-      You're the first in the world to discover{' '}
-      <span className={styles.statSmallSubEmphasis}>{count}</span> of these
-    </>
-  );
-}
-
 function isSingularPath(pathsFound: number | string): boolean {
   const count =
     typeof pathsFound === 'number'
@@ -42,7 +31,6 @@ export interface BentoBoxProps {
   toArticle: string;
   minHops: number | string;
   nodesExplored: number | string;
-  searchTime: string;
   pathArticles: number | string;
   firstArticles?: number;
   className?: string;
@@ -54,7 +42,6 @@ export function BentoBox({
   toArticle,
   minHops,
   nodesExplored,
-  searchTime,
   pathArticles,
   firstArticles = 0,
   className = '',
@@ -80,7 +67,6 @@ export function BentoBox({
         label="Articles in paths"
         value={pathArticles}
         cardClassName={styles.cardArticles}
-        subtext={firstArticlesSubtext(firstArticles)}
       />
 
       <SmallStatCard
@@ -96,9 +82,9 @@ export function BentoBox({
       />
 
       <SmallStatCard
-        label="Search time"
-        value={searchTime}
-        cardClassName={styles.cardTime}
+        label="First discoveries"
+        value={firstArticles}
+        cardClassName={styles.cardFirst}
       />
     </section>
   );

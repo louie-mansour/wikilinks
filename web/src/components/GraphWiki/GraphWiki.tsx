@@ -3,7 +3,6 @@ import { trackGraphNodeHighlighted, trackGraphNodeNavigated } from '../../analyt
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d';
 import { forceLink, forceManyBody, forceX as d3ForceX, forceY as d3ForceY } from 'd3-force-3d';
 import styles from './GraphWiki.module.css';
-import { Badge } from '../Badge/Badge';
 import { useCanvasColors, useTypographySizes } from '../../theme/useTheme';
 import type { CanvasColors } from '../../theme/readCanvasColors';
 
@@ -71,14 +70,15 @@ function resolveVariant(node: WikiNode): WikiNodeVariant {
   return 'default';
 }
 
-function nodeFill(variant: WikiNodeVariant, colors: CanvasColors): string {
+function nodeFill(variant: WikiNodeVariant, isNew: boolean | undefined, colors: CanvasColors): string {
   if (variant === 'start') return colors.ink;
   if (variant === 'end') return colors.sage;
+  if (isNew) return colors.clay;
   return colors.terra;
 }
 
 function nodeRadius(variant: WikiNodeVariant): number {
-  return variant === 'start' || variant === 'end' ? SPACE_2 : SPACE_1;
+  return variant === 'start' || variant === 'end' ? SPACE_2 + SPACE_1 : SPACE_2;
 }
 
 function nodeVal(variant: WikiNodeVariant): number {
@@ -232,7 +232,6 @@ function computeFitBounds(
   let labelHalfW = 0;
   let hasStart = false;
   let hasEnd = false;
-  let hasNew = false;
 
   for (const node of nodes) {
     const variant = resolveVariant(node);
@@ -246,7 +245,6 @@ function computeFitBounds(
       const text = nodeDisplayName(node);
       labelHalfW = Math.max(labelHalfW, (text.length * 6.5 + LABEL_PAD_X * 2) / 2);
     }
-    if (node.isNew) hasNew = true;
   }
 
   if (orientation === 'horizontal') {
@@ -259,7 +257,6 @@ function computeFitBounds(
     xMin -= labelHalfW / k;
     xMax += labelHalfW / k;
   }
-  if (hasNew) xMax += 40 / k;
 
   return { xMin, xMax, yMin, yMax };
 }
@@ -446,6 +443,34 @@ function useMiddleButtonPan(
   }, [wrapperRef, fgRef, onPanningChange]);
 }
 
+/**
+ * Two-finger trackpad scroll fires plain `wheel` events (no ctrlKey); pinch-to-zoom
+ * synthesizes `wheel` events with ctrlKey set. force-graph's own zoom behavior is
+ * restricted to ctrlKey via `enableZoomInteraction`, so plain scroll reaches here to pan.
+ */
+function useWheelPan(
+  wrapperRef: RefObject<HTMLDivElement | null>,
+  fgRef: RefObject<ForceGraphMethods<WikiNode, WikiLink> | undefined>,
+): void {
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) return;
+      const fg = fgRef.current;
+      if (!fg) return;
+      e.preventDefault();
+      const k = fg.zoom();
+      const center = fg.centerAt();
+      fg.centerAt(center.x + e.deltaX / k, center.y + e.deltaY / k, 0);
+    };
+
+    wrapper.addEventListener('wheel', onWheel, { passive: false });
+    return () => wrapper.removeEventListener('wheel', onWheel);
+  }, [wrapperRef, fgRef]);
+}
+
 function positionLabelLink(
   el: HTMLElement,
   layout: LabelLayout,
@@ -579,52 +604,8 @@ function drawTerminalLabel(
   colors: CanvasColors,
   labelFontSize: number,
 ): void {
-  const borderColor = nodeFill(resolveVariant(node), colors);
+  const borderColor = nodeFill(resolveVariant(node), node.isNew, colors);
   drawLabel(node, ctx, globalScale, orientation, borderColor, colors.white, colors, labelFontSize);
-}
-
-const BADGE_PAD_X     = 6;
-const BADGE_PAD_Y     = 2;
-const BADGE_RADIUS    = 6;
-
-function drawBadge(
-  node: SimNode,
-  ctx: CanvasRenderingContext2D,
-  globalScale: number,
-  colors: CanvasColors,
-  badgeFontSize: number,
-): void {
-  if (node.x == null || node.y == null) return;
-  const variant = resolveVariant(node);
-  const r        = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
-  const fontSize = badgeFontSize / globalScale;
-  const padX     = BADGE_PAD_X / globalScale;
-  const padY     = BADGE_PAD_Y / globalScale;
-  const gap      = SPACE_1 / globalScale;
-  const bRadius  = BADGE_RADIUS / globalScale;
-  const borderW  = 1 / globalScale;
-
-  ctx.font = `700 ${fontSize}px ${FONT_UI}`;
-  const text = '★ first';
-  const textW = ctx.measureText(text).width;
-  const boxW  = textW + padX * 2;
-  const boxH  = fontSize * 1.6 + padY * 2;
-
-  const x = node.x + r + gap;
-  const y = node.y - boxH / 2;
-
-  ctx.beginPath();
-  roundRect(ctx, x, y, boxW, boxH, bRadius);
-  ctx.fillStyle = colors.clayPale;
-  ctx.fill();
-  ctx.strokeStyle = colors.clayBorder;
-  ctx.lineWidth = borderW;
-  ctx.stroke();
-
-  ctx.fillStyle = colors.clay;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + padX, node.y);
 }
 
 export function GraphWiki({ graphData }: { graphData: GraphData }) {
@@ -646,6 +627,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   const orientation = graphOrientation(dims.width);
 
   useMiddleButtonPan(wrapperRef, fgRef, setIsMiddlePanning);
+  useWheelPan(wrapperRef, fgRef);
 
   const bfsDepths = useMemo(
     () => computeBfsDepths(graphData.nodes, graphData.links),
@@ -700,11 +682,6 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     [hoveredNodeId, positionedData.links],
   );
 
-  const newNodes = useMemo(
-    () => positionedData.nodes.filter(n => n.isNew),
-    [positionedData.nodes],
-  );
-
   const terminalNodes = useMemo(
     () => positionedData.nodes.filter(n => resolveVariant(n) === 'start' || resolveVariant(n) === 'end'),
     [positionedData.nodes],
@@ -743,9 +720,6 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
     (ctx: CanvasRenderingContext2D, globalScale: number) => {
       const fg = fgRef.current;
       if (!fg) return;
-      for (const node of newNodes) {
-        drawBadge(node as SimNode, ctx, globalScale, colors, typography.badge);
-      }
       for (const node of terminalNodes) {
         const sim = node as SimNode;
         const layout = computeLabelLayout(sim, ctx, globalScale, orientation, typography.label);
@@ -785,7 +759,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         highlightedEl.style.visibility = 'hidden';
       }
     },
-    [newNodes, terminalNodes, hoveredLinks, hoveredLabelNodes, orientation, highlightedInteriorNode, colors, typography],
+    [terminalNodes, hoveredLinks, hoveredLabelNodes, orientation, highlightedInteriorNode, colors, typography],
   );
 
   useEffect(() => {
@@ -851,8 +825,12 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
       <div className={styles.legend}>
         <div className={styles.legendTitle}>Legend</div>
         <div className={styles.legendRow}>
-          <Badge variant="first" />
-          First time found
+          <span className={`${styles.legendDot} ${styles.legendDotNew}`} />
+          New discovery
+        </div>
+        <div className={styles.legendRow}>
+          <span className={`${styles.legendDot} ${styles.legendDotDefault}`} />
+          Connecting article
         </div>
       </div>
       {canHover && (
@@ -933,10 +911,11 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         nodeId="id"
         nodeLabel=""
         nodeAutoColorBy={null}
-        nodeColor={(n) => nodeFill(resolveVariant(n), colors)}
+        nodeColor={(n) => nodeFill(resolveVariant(n), n.isNew, colors)}
         nodeVal={(n) => nodeVal(resolveVariant(n))}
         graphData={positionedData}
         nodeRelSize={NODE_REL_SIZE}
+        enableZoomInteraction={(e) => (e as WheelEvent).ctrlKey}
         linkColor={() => 'transparent'}
         linkWidth={BORDER_STD}
         linkCanvasObjectMode={() => 'replace'}
@@ -958,11 +937,30 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         nodeCanvasObject={(node, ctx, globalScale) => {
           const variant = resolveVariant(node);
           const r = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
-          ctx.beginPath();
-          ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);
-          ctx.strokeStyle = colors.ink;
-          ctx.lineWidth = BORDER_STD / globalScale;
-          ctx.stroke();
+          const isTerminalVariant = variant === 'start' || variant === 'end';
+
+          if (node.isNew && !isTerminalVariant) {
+            const shine = ctx.createRadialGradient(
+              node.x! - r * 0.35, node.y! - r * 0.35, r * 0.05,
+              node.x!, node.y!, r,
+            );
+            shine.addColorStop(0, colors.clayPale);
+            shine.addColorStop(1, colors.clay);
+            ctx.beginPath();
+            ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);
+            ctx.shadowColor = colors.clay;
+            ctx.shadowBlur = r * 2.2;
+            ctx.fillStyle = shine;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+          } else {
+            ctx.beginPath();
+            ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);
+            ctx.strokeStyle = colors.ink;
+            ctx.lineWidth = BORDER_STD / globalScale;
+            ctx.stroke();
+          }
 
           const isHovered =
             hoveredNodeId === node.id
@@ -980,6 +978,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
           const variant = resolveVariant(node);
           const isTerminal = variant === 'start' || variant === 'end';
           return isTerminal
+            || node.isNew
             || hoveredNodeId === node.id
             || (hoveredNeighborIds?.has(node.id))
             || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target))

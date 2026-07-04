@@ -15,7 +15,7 @@ import {
 } from './data/suggestions';
 import { fetchRandom } from './api/random';
 import { useDebouncedSuggestions } from './hooks/useDebouncedSuggestions';
-import { formatSearchTime, formatNumber, type SearchResult } from './data/mockSearch';
+import { formatNumber, type SearchResult } from './data/mockSearch';
 import { searchPaths } from './api/search';
 import { getShare, createShare } from './api/share';
 import { SHARE_BASE_URL } from './config';
@@ -261,7 +261,6 @@ return 0; // 'interesting' = original order
               toArticle={result.end}
               minHops={result.minHops}
               nodesExplored={formatNumber(result.nodesExplored)}
-              searchTime={formatSearchTime(result.searchTimeMs)}
               pathArticles={result.graphData.nodes.length}
               firstArticles={result.newArticles}
             />

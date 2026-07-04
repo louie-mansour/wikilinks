@@ -131,7 +131,7 @@
 
 .cardNodes {
   grid-column: 3;
-  grid-row: 1;
+  grid-row: 2;
   background: var(--sand);
   border-color: var(--sand-dark);
   --card-value-color: var(--ink);
@@ -141,15 +141,15 @@
   letter-spacing: -0.5px;
 }
 
-.cardTime {
+.cardFirst {
   grid-column: 3;
-  grid-row: 2;
+  grid-row: 1;
   background: var(--clay-pale);
   border-color: var(--clay-border);
   --card-value-color: var(--clay);
 }
 
-.cardTime .statSmallValue {
+.cardFirst .statSmallValue {
   font-size: var(--text-stat-md);
 }
 
@@ -226,7 +226,7 @@
 
   .cardHops,
   .cardNodes,
-  .cardTime,
+  .cardFirst,
   .cardArticles {
     grid-column: auto;
     grid-row: auto;

@@ -24,7 +24,6 @@ export const Default: Story = {
     toArticle: 'Banana',
     minHops: 4,
     nodesExplored: '8,241',
-    searchTime: '1.2s',
     pathArticles: 14,
     firstArticles: 2,
   },
@@ -40,14 +39,13 @@ export const FewPaths: Story = {
     toArticle: 'Dog',
     minHops: 3,
     nodesExplored: '412',
-    searchTime: '0.3s',
     pathArticles: 5,
     firstArticles: 1,
   },
 };
 
 /* ────────────────────────────────────────
-   ManyFirstDiscoveries — clay subtext stress test
+   ManyFirstDiscoveries — high first-discoveries count
 ──────────────────────────────────────── */
 export const ManyFirstDiscoveries: Story = {
   args: {
@@ -56,7 +54,6 @@ export const ManyFirstDiscoveries: Story = {
     toArticle: 'Banana',
     minHops: 4,
     nodesExplored: '8,241',
-    searchTime: '1.2s',
     pathArticles: 180,
     firstArticles: 166,
   },
@@ -72,7 +69,6 @@ export const ManyPaths: Story = {
     toArticle: 'Music',
     minHops: 5,
     nodesExplored: '24,831',
-    searchTime: '4.7s',
     pathArticles: 38,
     firstArticles: 0,
   },
@@ -89,7 +85,6 @@ export const LongArticleNames: Story = {
       'History of the National Register of Historic Places listings in Manhattan above 59th to 110th Streets',
     minHops: 4,
     nodesExplored: '2,104',
-    searchTime: '0.9s',
     pathArticles: 11,
     firstArticles: 3,
   },

@@ -386,10 +386,6 @@ export function searchPaths(start: string, end: string): Promise<SearchResult> {
   });
 }
 
-export function formatSearchTime(ms: number): string {
-  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
-}
-
 export function formatNumber(n: number): string {
   return n.toLocaleString();
 }
