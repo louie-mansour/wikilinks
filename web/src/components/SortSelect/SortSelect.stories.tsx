@@ -15,6 +15,7 @@ export const SortOrder: Story = {
     label: 'Sort order',
     options: [
       { value: 'interesting', label: 'Sort: most interesting' },
+      { value: 'least-interesting', label: 'Sort: least interesting' },
       { value: 'alpha', label: 'Sort: alphabetical' },
     ],
   },
@@ -42,6 +43,7 @@ export const Pair: Story = {
         label="Sort order"
         options={[
           { value: 'interesting', label: 'Sort: most interesting' },
+          { value: 'least-interesting', label: 'Sort: least interesting' },
           { value: 'alpha', label: 'Sort: alphabetical' },
         ]}
       />

@@ -3,6 +3,7 @@ import { ShortestPaths } from './ShortestPaths';
 
 const SORT_OPTIONS = [
   { value: 'interesting', label: 'Sort: most interesting' },
+  { value: 'least-interesting', label: 'Sort: least interesting' },
   { value: 'alpha', label: 'Sort: alphabetical' },
 ];
 

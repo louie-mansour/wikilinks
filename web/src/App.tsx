@@ -23,6 +23,7 @@ import styles from './App.module.css';
 
 const SORT_OPTIONS = [
   { value: 'interesting', label: 'Sort: most interesting' },
+  { value: 'least-interesting', label: 'Sort: least interesting' },
   { value: 'alpha', label: 'Sort: alphabetical' },
 ];
 
@@ -184,6 +185,9 @@ export function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEndRouletting, isRouletting, isSearching, startArticle]);
 
+  const newArticleCount = (path: SearchResult['paths'][number]) =>
+    path.crumbs.filter((crumb) => crumb.tag === 'first').length;
+
   const sortedPaths = result
     ? [...result.paths].sort((a, b) => {
         if (sortOrder === 'alpha') {
@@ -191,7 +195,10 @@ export function App() {
           const bLabel = b.crumbs[1]?.label ?? '';
           return aLabel.localeCompare(bLabel);
         }
-return 0; // 'interesting' = original order
+        if (sortOrder === 'least-interesting') {
+          return newArticleCount(a) - newArticleCount(b);
+        }
+        return 0; // 'interesting' = original order
       })
     : [];
 
