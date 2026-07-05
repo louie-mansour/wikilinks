@@ -906,23 +906,14 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         nodeCanvasObject={(node, ctx, globalScale) => {
           const variant = resolveVariant(node);
           const r = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
-          const isTerminalVariant = variant === 'start' || variant === 'end';
 
-          if (node.isNew && !isTerminalVariant) {
-            ctx.beginPath();
-            ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);
-            ctx.fillStyle = colors.clay;
-            ctx.fill();
-            ctx.strokeStyle = colors.clayBorder;
-            ctx.lineWidth = BORDER_STD / globalScale;
-            ctx.stroke();
-          } else {
-            ctx.beginPath();
-            ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);
-            ctx.strokeStyle = colors.ink;
-            ctx.lineWidth = BORDER_STD / globalScale;
-            ctx.stroke();
-          }
+          ctx.beginPath();
+          ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);
+          ctx.fillStyle = nodeFill(variant, node.isNew, colors);
+          ctx.fill();
+          ctx.strokeStyle = colors.ink;
+          ctx.lineWidth = BORDER_STD / globalScale;
+          ctx.stroke();
 
           const isHovered =
             hoveredNodeId === node.id
@@ -936,17 +927,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
             drawTerminalLabel(node as SimNode, ctx, globalScale, orientation, colors, typography.label);
           }
         }}
-        nodeCanvasObjectMode={(node) => {
-          const variant = resolveVariant(node);
-          const isTerminal = variant === 'start' || variant === 'end';
-          return isTerminal
-            || node.isNew
-            || hoveredNodeId === node.id
-            || (hoveredNeighborIds?.has(node.id))
-            || (hoveredLink && (node.id === hoveredLink.source || node.id === hoveredLink.target))
-              ? 'after'
-              : undefined;
-        }}
+        nodeCanvasObjectMode={() => 'replace'}
         onNodeClick={(node) => {
           const variant = resolveVariant(node);
           const props = {

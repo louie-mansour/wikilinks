@@ -82,10 +82,10 @@ export function BentoBox({
       />
 
       <SmallStatCard
-        label="First discoveries"
+        label="New discoveries"
         value={firstArticles}
         cardClassName={styles.cardFirst}
-        subtext="You're the first to uncover these"
+        subtext={<>You're the <strong>first person</strong> to uncover these</>}
       />
     </section>
   );

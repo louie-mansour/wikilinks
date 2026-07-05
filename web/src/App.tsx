@@ -195,10 +195,8 @@ export function App() {
           const bLabel = b.crumbs[1]?.label ?? '';
           return aLabel.localeCompare(bLabel);
         }
-        if (sortOrder === 'least-interesting') {
-          return newArticleCount(a) - newArticleCount(b);
-        }
-        return 0; // 'interesting' = original order
+        const diff = newArticleCount(a) - newArticleCount(b);
+        return sortOrder === 'least-interesting' ? diff : -diff;
       })
     : [];
 

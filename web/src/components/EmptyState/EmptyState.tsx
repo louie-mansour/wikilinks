@@ -1,7 +1,7 @@
 import styles from './EmptyState.module.css';
 
 const DEFAULT_HINT =
-  "Enter two articles, or leave blank and click Find paths — we'll pick a pair at random.";
+  "If you leave the inputs blank, we'll pick a pair at random.";
 
 interface EmptyStateProps {
   hint?: string;
