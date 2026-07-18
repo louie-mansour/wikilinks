@@ -1,0 +1,162 @@
+@import '../../tokens.css';
+
+.widget {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  max-width: calc(100vw - 32px);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 260px;
+  max-width: 100%;
+  padding: 10px 12px;
+  background: var(--white);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-md);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.facesRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label {
+  font-size: var(--text-caption);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-muted);
+  margin-right: auto;
+}
+
+.face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.face:hover {
+  transform: scale(1.1);
+}
+
+.face:focus-visible {
+  outline: 2px solid var(--terra);
+  outline-offset: 2px;
+}
+
+.face-1:hover,
+.face-1.faceSelected {
+  color: var(--terra);
+  background: var(--terra-pale);
+}
+
+.face-2:hover,
+.face-2.faceSelected {
+  color: var(--clay);
+  background: var(--clay-pale);
+}
+
+.face-3:hover,
+.face-3.faceSelected {
+  color: var(--sage);
+  background: var(--sage-pale);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-family: var(--font-ui);
+  font-size: var(--text-small);
+  color: var(--ink);
+  background: var(--sand);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  min-height: 60px;
+}
+
+.textarea:focus-visible {
+  outline: 2px solid var(--terra);
+  outline-offset: 2px;
+}
+
+.panelActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.skipButton {
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.skipButton:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.thanks {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--sage);
+  flex: 1;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.closeButton:hover {
+  color: var(--ink);
+  background: var(--sand-mid);
+}
+
+@media (max-width: 520px) {
+  .widget {
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .card {
+    width: 240px;
+  }
+}

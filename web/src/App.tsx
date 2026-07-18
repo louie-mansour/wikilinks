@@ -9,6 +9,7 @@ import { ShortestPaths } from './components/ShortestPaths/ShortestPaths';
 import { EmptyState } from './components/EmptyState/EmptyState';
 import { LoadingState } from './components/LoadingState/LoadingState';
 import { PanelEnter } from './components/PanelEnter/PanelEnter';
+import { FeedbackWidget } from './components/FeedbackWidget/FeedbackWidget';
 import {
   SUGGESTIONS,
   animateRoulette,
@@ -18,6 +19,7 @@ import { useDebouncedSuggestions } from './hooks/useDebouncedSuggestions';
 import { formatNumber, type SearchResult } from './data/mockSearch';
 import { searchPaths } from './api/search';
 import { getShare, createShare } from './api/share';
+import { submitFeedbackRating, submitFeedbackComment } from './api/feedback';
 import { SHARE_BASE_URL } from './config';
 import styles from './App.module.css';
 
@@ -346,6 +348,8 @@ export function App() {
       ) : (
         <EmptyState />
       )}
+
+      <FeedbackWidget onRate={submitFeedbackRating} onSubmitComment={submitFeedbackComment} />
     </div>
   );
 }

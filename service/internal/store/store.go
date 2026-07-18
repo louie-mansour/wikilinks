@@ -35,6 +35,15 @@ CREATE TABLE IF NOT EXISTS share_snapshots (
 );
 
 CREATE INDEX IF NOT EXISTS idx_share_snapshots_created ON share_snapshots(created_at);
+
+CREATE TABLE IF NOT EXISTS feedback (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at INTEGER NOT NULL,
+    rating     INTEGER NOT NULL,
+    comment    TEXT    NOT NULL DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_created_at ON feedback(created_at);
 `
 
 // Store is a SQLite-backed persistence layer for hit counts and search history.
@@ -319,4 +328,34 @@ func (s *Store) GetShareSnapshot(key string) ([]byte, error) {
 		return nil, sql.ErrNoRows
 	}
 	return []byte(jsonStr), nil
+}
+
+// SaveFeedbackRating inserts a new feedback row with the given rating (1-3)
+// and returns its id so a follow-up comment can be attached to it later.
+func (s *Store) SaveFeedbackRating(rating int) (int64, error) {
+	res, err := s.db.Exec(
+		`INSERT INTO feedback(created_at, rating, comment) VALUES(?, ?, '')`,
+		time.Now().Unix(), rating,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("insert feedback: %w", err)
+	}
+	return res.LastInsertId()
+}
+
+// UpdateFeedbackComment attaches free-text comment to an existing feedback
+// row. Returns sql.ErrNoRows if the id does not exist.
+func (s *Store) UpdateFeedbackComment(id int64, comment string) error {
+	res, err := s.db.Exec(`UPDATE feedback SET comment = ? WHERE id = ?`, comment, id)
+	if err != nil {
+		return fmt.Errorf("update feedback comment: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("rows affected: %w", err)
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }

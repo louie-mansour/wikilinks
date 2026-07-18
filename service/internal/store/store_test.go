@@ -1,6 +1,57 @@
 package store
 
-import "testing"
+import (
+	"database/sql"
+	"path/filepath"
+	"testing"
+)
+
+func TestSaveFeedbackRating_and_UpdateFeedbackComment(t *testing.T) {
+	st, err := New(filepath.Join(t.TempDir(), "test.db"), 0)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	defer st.Close()
+
+	id, err := st.SaveFeedbackRating(3)
+	if err != nil {
+		t.Fatalf("SaveFeedbackRating: %v", err)
+	}
+	if id == 0 {
+		t.Fatal("expected non-zero id")
+	}
+
+	var rating int
+	var comment string
+	if err := st.db.QueryRow(`SELECT rating, comment FROM feedback WHERE id = ?`, id).Scan(&rating, &comment); err != nil {
+		t.Fatalf("select after insert: %v", err)
+	}
+	if rating != 3 || comment != "" {
+		t.Fatalf("rating=%d comment=%q, want rating=3 comment=\"\"", rating, comment)
+	}
+
+	if err := st.UpdateFeedbackComment(id, "Loved it!"); err != nil {
+		t.Fatalf("UpdateFeedbackComment: %v", err)
+	}
+	if err := st.db.QueryRow(`SELECT comment FROM feedback WHERE id = ?`, id).Scan(&comment); err != nil {
+		t.Fatalf("select after update: %v", err)
+	}
+	if comment != "Loved it!" {
+		t.Fatalf("comment = %q, want %q", comment, "Loved it!")
+	}
+}
+
+func TestUpdateFeedbackComment_missingID(t *testing.T) {
+	st, err := New(filepath.Join(t.TempDir(), "test.db"), 0)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	defer st.Close()
+
+	if err := st.UpdateFeedbackComment(999, "no such row"); err != sql.ErrNoRows {
+		t.Fatalf("err = %v, want sql.ErrNoRows", err)
+	}
+}
 
 func TestAnnotateRecordBadges_allTimeRecordBadgesEveryWindow(t *testing.T) {
 	previous := []RecordPeriod{

@@ -105,3 +105,13 @@ export function trackShareLinkClicked(props: { share_url: string }) {
 export function trackShareLinkOpened(props: { share_id: string }) {
   capture('share_link_opened', props);
 }
+
+// --- Feedback ---
+
+export function trackFeedbackRatingSubmitted(props: { rating: number }) {
+  capture('feedback_rating_submitted', props);
+}
+
+export function trackFeedbackCommentSubmitted(props: { rating: number | null; char_count: number }) {
+  capture('feedback_comment_submitted', props);
+}

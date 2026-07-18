@@ -66,6 +66,7 @@ func main() {
 	controller.NewHealth().Register(mux)
 	controller.NewSearch(searchSvc, a).Register(mux)
 	controller.NewShare(st, *staticDir, *appURL).Register(mux)
+	controller.NewFeedback(st).Register(mux)
 	controller.NewStartingNodes(startingNodesSvc).Register(mux)
 	controller.NewEndingNodes(endingNodesSvc).Register(mux)
 	controller.NewSuggest(suggestSvc).Register(mux)
@@ -130,7 +131,7 @@ func chain(h http.Handler, middlewares ...func(http.Handler) http.Handler) http.
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
