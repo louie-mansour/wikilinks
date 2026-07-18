@@ -595,13 +595,20 @@ function drawTerminalLabel(
   drawLabel(node, ctx, globalScale, orientation, borderColor, colors.white, colors, labelFontSize);
 }
 
-export function GraphWiki({ graphData }: { graphData: GraphData }) {
+interface GraphWikiProps {
+  graphData: GraphData;
+  /** Fires once after the graph has fitted to its container. */
+  onReady?: () => void;
+}
+
+export function GraphWiki({ graphData, onReady }: GraphWikiProps) {
   const colors = useCanvasColors();
   const typography = useTypographySizes();
   const wrapperRef     = useRef<HTMLDivElement>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hoverDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fgRef          = useRef<ForceGraphMethods<WikiNode, WikiLink>>();
+  const readyNotifiedRef = useRef(false);
   const labelLinkRefs       = useRef<Map<string, HTMLAnchorElement>>(new Map());
   const hoverLabelRefs      = useRef<Map<string, HTMLDivElement>>(new Map());
   const highlightedLabelRef = useRef<HTMLAnchorElement>(null);
@@ -746,9 +753,14 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
   );
 
   useEffect(() => {
+    readyNotifiedRef.current = false;
+  }, [graphData]);
+
+  useEffect(() => {
     if (!fitBounds) return;
 
     let raf = 0;
+    let cancelled = false;
     const fit = () => {
       const fg = fgRef.current;
       if (!fg) {
@@ -756,10 +768,19 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         return;
       }
       fitGraphView(fg, fitBounds, dims.width, dims.height, 0);
+      if (!readyNotifiedRef.current) {
+        readyNotifiedRef.current = true;
+        raf = requestAnimationFrame(() => {
+          if (!cancelled) onReady?.();
+        });
+      }
     };
     fit();
-    return () => cancelAnimationFrame(raf);
-  }, [fitBounds, dims]);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [fitBounds, dims, onReady]);
 
   useEffect(() => {
     const fg = fgRef.current;

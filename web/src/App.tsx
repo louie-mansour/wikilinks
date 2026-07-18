@@ -28,6 +28,33 @@ const SORT_OPTIONS = [
 ];
 
 const PAGE_SIZE = 20;
+const SCROLL_DELAY_AFTER_GRAPH_MS = 600;
+const SCROLL_DURATION_MS = 1400;
+
+function smoothScrollToElement(el: HTMLElement): void {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReducedMotion) {
+    el.scrollIntoView({ block: 'start' });
+    return;
+  }
+
+  const scrollMarginTop = Number.parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+  const targetY = window.scrollY + el.getBoundingClientRect().top - scrollMarginTop;
+  const startY = window.scrollY;
+  const distance = targetY - startY;
+  if (Math.abs(distance) < 2) return;
+
+  const start = performance.now();
+  const easeInOutCubic = (t: number) =>
+    t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+
+  const step = (now: number) => {
+    const progress = Math.min((now - start) / SCROLL_DURATION_MS, 1);
+    window.scrollTo(0, startY + distance * easeInOutCubic(progress));
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 
 export function App() {
   const [startArticle, setStartArticle] = useState('');
@@ -45,6 +72,7 @@ export function App() {
   const [isSelectedEnd, setIsSelectedEnd] = useState(false);
   const searchStartRef = useRef<number>(0);
   const graphPanelRef = useRef<HTMLDivElement>(null);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     if (result && !result.noPathFound) {
@@ -54,25 +82,17 @@ export function App() {
     }
   }, [result]);
 
-  // After search (or shared-link load) finishes, pin the graph panel to the top
-  // of the viewport so results aren't hidden under the header on mobile/desktop.
-  useEffect(() => {
-    if (!result || isSearching || isRouletting) return;
+  const handleGraphReady = useCallback(() => {
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      const el = graphPanelRef.current;
+      if (el) smoothScrollToElement(el);
+    }, SCROLL_DELAY_AFTER_GRAPH_MS);
+  }, []);
 
-    let cancelled = false;
-    const outer = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!cancelled) {
-          graphPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      });
-    });
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(outer);
-    };
-  }, [result, isSearching, isRouletting]);
+  useEffect(() => () => {
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+  }, []);
 
   useEffect(() => {
     const match = window.location.pathname.match(/^\/s\/([A-Za-z0-9]+)$/);
@@ -268,7 +288,7 @@ export function App() {
       ) : result?.noPathFound ? (
         <div ref={graphPanelRef} className={styles.sections} key={`${result.start}|${result.end}`}>
           <PanelEnter index={1}>
-            <GraphWiki graphData={result.graphData} />
+            <GraphWiki graphData={result.graphData} onReady={handleGraphReady} />
           </PanelEnter>
           <PanelEnter index={2}>
             <EmptyState hint={`No path found between "${result.start}" and "${result.end}" within ${result.maxHops} degrees of separation.`} />
@@ -277,7 +297,7 @@ export function App() {
       ) : result ? (
         <div ref={graphPanelRef} className={styles.sections} key={`${result.start}|${result.end}`}>
           <PanelEnter index={1}>
-            <GraphWiki graphData={result.graphData} />
+            <GraphWiki graphData={result.graphData} onReady={handleGraphReady} />
           </PanelEnter>
 
           <PanelEnter index={2}>
