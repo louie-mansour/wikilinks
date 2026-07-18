@@ -15,7 +15,7 @@ function sanitizeResult(result: SearchResult): SearchResult {
   return {
     ...result,
     graphData: {
-      nodes: result.graphData.nodes.map(({ id, variant, label, isNew }) => ({ id, variant, label, isNew })),
+      nodes: result.graphData.nodes.map(({ id, variant, label, hitCount }) => ({ id, variant, label, hitCount })),
       links: result.graphData.links.map((link) => ({
         source: nodeId(link.source),
         target: nodeId(link.target),

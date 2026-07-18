@@ -27,6 +27,8 @@
   flex-direction: column;
   gap: 10px;
   padding: 14px 16px 0;
+  /* Breathing room when scrollIntoView pins this block to the viewport top */
+  scroll-margin-top: 14px;
 }
 
 @media (max-width: 520px) {

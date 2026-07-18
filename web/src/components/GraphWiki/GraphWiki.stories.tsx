@@ -6,7 +6,7 @@ import { buildGraphForDegrees, buildMultiPathGraph } from '../../data/buildGraph
 function withNewNode(graphData: GraphData, nodeId: string): GraphData {
   return {
     ...graphData,
-    nodes: graphData.nodes.map(n => n.id === nodeId ? { ...n, isNew: true } : n),
+    nodes: graphData.nodes.map(n => n.id === nodeId ? { ...n, hitCount: 1 } : n),
   };
 }
 

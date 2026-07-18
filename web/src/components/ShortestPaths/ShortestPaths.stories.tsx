@@ -11,46 +11,46 @@ const SAMPLE_PATHS = [
   {
     id: 1,
     crumbs: [
-      { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Physics', tag: 'first' as const },
-      { href: '#', label: 'Wave function', tag: 'rare' as const },
-      { href: '#', label: 'Quantum mechanics', highlighted: true },
+      { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+      { href: '#', label: 'Physics', hitCount: 1 },
+      { href: '#', label: 'Wave function', hitCount: 3 },
+      { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
     ],
   },
   {
     id: 2,
     crumbs: [
-      { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Nobel Prize in Physics', tag: 'uncommon' as const },
-      { href: '#', label: 'Niels Bohr' },
-      { href: '#', label: 'Quantum mechanics', highlighted: true },
+      { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+      { href: '#', label: 'Nobel Prize in Physics', hitCount: 7 },
+      { href: '#', label: 'Niels Bohr', hitCount: 12 },
+      { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
     ],
   },
   {
     id: 3,
     crumbs: [
-      { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Special Relativity' },
-      { href: '#', label: 'Max Planck', tag: 'uncommon' as const },
-      { href: '#', label: 'Quantum mechanics', highlighted: true },
+      { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+      { href: '#', label: 'Special Relativity', hitCount: 12 },
+      { href: '#', label: 'Max Planck', hitCount: 7 },
+      { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
     ],
   },
   {
     id: 4,
     crumbs: [
-      { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Germany' },
-      { href: '#', label: 'Max Planck', tag: 'uncommon' as const },
-      { href: '#', label: 'Quantum mechanics', highlighted: true },
+      { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+      { href: '#', label: 'Germany', hitCount: 12 },
+      { href: '#', label: 'Max Planck', hitCount: 7 },
+      { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
     ],
   },
   {
     id: 5,
     crumbs: [
-      { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Science' },
-      { href: '#', label: 'Niels Bohr' },
-      { href: '#', label: 'Quantum mechanics', highlighted: true },
+      { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+      { href: '#', label: 'Science', hitCount: 12 },
+      { href: '#', label: 'Niels Bohr', hitCount: 12 },
+      { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
     ],
   },
 ];
@@ -96,27 +96,27 @@ export const FewPaths: Story = {
 };
 
 const SEVEN_HOP_PATH = [
-  { href: '#', label: 'Albert Einstein', highlighted: true },
-  { href: '#', label: 'Theory of relativity' },
-  { href: '#', label: 'Spacetime', tag: 'first' as const },
-  { href: '#', label: 'General relativity' },
-  { href: '#', label: 'Gravitational wave', tag: 'rare' as const },
-  { href: '#', label: 'LIGO Scientific Collaboration' },
-  { href: '#', label: 'Quantum mechanics', highlighted: true },
+  { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+  { href: '#', label: 'Theory of relativity', hitCount: 12 },
+  { href: '#', label: 'Spacetime', hitCount: 1 },
+  { href: '#', label: 'General relativity', hitCount: 12 },
+  { href: '#', label: 'Gravitational wave', hitCount: 3 },
+  { href: '#', label: 'LIGO Scientific Collaboration', hitCount: 12 },
+  { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
 ];
 
 const LONG_LABEL_PATH = [
-  { href: '#', label: 'Albert Einstein', highlighted: true },
-  { href: '#', label: 'Nobel Prize in Physics' },
+  { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+  { href: '#', label: 'Nobel Prize in Physics', hitCount: 12 },
   {
     href: '#',
     label: 'International Union of Pure and Applied Physics',
-    tag: 'uncommon' as const,
+    hitCount: 7,
   },
-  { href: '#', label: 'World Conference on Physics and Sustainable Development' },
-  { href: '#', label: 'United Nations Educational, Scientific and Cultural Organization' },
-  { href: '#', label: 'Member states of the United Nations' },
-  { href: '#', label: 'Quantum mechanics', highlighted: true },
+  { href: '#', label: 'World Conference on Physics and Sustainable Development', hitCount: 12 },
+  { href: '#', label: 'United Nations Educational, Scientific and Cultural Organization', hitCount: 12 },
+  { href: '#', label: 'Member states of the United Nations', hitCount: 12 },
+  { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
 ];
 
 export const SevenHops: Story = {
@@ -128,13 +128,13 @@ export const SevenHops: Story = {
       {
         id: '7h-3',
         crumbs: [
-          { href: '#', label: 'Albert Einstein', highlighted: true },
-          { href: '#', label: 'Patent office' },
-          { href: '#', label: 'Bern', tag: 'uncommon' as const },
-          { href: '#', label: 'Canton of Bern' },
-          { href: '#', label: 'Switzerland' },
-          { href: '#', label: 'Central Europe' },
-          { href: '#', label: 'Europe', highlighted: true },
+          { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+          { href: '#', label: 'Patent office', hitCount: 12 },
+          { href: '#', label: 'Bern', hitCount: 7 },
+          { href: '#', label: 'Canton of Bern', hitCount: 12 },
+          { href: '#', label: 'Switzerland', hitCount: 12 },
+          { href: '#', label: 'Central Europe', hitCount: 12 },
+          { href: '#', label: 'Europe', highlighted: true, hitCount: 12 },
         ],
       },
     ],

@@ -6,7 +6,7 @@ export interface Crumb {
   href: string;
   label: string;
   highlighted?: boolean;
-  tag?: 'first' | 'rare' | 'uncommon';
+  hitCount: number;
 }
 
 interface PathItemProps {
@@ -35,8 +35,8 @@ export function PathItem({ number, crumbs }: PathItemProps) {
               onClick={() => trackArticleLinkClicked({ article_title: crumb.label, hop_index: i, path_titles: pathTitles })}
             >
               {crumb.label}
-              {crumb.tag && (
-                <Badge variant={crumb.tag} />
+              {crumb.hitCount === 1 && (
+                <Badge variant="first" />
               )}
             </a>
           </span>

@@ -8,6 +8,7 @@ export function initAnalytics() {
   if (!key) return;
   posthog.init(key, {
     api_host: host ?? 'https://us.i.posthog.com',
+    defaults: '2026-05-30',
     person_profiles: 'identified_only',
     capture_pageview: true,
     capture_pageleave: true,

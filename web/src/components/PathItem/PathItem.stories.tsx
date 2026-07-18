@@ -18,10 +18,10 @@ export const WithFirstTag: Story = {
   args: {
     number: 1,
     crumbs: [
-      { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Physics', tag: 'first' },
-      { href: '#', label: 'Wave function', tag: 'rare' },
-      { href: '#', label: 'Quantum mechanics', highlighted: true },
+      { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+      { href: '#', label: 'Physics', hitCount: 1 },
+      { href: '#', label: 'Wave function', hitCount: 3 },
+      { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
     ],
   },
 };
@@ -30,10 +30,10 @@ export const WithUncommonTag: Story = {
   args: {
     number: 2,
     crumbs: [
-      { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Nobel Prize in Physics', tag: 'uncommon' },
-      { href: '#', label: 'Niels Bohr' },
-      { href: '#', label: 'Quantum mechanics', highlighted: true },
+      { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+      { href: '#', label: 'Nobel Prize in Physics', hitCount: 7 },
+      { href: '#', label: 'Niels Bohr', hitCount: 12 },
+      { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
     ],
   },
 };
@@ -42,10 +42,10 @@ export const NoTags: Story = {
   args: {
     number: 5,
     crumbs: [
-      { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Science' },
-      { href: '#', label: 'Niels Bohr' },
-      { href: '#', label: 'Quantum mechanics', highlighted: true },
+      { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+      { href: '#', label: 'Science', hitCount: 12 },
+      { href: '#', label: 'Niels Bohr', hitCount: 12 },
+      { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
     ],
   },
 };
@@ -54,13 +54,13 @@ export const SevenHops: Story = {
   args: {
     number: 1,
     crumbs: [
-      { href: '#', label: 'Albert Einstein', highlighted: true },
-      { href: '#', label: 'Theory of relativity' },
-      { href: '#', label: 'Spacetime', tag: 'first' },
-      { href: '#', label: 'General relativity' },
-      { href: '#', label: 'Gravitational wave', tag: 'rare' },
-      { href: '#', label: 'LIGO Scientific Collaboration' },
-      { href: '#', label: 'Quantum mechanics', highlighted: true },
+      { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+      { href: '#', label: 'Theory of relativity', hitCount: 12 },
+      { href: '#', label: 'Spacetime', hitCount: 1 },
+      { href: '#', label: 'General relativity', hitCount: 12 },
+      { href: '#', label: 'Gravitational wave', hitCount: 3 },
+      { href: '#', label: 'LIGO Scientific Collaboration', hitCount: 12 },
+      { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
     ],
   },
 };
@@ -68,35 +68,35 @@ export const SevenHops: Story = {
 export const MultipleItems: Story = {
   args: {
     number: 1,
-    crumbs: [{ href: '#', label: 'Example' }],
+    crumbs: [{ href: '#', label: 'Example', hitCount: 12 }],
   },
   render: () => (
     <div style={{ background: 'var(--white)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1.5px solid var(--sand-mid)' }}>
       <PathItem
         number={1}
         crumbs={[
-          { href: '#', label: 'Albert Einstein', highlighted: true },
-          { href: '#', label: 'Physics', tag: 'first' },
-          { href: '#', label: 'Wave function', tag: 'rare' },
-          { href: '#', label: 'Quantum mechanics', highlighted: true },
+          { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+          { href: '#', label: 'Physics', hitCount: 1 },
+          { href: '#', label: 'Wave function', hitCount: 3 },
+          { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
         ]}
       />
       <PathItem
         number={2}
         crumbs={[
-          { href: '#', label: 'Albert Einstein', highlighted: true },
-          { href: '#', label: 'Nobel Prize in Physics', tag: 'uncommon' },
-          { href: '#', label: 'Niels Bohr' },
-          { href: '#', label: 'Quantum mechanics', highlighted: true },
+          { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+          { href: '#', label: 'Nobel Prize in Physics', hitCount: 7 },
+          { href: '#', label: 'Niels Bohr', hitCount: 12 },
+          { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
         ]}
       />
       <PathItem
         number={3}
         crumbs={[
-          { href: '#', label: 'Albert Einstein', highlighted: true },
-          { href: '#', label: 'Special Relativity' },
-          { href: '#', label: 'Max Planck', tag: 'uncommon' },
-          { href: '#', label: 'Quantum mechanics', highlighted: true },
+          { href: '#', label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+          { href: '#', label: 'Special Relativity', hitCount: 12 },
+          { href: '#', label: 'Max Planck', hitCount: 7 },
+          { href: '#', label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
         ]}
       />
     </div>

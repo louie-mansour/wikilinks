@@ -35,8 +35,8 @@ export interface WikiNode {
   variant?: WikiNodeVariant;
   /** Wikipedia article title — shown on hover/highlight only. */
   label?: string;
-  /** Show the "new" badge next to this node. */
-  isNew?: boolean;
+  /** Number of times this article has been hit across searches; 1 means first discovery. */
+  hitCount?: number;
 }
 
 /** Force-graph mutates nodes with simulation coordinates at runtime. */
@@ -71,10 +71,10 @@ function resolveVariant(node: WikiNode): WikiNodeVariant {
   return 'default';
 }
 
-function nodeFill(variant: WikiNodeVariant, isNew: boolean | undefined, colors: CanvasColors): string {
+function nodeFill(variant: WikiNodeVariant, hitCount: number | undefined, colors: CanvasColors): string {
   if (variant === 'start') return colors.ink;
   if (variant === 'end') return colors.sage;
-  if (isNew) return colors.clay;
+  if (hitCount === 1) return colors.clay;
   return colors.terra;
 }
 
@@ -591,7 +591,7 @@ function drawTerminalLabel(
   colors: CanvasColors,
   labelFontSize: number,
 ): void {
-  const borderColor = nodeFill(resolveVariant(node), node.isNew, colors);
+  const borderColor = nodeFill(resolveVariant(node), node.hitCount, colors);
   drawLabel(node, ctx, globalScale, orientation, borderColor, colors.white, colors, labelFontSize);
 }
 
@@ -879,7 +879,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
         nodeId="id"
         nodeLabel=""
         nodeAutoColorBy={null}
-        nodeColor={(n) => nodeFill(resolveVariant(n), n.isNew, colors)}
+        nodeColor={(n) => nodeFill(resolveVariant(n), n.hitCount, colors)}
         nodeVal={(n) => nodeVal(resolveVariant(n))}
         graphData={positionedData}
         nodeRelSize={NODE_REL_SIZE}
@@ -909,7 +909,7 @@ export function GraphWiki({ graphData }: { graphData: GraphData }) {
 
           ctx.beginPath();
           ctx.arc(node.x!, node.y!, r, 0, 2 * Math.PI);
-          ctx.fillStyle = nodeFill(variant, node.isNew, colors);
+          ctx.fillStyle = nodeFill(variant, node.hitCount, colors);
           ctx.fill();
           ctx.strokeStyle = colors.ink;
           ctx.lineWidth = BORDER_STD / globalScale;

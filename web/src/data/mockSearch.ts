@@ -44,136 +44,136 @@ const EINSTEIN_QUANTUM: SearchResult = {
     {
       id: 1,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Physics'), label: 'Physics', tag: 'first' },
-        { href: wikiUrl('Wave function'), label: 'Wave function', tag: 'rare' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Physics'), label: 'Physics', hitCount: 1 },
+        { href: wikiUrl('Wave function'), label: 'Wave function', hitCount: 3 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 2,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Nobel Prize in Physics'), label: 'Nobel Prize in Physics', tag: 'uncommon' },
-        { href: wikiUrl('Niels Bohr'), label: 'Niels Bohr' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Nobel Prize in Physics'), label: 'Nobel Prize in Physics', hitCount: 7 },
+        { href: wikiUrl('Niels Bohr'), label: 'Niels Bohr', hitCount: 12 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 3,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Special Relativity'), label: 'Special Relativity' },
-        { href: wikiUrl('Max Planck'), label: 'Max Planck', tag: 'uncommon' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Special Relativity'), label: 'Special Relativity', hitCount: 12 },
+        { href: wikiUrl('Max Planck'), label: 'Max Planck', hitCount: 7 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 4,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Germany'), label: 'Germany' },
-        { href: wikiUrl('Max Planck'), label: 'Max Planck', tag: 'uncommon' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Germany'), label: 'Germany', hitCount: 12 },
+        { href: wikiUrl('Max Planck'), label: 'Max Planck', hitCount: 7 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 5,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Science'), label: 'Science' },
-        { href: wikiUrl('Niels Bohr'), label: 'Niels Bohr' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Science'), label: 'Science', hitCount: 12 },
+        { href: wikiUrl('Niels Bohr'), label: 'Niels Bohr', hitCount: 12 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 6,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('History of physics'), label: 'History of physics' },
-        { href: wikiUrl('Classical mechanics'), label: 'Classical mechanics' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('History of physics'), label: 'History of physics', hitCount: 12 },
+        { href: wikiUrl('Classical mechanics'), label: 'Classical mechanics', hitCount: 12 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 7,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Thermodynamics'), label: 'Thermodynamics' },
-        { href: wikiUrl('Wave function'), label: 'Wave function', tag: 'rare' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Thermodynamics'), label: 'Thermodynamics', hitCount: 12 },
+        { href: wikiUrl('Wave function'), label: 'Wave function', hitCount: 3 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 8,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Special Relativity'), label: 'Special Relativity' },
-        { href: wikiUrl('Lorentz transform'), label: 'Lorentz transform' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Special Relativity'), label: 'Special Relativity', hitCount: 12 },
+        { href: wikiUrl('Lorentz transform'), label: 'Lorentz transform', hitCount: 12 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 9,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Nobel Prize in Physics'), label: 'Nobel Prize in Physics', tag: 'uncommon' },
-        { href: wikiUrl('Max Planck'), label: 'Max Planck', tag: 'uncommon' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Nobel Prize in Physics'), label: 'Nobel Prize in Physics', hitCount: 7 },
+        { href: wikiUrl('Max Planck'), label: 'Max Planck', hitCount: 7 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 10,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Germany'), label: 'Germany' },
-        { href: wikiUrl('Niels Bohr'), label: 'Niels Bohr', tag: 'first' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Germany'), label: 'Germany', hitCount: 12 },
+        { href: wikiUrl('Niels Bohr'), label: 'Niels Bohr', hitCount: 1 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 11,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Physics'), label: 'Physics', tag: 'first' },
-        { href: wikiUrl('Thermodynamics'), label: 'Thermodynamics' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Physics'), label: 'Physics', hitCount: 1 },
+        { href: wikiUrl('Thermodynamics'), label: 'Thermodynamics', hitCount: 12 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 12,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Science'), label: 'Science' },
-        { href: wikiUrl('Classical mechanics'), label: 'Classical mechanics' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Science'), label: 'Science', hitCount: 12 },
+        { href: wikiUrl('Classical mechanics'), label: 'Classical mechanics', hitCount: 12 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 13,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('History of physics'), label: 'History of physics' },
-        { href: wikiUrl('Thermodynamics'), label: 'Thermodynamics' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('History of physics'), label: 'History of physics', hitCount: 12 },
+        { href: wikiUrl('Thermodynamics'), label: 'Thermodynamics', hitCount: 12 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 14,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Special Relativity'), label: 'Special Relativity' },
-        { href: wikiUrl('Wave function'), label: 'Wave function', tag: 'rare' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Special Relativity'), label: 'Special Relativity', hitCount: 12 },
+        { href: wikiUrl('Wave function'), label: 'Wave function', hitCount: 3 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
     {
       id: 15,
       crumbs: [
-        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true },
-        { href: wikiUrl('Germany'), label: 'Germany' },
-        { href: wikiUrl('History of physics'), label: 'History of physics' },
-        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true },
+        { href: wikiUrl('Albert Einstein'), label: 'Albert Einstein', highlighted: true, hitCount: 12 },
+        { href: wikiUrl('Germany'), label: 'Germany', hitCount: 12 },
+        { href: wikiUrl('History of physics'), label: 'History of physics', hitCount: 12 },
+        { href: wikiUrl('Quantum mechanics'), label: 'Quantum mechanics', highlighted: true, hitCount: 12 },
       ],
     },
   ],
@@ -259,19 +259,19 @@ function buildGenericResult(start: string, end: string): SearchResult {
   // ── Paths ─────────────────────────────────────────────────────────────────
   const paths: PathData[] = [];
   const pathInters = seededPick(INTERMEDIATES.filter((t) => t !== start && t !== end), seed + 2, pathsFound);
-  const TAGS: Array<'first' | 'rare' | 'uncommon' | undefined> = ['first', 'rare', 'uncommon', undefined, undefined];
+  const HIT_COUNTS = [1, 3, 7, 12, 12];
   for (let i = 0; i < pathsFound; i++) {
     const inter = pathInters[i % pathInters.length];
-    const tag = TAGS[(i + s(i + 10)) % TAGS.length];
+    const hitCount = HIT_COUNTS[(i + s(i + 10)) % HIT_COUNTS.length];
     paths.push({
       id: i + 1,
       crumbs: [
-        { href: wikiUrl(start), label: start, highlighted: true },
+        { href: wikiUrl(start), label: start, highlighted: true, hitCount: 12 },
         ...(hops === 4
-          ? [{ href: wikiUrl(inter), label: inter, tag }]
+          ? [{ href: wikiUrl(inter), label: inter, hitCount }]
           : []),
-        { href: wikiUrl(intermediates[0]), label: intermediates[0] },
-        { href: wikiUrl(end), label: end, highlighted: true },
+        { href: wikiUrl(intermediates[0]), label: intermediates[0], hitCount: 12 },
+        { href: wikiUrl(end), label: end, highlighted: true, hitCount: 12 },
       ],
     });
   }
@@ -344,7 +344,7 @@ function buildGenericResult(start: string, end: string): SearchResult {
 
   const newArticles = new Set(
     paths.flatMap((path) =>
-      path.crumbs.filter((crumb) => crumb.tag === 'first').map((crumb) => crumb.label),
+      path.crumbs.filter((crumb) => crumb.hitCount === 1).map((crumb) => crumb.label),
     ),
   ).size;
 

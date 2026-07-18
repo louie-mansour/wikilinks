@@ -44,6 +44,7 @@ export function App() {
   const [isSelectedStart, setIsSelectedStart] = useState(false);
   const [isSelectedEnd, setIsSelectedEnd] = useState(false);
   const searchStartRef = useRef<number>(0);
+  const graphPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (result && !result.noPathFound) {
@@ -52,6 +53,26 @@ export function App() {
       document.title = 'WikiHop — Wikipedia Hop Finder';
     }
   }, [result]);
+
+  // After search (or shared-link load) finishes, pin the graph panel to the top
+  // of the viewport so results aren't hidden under the header on mobile/desktop.
+  useEffect(() => {
+    if (!result || isSearching || isRouletting) return;
+
+    let cancelled = false;
+    const outer = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!cancelled) {
+          graphPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(outer);
+    };
+  }, [result, isSearching, isRouletting]);
 
   useEffect(() => {
     const match = window.location.pathname.match(/^\/s\/([A-Za-z0-9]+)$/);
@@ -186,7 +207,7 @@ export function App() {
   }, [isEndRouletting, isRouletting, isSearching, startArticle]);
 
   const newArticleCount = (path: SearchResult['paths'][number]) =>
-    path.crumbs.filter((crumb) => crumb.tag === 'first').length;
+    path.crumbs.filter((crumb) => crumb.hitCount === 1).length;
 
   const sortedPaths = result
     ? [...result.paths].sort((a, b) => {
@@ -245,7 +266,7 @@ export function App() {
       ) : searchError ? (
         <EmptyState hint={searchError} />
       ) : result?.noPathFound ? (
-        <div className={styles.sections} key={`${result.start}|${result.end}`}>
+        <div ref={graphPanelRef} className={styles.sections} key={`${result.start}|${result.end}`}>
           <PanelEnter index={1}>
             <GraphWiki graphData={result.graphData} />
           </PanelEnter>
@@ -254,7 +275,7 @@ export function App() {
           </PanelEnter>
         </div>
       ) : result ? (
-        <div className={styles.sections} key={`${result.start}|${result.end}`}>
+        <div ref={graphPanelRef} className={styles.sections} key={`${result.start}|${result.end}`}>
           <PanelEnter index={1}>
             <GraphWiki graphData={result.graphData} />
           </PanelEnter>

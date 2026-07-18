@@ -47,7 +47,7 @@ type Crumb struct {
 	Href        string `json:"href"`
 	Label       string `json:"label"`
 	Highlighted bool   `json:"highlighted,omitempty"`
-	Tag         string `json:"tag,omitempty"`
+	HitCount    int    `json:"hitCount"`
 }
 
 type GraphData struct {
@@ -56,10 +56,10 @@ type GraphData struct {
 }
 
 type WikiNode struct {
-	ID      string `json:"id"`
-	Variant string `json:"variant,omitempty"`
-	Label   string `json:"label,omitempty"`
-	IsNew   bool   `json:"isNew,omitempty"`
+	ID       string `json:"id"`
+	Variant  string `json:"variant,omitempty"`
+	Label    string `json:"label,omitempty"`
+	HitCount int    `json:"hitCount,omitempty"`
 }
 
 type WikiLink struct {
@@ -156,11 +156,8 @@ func (s *Search) Find(from, to string) (*SearchResult, error) {
 		return nil, fmt.Errorf("record search: %w", err)
 	}
 
-	// Mark newly-seen graph nodes (hit_count == 1 means first time seen).
 	for i := range graphData.Nodes {
-		if hitCounts[graphData.Nodes[i].ID] == 1 {
-			graphData.Nodes[i].IsNew = true
-		}
+		graphData.Nodes[i].HitCount = hitCounts[graphData.Nodes[i].ID]
 	}
 
 	newArticleCount := 0
@@ -249,15 +246,11 @@ func buildGraphData(allPaths [][]string) GraphData {
 func buildCrumbs(path []string, hitCounts map[string]int) []Crumb {
 	crumbs := make([]Crumb, len(path))
 	for i, title := range path {
-		var tag string
-		if hitCounts[title] == 1 {
-			tag = "first"
-		}
 		crumbs[i] = Crumb{
 			Href:        "https://en.wikipedia.org/wiki/" + strings.ReplaceAll(title, " ", "_"),
 			Label:       title,
 			Highlighted: i == 0 || i == len(path)-1,
-			Tag:         tag,
+			HitCount:    hitCounts[title],
 		}
 	}
 	return crumbs
