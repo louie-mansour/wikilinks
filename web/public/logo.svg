@@ -1,0 +1,11 @@
+<svg width="480" height="140" viewBox="0 0 480 140" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(14, 14)">
+    <rect x="2" y="2" width="108" height="108" rx="14" fill="#fefcf8" stroke="#000000" stroke-width="4"/>
+    <line x1="56" y1="21" x2="21" y2="91" stroke="#f3ead9" stroke-width="10" stroke-linecap="round"/>
+    <line x1="56" y1="21" x2="91" y2="91" stroke="#f3ead9" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="56" cy="21" r="14" fill="#e8a05a"/>
+    <circle cx="21" cy="91" r="14" fill="#c4572a"/>
+    <circle cx="91" cy="91" r="14" fill="#c4572a"/>
+  </g>
+  <text x="150" y="86" font-family="'Figtree', system-ui, sans-serif" font-size="56" font-weight="800" fill="#2c2416">WikiSpan</text>
+</svg>
