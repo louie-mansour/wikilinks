@@ -433,7 +433,7 @@ export function App() {
               fromArticle={result.start}
               toArticle={result.end}
               minHops={result.minHops}
-              nodesExplored={formatNumber(result.nodesExplored)}
+              searchTimeMs={`${formatNumber(result.searchTimeMs)} ms`}
               pathArticles={result.graphData.nodes.length}
               firstArticles={result.newArticles}
             />
