@@ -28,7 +28,7 @@
 ──────────────────────────────────────── */
 .statLabel {
   display: block;
-  font-size: var(--text-small);
+  font-size: var(--text-label);
   font-weight: 700;
   letter-spacing: 0.07em;
   color: var(--ink-muted);

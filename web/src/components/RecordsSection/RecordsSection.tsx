@@ -19,6 +19,10 @@ interface RecordsSectionProps {
 const PERIOD_ORDER = ['Past day', 'Past week', 'All time'];
 const METRIC_ORDER = ['Most paths', 'Most articles', 'Longest path'];
 
+function toTitleCase(text: string): string {
+  return text.replace(/\w\S*/g, (word) => word[0].toUpperCase() + word.slice(1).toLowerCase());
+}
+
 function sortPeriods(periods: RecordPeriod[]): RecordPeriod[] {
   const rank = new Map(PERIOD_ORDER.map((period, index) => [period, index]));
   return [...periods].sort((a, b) => {
@@ -58,11 +62,11 @@ export function RecordsSection({ periods }: RecordsSectionProps) {
 
   return (
     <div className={styles.section} role="region" aria-label="Worldwide leaderboard">
-      <div className={styles.header}>Worldwide leaderboard</div>
+      <div className={styles.header}>Worldwide Leaderboard</div>
       <div className={styles.cols}>
         {columns.map((col) => (
           <div key={col.period} className={styles.col}>
-            <div className={styles.period}>{col.period}</div>
+            <div className={styles.period}>{toTitleCase(col.period)}</div>
             {col.rows.map((row) => (
               <div key={row.key} className={styles.row}>
                 <span className={styles.key}>{row.key}</span>

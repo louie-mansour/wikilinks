@@ -108,7 +108,7 @@
 
 /* Visible label above each combobox — §3 Type Scale (input label) */
 .inputLabel {
-  font-size: var(--text-ui);
+  font-size: var(--text-small);
   font-weight: 700;
   letter-spacing: 0.07em;
   color: var(--ink-muted);

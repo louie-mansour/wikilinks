@@ -89,10 +89,10 @@ export function Header({
       <div className={styles.searchForm}>
         <div className={styles.inputsRow}>
           <div className={styles.inputGroup}>
-            <span className={styles.inputLabel} aria-hidden="true">Start article</span>
+            <span className={styles.inputLabel} aria-hidden="true">Start Article</span>
             <Combobox
               id="header-start"
-              label="Start article"
+              label="Start Article"
               placeholder="Type article here"
               value={startValue}
               suggestions={startSuggestions}
@@ -112,10 +112,10 @@ export function Header({
           </div>
 
           <div className={styles.inputGroup}>
-            <span className={styles.inputLabel} aria-hidden="true">End article</span>
+            <span className={styles.inputLabel} aria-hidden="true">End Article</span>
             <Combobox
               id="header-end"
-              label="End article"
+              label="End Article"
               placeholder="Type article here"
               value={endValue}
               suggestions={endSuggestions}

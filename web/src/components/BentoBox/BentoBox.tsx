@@ -54,7 +54,7 @@ export function BentoBox({
     >
       {/* Card 1 — Paths Found (large, sage) */}
       <article className={`${styles.bentoCard} ${styles.cardPaths}`}>
-        <span className={styles.statLabel}>Paths found</span>
+        <span className={styles.statLabel}>Paths Found</span>
         <span className={styles.statPaths}>{pathsFound}</span>
         <span className={styles.statSub}>
           Shortest path{isSingularPath(pathsFound) ? '' : 's'} from{' '}
@@ -64,25 +64,25 @@ export function BentoBox({
       </article>
 
       <SmallStatCard
-        label="Articles in paths"
+        label="Articles in Paths"
         value={pathArticles}
         cardClassName={styles.cardArticles}
       />
 
       <SmallStatCard
-        label="Search time"
+        label="Search Time"
         value={searchTimeMs}
         cardClassName={styles.cardNodes}
       />
 
       <SmallStatCard
-        label="Shortest path"
+        label="Shortest Path"
         value={minHops}
         cardClassName={styles.cardHops}
       />
 
       <SmallStatCard
-        label="New discoveries"
+        label="New Discoveries"
         value={firstArticles}
         cardClassName={styles.cardFirst}
         subtext={<>You're the <strong>first person</strong> to uncover these</>}
