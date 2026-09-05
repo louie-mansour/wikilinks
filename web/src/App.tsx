@@ -182,9 +182,9 @@ export function App() {
 
   useEffect(() => {
     if (result && !result.noPathFound) {
-      document.title = `${result.start} → ${result.end} | WikiHop`;
+      document.title = `${result.start} → ${result.end} | WikiSpan`;
     } else {
-      document.title = 'WikiHop — Wikipedia Hop Finder';
+      document.title = 'WikiSpan — Wikipedia Hop Finder';
     }
   }, [result]);
 

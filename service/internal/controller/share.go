@@ -96,19 +96,19 @@ var ogTemplate = template.Must(template.New("og").Parse(`<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>{{.Start}} → {{.End}} | WikiHop</title>
+  <title>{{.Start}} → {{.End}} | WikiSpan</title>
   <meta name="description" content="{{.PathsFound}} shortest paths in {{.MinHops}} degrees of separation">
-  <meta property="og:title" content="{{.Start}} → {{.End}} | WikiHop">
+  <meta property="og:title" content="{{.Start}} → {{.End}} | WikiSpan">
   <meta property="og:description" content="{{.PathsFound}} shortest paths in {{.MinHops}} degrees of separation">
   <meta property="og:url" content="{{.AppURL}}/s/{{.Code}}">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="{{.Start}} → {{.End}} | WikiHop">
+  <meta name="twitter:title" content="{{.Start}} → {{.End}} | WikiSpan">
   <meta name="twitter:description" content="{{.PathsFound}} shortest paths in {{.MinHops}} degrees of separation">
 </head>
 <body>
   <script>window.location.replace({{.SharePath}})</script>
-  <a href="{{.SharePath}}">View on WikiHop</a>
+  <a href="{{.SharePath}}">View on WikiSpan</a>
 </body>
 </html>`))
 

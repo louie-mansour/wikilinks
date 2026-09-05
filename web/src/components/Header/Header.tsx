@@ -66,7 +66,7 @@ export function Header({
             <line x1="8" y1="5" x2="13" y2="11" stroke="white" strokeWidth="1.5" />
           </svg>
         </span>
-        WikiHop
+        WikiSpan
       </div>
 
       <p className={styles.tagline}>
