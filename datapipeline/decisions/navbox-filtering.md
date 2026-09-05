@@ -5,7 +5,7 @@ Wikipedia articles contain two broad categories of internal links:
 - **Body links** — links embedded in article prose, infoboxes, "See also", and "Further reading" sections. These feel like intentional, meaningful connections.
 - **Navbox links** — links inside collapsible navigation boxes (accordions) at the bottom of articles, e.g. "Template:Countries of Europe". These create dense clusters of related articles and can produce paths that feel cheap or accidental.
 
-The Kaggle `links_export.csv` source exposes a `depth` column that distinguishes these: depth ≤ 2 is body/section text, depth ≥ 3 is navbox/template content. The `--max-depth 2` flag on `extract_edges` exploits this.
+The now-removed Kaggle `links_export.csv` source exposed a `depth` column that distinguished these: depth ≤ 2 was body/section text, depth ≥ 3 was navbox/template content, filterable via a `--max-depth 2` flag.
 
 **The Wikipedia SQL dump path has no equivalent.** The `pagelinks` table records only `(pl_from, pl_target_id)` — no section, position, or nesting depth. All link types are flattened together.
 

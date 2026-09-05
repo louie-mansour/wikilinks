@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import { Frown, Meh, Smile, X } from 'lucide-react';
-import { Button } from '../Button/Button';
 import styles from './FeedbackWidget.module.css';
 import { trackFeedbackRatingSubmitted, trackFeedbackCommentSubmitted } from '../../analytics';
 
@@ -105,9 +104,14 @@ export function FeedbackWidget({ onRate, onSubmitComment }: FeedbackWidgetProps)
                 <button type="button" className={styles.skipButton} onClick={() => setIsDone(true)}>
                   Skip
                 </button>
-                <Button variant="action" onClick={handleSubmitComment} disabled={isSubmittingComment}>
+                <button
+                  type="button"
+                  className={styles.sendButton}
+                  onClick={handleSubmitComment}
+                  disabled={isSubmittingComment}
+                >
                   Send
-                </Button>
+                </button>
               </div>
             </div>
           ) : null}

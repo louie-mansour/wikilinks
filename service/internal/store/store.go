@@ -178,12 +178,12 @@ func (s *Store) QueryRecords() ([]RecordPeriod, error) {
 
 	periods := make([]RecordPeriod, 0, len(windows))
 	for _, w := range windows {
-		var maxPaths, maxArticlesInPaths, maxArticlesExplored sql.NullInt64
+		var maxPaths, maxArticlesInPaths sql.NullInt64
 		var maxHops sql.NullInt64
 		err := s.db.QueryRow(`
-			SELECT MAX(paths_found), MAX(articles_in_paths), MAX(nodes_explored), MAX(min_hops)
+			SELECT MAX(paths_found), MAX(articles_in_paths), MAX(min_hops)
 			FROM searches WHERE created_at >= ?
-		`, w.threshold).Scan(&maxPaths, &maxArticlesInPaths, &maxArticlesExplored, &maxHops)
+		`, w.threshold).Scan(&maxPaths, &maxArticlesInPaths, &maxHops)
 		if err != nil {
 			return nil, fmt.Errorf("query records for %q: %w", w.period, err)
 		}
@@ -196,9 +196,8 @@ func (s *Store) QueryRecords() ([]RecordPeriod, error) {
 		periods = append(periods, RecordPeriod{
 			Period: w.period,
 			Rows: []RecordRow{
-				{Key: "Most paths found", Value: fmt.Sprintf("%d", maxPaths.Int64)},
-				{Key: "Most articles in paths", Value: fmt.Sprintf("%d", maxArticlesInPaths.Int64)},
-				{Key: "Most articles explored", Value: fmt.Sprintf("%d", maxArticlesExplored.Int64)},
+				{Key: "Most paths", Value: fmt.Sprintf("%d", maxPaths.Int64)},
+				{Key: "Most articles", Value: fmt.Sprintf("%d", maxArticlesInPaths.Int64)},
 				{Key: "Longest path", Value: fmt.Sprintf("%d hops", maxHops.Int64)},
 			},
 		})
@@ -244,12 +243,10 @@ func isNewRecord(key, displayed string, allTimePrev map[string]string, meta Sear
 
 func searchMatchesDisplayed(key, displayed string, meta SearchMeta) bool {
 	switch key {
-	case "Most paths found":
+	case "Most paths", "Most paths found":
 		return meta.PathsFound == parseRecordInt(displayed)
-	case "Most articles in paths":
+	case "Most articles", "Most articles in paths":
 		return meta.ArticlesInPaths == parseRecordInt(displayed)
-	case "Most articles explored", "Most nodes":
-		return meta.NodesExplored == parseRecordInt(displayed)
 	case "Longest path", "Shortest path":
 		return meta.MinHops == parseRecordHops(displayed)
 	default:
@@ -259,12 +256,10 @@ func searchMatchesDisplayed(key, displayed string, meta SearchMeta) bool {
 
 func beatsAllTimePrevious(key string, prev map[string]string, meta SearchMeta) bool {
 	switch key {
-	case "Most paths found":
-		return meta.PathsFound > parseRecordInt(prev["Most paths found"])
-	case "Most articles in paths":
-		return meta.ArticlesInPaths > parseRecordInt(prev["Most articles in paths"])
-	case "Most articles explored", "Most nodes":
-		return meta.NodesExplored > parseRecordInt(prevArticlesExplored(prev))
+	case "Most paths", "Most paths found":
+		return meta.PathsFound > parseRecordInt(prevMostPaths(prev))
+	case "Most articles", "Most articles in paths":
+		return meta.ArticlesInPaths > parseRecordInt(prevMostArticles(prev))
 	case "Longest path", "Shortest path":
 		prevHops := prevPathHops(prev)
 		return meta.MinHops > prevHops
@@ -273,11 +268,18 @@ func beatsAllTimePrevious(key string, prev map[string]string, meta SearchMeta) b
 	}
 }
 
-func prevArticlesExplored(prev map[string]string) string {
-	if v, ok := prev["Most articles explored"]; ok {
+func prevMostPaths(prev map[string]string) string {
+	if v, ok := prev["Most paths"]; ok {
 		return v
 	}
-	return prev["Most nodes"]
+	return prev["Most paths found"]
+}
+
+func prevMostArticles(prev map[string]string) string {
+	if v, ok := prev["Most articles"]; ok {
+		return v
+	}
+	return prev["Most articles in paths"]
 }
 
 func prevPathHops(prev map[string]string) int {

@@ -35,9 +35,10 @@
   position: relative;
   display: flex;
   align-items: center;
-  background: var(--sand);
-  border: 1.5px solid var(--sand-mid);
+  background: var(--white);
+  border: 1.5px solid color-mix(in srgb, var(--terra) 50%, var(--sand-dark));
   border-radius: var(--radius-sm);
+  box-shadow: 0 1px 4px rgba(44, 36, 22, 0.06);
 }
 
 /* Leading search icon — decorative, signals the field is typeable */
@@ -49,7 +50,7 @@
   width: 28px;
   height: 28px;
   margin-left: 4px;
-  color: var(--ink-faint);
+  color: var(--ink-muted);
 }
 
 /* Parchment shine — sweeps on hover (mirrors primary button §7.1) */
@@ -69,9 +70,10 @@
   opacity: 0;
 }
 
-/* Focus-within state — terracotta border only */
+/* Focus-within state — full terracotta + focus ring */
 .inputRow:focus-within {
   border-color: var(--terra);
+  box-shadow: 0 0 0 3px var(--terra-light);
 }
 
 /* Input element */
@@ -208,7 +210,7 @@
     transition:
       border-color 0.2s ease,
       background 0.2s ease,
-      box-shadow 0.25s ease,
+      box-shadow 0.2s ease,
       transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
   }
 

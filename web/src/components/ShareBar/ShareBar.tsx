@@ -46,8 +46,8 @@ export function ShareBar({ shareBaseUrl, urlCode, onActivate, onCopy }: ShareBar
 
   return (
     <div className={styles.bar}>
-      <span className={styles.label}>Share</span>
-      <span className={styles.urlWrap}>
+      <div className={styles.textRow}>
+        <span className={styles.label}>Share</span>
         <a
           href={fullUrl}
           className={styles.url}
@@ -55,7 +55,7 @@ export function ShareBar({ shareBaseUrl, urlCode, onActivate, onCopy }: ShareBar
         >
           {displayPrefix}<strong>{urlCode}</strong>
         </a>
-      </span>
+      </div>
       <Button
         variant="permalink"
         onClick={handleCopy}

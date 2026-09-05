@@ -148,6 +148,20 @@
   pointer-events: none;
 }
 
+.primary:disabled {
+  background: var(--sand-mid);
+  color: var(--ink-faint);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.primary:disabled::after {
+  max-width: 0;
+  opacity: 0;
+  margin-left: 0;
+}
+
 /* Focus ring — keyboard only */
 .primary:focus-visible {
   outline: 2px solid var(--terra);
@@ -192,7 +206,7 @@
     transition: opacity 0.15s ease;
   }
 
-  .primary:hover:not(.loading) {
+  .primary:hover:not(.loading):not(:disabled) {
     transform: translateY(-3px) scale(1.015);
     background: var(--terra-dark);
     box-shadow:
@@ -200,22 +214,22 @@
       0 0 0 3px var(--terra-light);
   }
 
-  .primary:hover:not(.loading) .buttonLabel {
+  .primary:hover:not(.loading):not(:disabled) .buttonLabel {
     transform: translateX(-6px);
   }
 
-  .primary:hover:not(.loading)::after {
+  .primary:hover:not(.loading):not(:disabled)::after {
     max-width: 1.5em;
     opacity: 0.85;
     margin-left: 6px;
   }
 
-  .primary:hover:not(.loading)::before {
+  .primary:hover:not(.loading):not(:disabled)::before {
     opacity: 1;
     animation: btn-shine 0.65s ease forwards;
   }
 
-  .primary:active:not(.loading) {
+  .primary:active:not(.loading):not(:disabled) {
     transform: translateY(-1px) scale(1.005);
   }
 
@@ -306,23 +320,23 @@
     }
   }
 
-  .primary:hover .buttonLabel {
+  .primary:hover:not(:disabled) .buttonLabel {
     transform: translateX(-6px);
   }
 
-  .primary:hover::after {
+  .primary:hover:not(:disabled)::after {
     max-width: 1.5em;
     opacity: 0.85;
     margin-left: 6px;
   }
 
-  .primary:hover:not(.loading) {
+  .primary:hover:not(.loading):not(:disabled) {
     box-shadow:
       0 6px 20px rgba(196, 87, 42, 0.14),
       0 0 0 3px var(--terra-light);
   }
 
-  .primary:active:not(.loading) {
+  .primary:active:not(.loading):not(:disabled) {
     transform: none;
   }
 }

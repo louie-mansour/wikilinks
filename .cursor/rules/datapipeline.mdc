@@ -6,39 +6,38 @@ alwaysApply: false
 
 # Wikipedia Links Datapipeline
 
-Build the pipeline in **Python** under `datapipeline/`. Before choosing formats, sources, or stage boundaries, read `datapipeline/decisions/datasource.md`.
+Build the pipeline in **Python** under `datapipeline/`. Before choosing formats or stage boundaries, read `datapipeline/decisions/datasource.md`.
 
 ## Architecture decisions (from datasource.md)
 
 - **Display key:** article titles (e.g. `"Python_(programming_language)"`) are shown in final paths. Resolve `id → title` only at path output via an entities table — not during BFS expansion.
-- **Internal key:** after `extract_edges`, use **integer node IDs** on disk and in BFS (frontier queues, parent maps, adjacency). This keeps memory and I/O manageable at ~29M edges.
-- **Sources:** Kaggle 100K subset (`links_export.csv`) for dev; Wikipedia's own SQL dumps (`page` + `linktarget` + `pagelinks`, `--source wikipedia`) are the preferred full-scale path; KONECT full graph (`out.wikipedia_link_en` + `ent.wikipedia_link_en`) is superseded for full-scale but kept for BFS stress tests.
-- **Kaggle input:** use `raw/links_export.csv` only — do **not** parse `raw/graph.json` (monolithic, redundant, not streamable).
-- **KONECT ETL:** entity file maps line index → title; edge file is space-separated integer pairs — dedicated stages must join these into the same downstream formats as Kaggle.
+- **Internal key:** use **integer node IDs** on disk and in BFS (frontier queues, parent maps, adjacency). This keeps memory and I/O manageable at ~1B edges.
+- **Source:** Wikipedia's own SQL dumps (`page` + `linktarget` + `pagelinks`) — current, self-consistent, and the full English Wikipedia link graph (~6.8–7M articles, likely >1B edges).
 
-## Planned stage order
+## Stage order
 
 Build stages in this order. Each stage reads/writes only under `raw/` or `data/`:
 
 ```
-fetch           raw/links_export.csv          (done)
-extract_edges   data/edges.tsv                source_title, target_title only
-build_vocab     data/entities.tsv             id ↔ title
-                data/edges_int.tsv            src_id, dst_id
-build_adjacency data/adj_fwd.* + data/adj_rev.*   CSR or sorted neighbor lists
-search          in-memory bidirectional BFS     loads adj + entities
+fetch              raw/enwiki-latest-page.sql.gz (~2.4GB)
+                   raw/enwiki-latest-linktarget.sql.gz (~1.4GB)
+                   raw/enwiki-latest-pagelinks.sql.gz (~7.0GB)
+build_title_index  data/entities.tsv + data/wiki_page_ids.tsv
+extract_wiki_edges data/edges_int.tsv
+build_adjacency    data/adj_fwd.* + data/adj_rev.*   CSR or sorted neighbor lists
+search             in-memory bidirectional BFS         loads adj + entities
 ```
 
-**Do not skip `extract_edges`.** Raw CSV is ~4.8 GB with unused columns; downstream stages must never re-read it.
-
 **Do not build string-keyed adjacency from raw.** Compress to int edges first, then build forward + reverse adjacency from `edges_int.tsv`.
+
+**Redirects are not resolved** in this path; see `datapipeline/decisions/datasource.md` "Known limitations / follow-ups".
 
 ## Stage schemas
 
 | Stage | Input | Output | Notes |
 |-------|-------|--------|-------|
-| `extract_edges` | `links_export.csv` | `edges.tsv` | Stream with `csv.DictReader`; drop metadata columns; optional dedupe/self-loop removal |
-| `build_vocab` | `edges.tsv` | `entities.tsv`, `edges_int.tsv` | Intern titles on first sighting; two-pass OK |
+| `build_title_index` | `enwiki-latest-page.sql.gz` | `entities.tsv`, `wiki_page_ids.tsv` | Dense id ↔ title for namespace-0, non-redirect pages |
+| `extract_wiki_edges` | `enwiki-latest-linktarget.sql.gz` + `enwiki-latest-pagelinks.sql.gz` + `entities.tsv` + `wiki_page_ids.tsv` | `edges_int.tsv` | Resolve `pagelinks` to dense ids; drop unresolved and self-loop edges |
 | `build_adjacency` | `edges_int.tsv` | forward + reverse adjacency files | Adjacency lists or CSR — not dense matrices |
 
 Document each stage's I/O in a one-line module docstring.
@@ -50,15 +49,14 @@ BFS needs two directed views of the same edge set:
 - **Forward:** `src → [targets]` — expand from start
 - **Reverse:** `dst → [sources]` — expand backward from goal
 
-At ~100K nodes / ~29M edges, use **adjacency lists or CSR**, not dense matrices. Keep `entities` as `[title₀, title₁, …]` indexed by node id.
+At ~7M nodes / ~1B edges, use **adjacency lists or CSR**, not dense matrices. Keep `entities` as `[title₀, title₁, …]` indexed by node id.
 
 ## Large raw files — safety rules
 
-Files in `raw/` are very large (~5 GB CSV, ~3 GB JSON). When exploring or debugging:
+Files in `raw/` are very large (multi-GB `.sql.gz` dumps). When exploring or debugging:
 
 - **Never** read entire raw files into memory (`read()`, `json.load()`, `pandas.read_csv` on full file).
-- **Never** open `graph.json` for pipeline work — use `links_export.csv`.
-- **Do** stream line-by-line; sample with `head` / first N rows only.
+- **Do** stream line-by-line via `lib/page_sql.py`; sample with `head` / first N rows only.
 - **Do** check file sizes with `ls -lh` before reading.
 - **Do** write all stage outputs to `data/` so `raw/` is read once per stage chain at most.
 
@@ -103,9 +101,8 @@ def run(inp: Path, out: Path, *, force: bool = False) -> None:
 - Monolithic scripts that download, parse, and load into memory in one run
 - Pipelines that only work when called from a specific import order
 - Re-fetching or re-parsing when cached output is still valid
-- Building adjacency directly from `raw/links_export.csv` or using string keys in adjacency structures
+- Building adjacency directly from raw SQL dumps or using string keys in adjacency structures
 - Loading full raw files into memory
-- Using `graph.json` as a pipeline input
 
 ## File formats between stages
 
@@ -119,26 +116,6 @@ Reserve in-memory structures for the search/load stage only — not for intermed
 
 ```bash
 python -m datapipeline.stages.fetch
-python -m datapipeline.stages.extract_edges --in raw/links_export.csv --out data/edges.tsv
-python -m datapipeline.stages.build_vocab --in data/edges.tsv --entities data/entities.tsv --out data/edges_int.tsv
-python -m datapipeline.stages.build_adjacency --in data/edges_int.tsv --out-dir data/
-```
-
-KONECT (int-native path — skips extract_edges + build_vocab; superseded for full-scale, see datasource.md):
-
-```bash
-python -m datapipeline.stages.fetch --source konect
-python -m datapipeline.stages.map_entities --in raw/ent.wikipedia_link_en --out data/entities.tsv
-python -m datapipeline.stages.edges_to_int --in raw/out.wikipedia_link_en --entities data/entities.tsv --out data/edges_int.tsv
-python -m datapipeline.stages.build_adjacency --in data/edges_int.tsv --out-dir data/
-```
-
-Fetch builds `ent.wikipedia_link_en` from Wikimedia `enwiki-latest-page.sql.gz` via `datapipeline/lib/page_sql.py` and `datapipeline/lib/konect_ent.py`.
-
-Wikipedia SQL dumps (preferred full-scale path — current, self-consistent, no `Page_{id}` placeholders; redirects not resolved, see datasource.md "Known limitations / follow-ups"):
-
-```bash
-python -m datapipeline.stages.fetch --source wikipedia
 python -m datapipeline.stages.build_title_index --in raw/enwiki-latest-page.sql.gz --out-dir data/
 python -m datapipeline.stages.extract_wiki_edges --linktarget raw/enwiki-latest-linktarget.sql.gz --pagelinks raw/enwiki-latest-pagelinks.sql.gz --entities data/entities.tsv --page-ids data/wiki_page_ids.tsv --out data/edges_int.tsv
 python -m datapipeline.stages.build_adjacency --in data/edges_int.tsv --out-dir data/

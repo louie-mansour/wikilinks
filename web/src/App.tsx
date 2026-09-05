@@ -30,32 +30,133 @@ const SORT_OPTIONS = [
 ];
 
 const PAGE_SIZE = 20;
-const SCROLL_DELAY_AFTER_GRAPH_MS = 600;
+const SCROLL_DELAY_AFTER_GRAPH_MS = 1200;
 const SCROLL_DURATION_MS = 1400;
+const USER_SCROLL_DIVERGENCE_PX = 10;
 
-function smoothScrollToElement(el: HTMLElement): void {
+const USER_SCROLL_KEYS = new Set([
+  'ArrowUp',
+  'ArrowDown',
+  'PageUp',
+  'PageDown',
+  'Home',
+  'End',
+  ' ',
+]);
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable;
+}
+
+function isUserScrollKey(event: KeyboardEvent): boolean {
+  return USER_SCROLL_KEYS.has(event.key)
+    && !event.ctrlKey
+    && !event.metaKey
+    && !event.altKey;
+}
+
+type SmoothScrollCallbacks = {
+  onComplete?: () => void;
+  onUserInterrupt?: () => void;
+};
+
+function smoothScrollToElement(el: HTMLElement, callbacks?: SmoothScrollCallbacks): () => void {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (prefersReducedMotion) {
     el.scrollIntoView({ block: 'start' });
-    return;
+    callbacks?.onComplete?.();
+    return () => {};
   }
 
   const scrollMarginTop = Number.parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
   const targetY = window.scrollY + el.getBoundingClientRect().top - scrollMarginTop;
   const startY = window.scrollY;
   const distance = targetY - startY;
-  if (Math.abs(distance) < 2) return;
+  if (Math.abs(distance) < 2) {
+    callbacks?.onComplete?.();
+    return () => {};
+  }
 
   const start = performance.now();
   const easeInOutCubic = (t: number) =>
     t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 
-  const step = (now: number) => {
-    const progress = Math.min((now - start) / SCROLL_DURATION_MS, 1);
-    window.scrollTo(0, startY + distance * easeInOutCubic(progress));
-    if (progress < 1) requestAnimationFrame(step);
+  let rafId = 0;
+  let cancelled = false;
+  let expectedY = startY;
+
+  const cleanup = () => {
+    window.removeEventListener('scroll', onScroll);
   };
-  requestAnimationFrame(step);
+
+  const interrupt = () => {
+    if (cancelled) return;
+    cancelled = true;
+    cancelAnimationFrame(rafId);
+    cleanup();
+    callbacks?.onUserInterrupt?.();
+  };
+
+  const onScroll = () => {
+    if (cancelled) return;
+    if (Math.abs(window.scrollY - expectedY) > USER_SCROLL_DIVERGENCE_PX) {
+      interrupt();
+    }
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  const step = (now: number) => {
+    if (cancelled) return;
+
+    const progress = Math.min((now - start) / SCROLL_DURATION_MS, 1);
+    expectedY = startY + distance * easeInOutCubic(progress);
+    window.scrollTo(0, expectedY);
+
+    if (progress < 1) {
+      rafId = requestAnimationFrame(step);
+      return;
+    }
+
+    cancelled = true;
+    cleanup();
+    callbacks?.onComplete?.();
+  };
+
+  rafId = requestAnimationFrame(step);
+
+  return interrupt;
+}
+
+function attachUserScrollListeners(
+  onUserScroll: () => void,
+  { includeScroll = false }: { includeScroll?: boolean } = {},
+): () => void {
+  const handleWheel = () => onUserScroll();
+  const handleTouchMove = () => onUserScroll();
+  const handleScroll = () => onUserScroll();
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (isEditableTarget(event.target)) return;
+    if (isUserScrollKey(event)) onUserScroll();
+  };
+
+  window.addEventListener('wheel', handleWheel, { passive: true });
+  window.addEventListener('touchmove', handleTouchMove, { passive: true });
+  window.addEventListener('keydown', handleKeyDown);
+  if (includeScroll) {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+  }
+
+  return () => {
+    window.removeEventListener('wheel', handleWheel);
+    window.removeEventListener('touchmove', handleTouchMove);
+    window.removeEventListener('keydown', handleKeyDown);
+    if (includeScroll) {
+      window.removeEventListener('scroll', handleScroll);
+    }
+  };
 }
 
 export function App() {
@@ -75,6 +176,8 @@ export function App() {
   const searchStartRef = useRef<number>(0);
   const graphPanelRef = useRef<HTMLDivElement>(null);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const cancelSmoothScrollRef = useRef<(() => void) | null>(null);
+  const removeScrollListenersRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (result && !result.noPathFound) {
@@ -84,17 +187,51 @@ export function App() {
     }
   }, [result]);
 
-  const handleGraphReady = useCallback(() => {
-    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-    scrollTimerRef.current = setTimeout(() => {
-      const el = graphPanelRef.current;
-      if (el) smoothScrollToElement(el);
-    }, SCROLL_DELAY_AFTER_GRAPH_MS);
+  const finishAutoScroll = useCallback(() => {
+    removeScrollListenersRef.current?.();
+    removeScrollListenersRef.current = null;
+    cancelSmoothScrollRef.current = null;
+    scrollTimerRef.current = undefined;
   }, []);
 
-  useEffect(() => () => {
-    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+  const cancelAutoScroll = useCallback(() => {
+    if (scrollTimerRef.current) {
+      clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = undefined;
+    }
+    cancelSmoothScrollRef.current?.();
+    cancelSmoothScrollRef.current = null;
+    removeScrollListenersRef.current?.();
+    removeScrollListenersRef.current = null;
   }, []);
+
+  const handleGraphReady = useCallback(() => {
+    cancelAutoScroll();
+    removeScrollListenersRef.current = attachUserScrollListeners(cancelAutoScroll, {
+      includeScroll: true,
+    });
+
+    scrollTimerRef.current = setTimeout(() => {
+      scrollTimerRef.current = undefined;
+      removeScrollListenersRef.current?.();
+      removeScrollListenersRef.current = attachUserScrollListeners(cancelAutoScroll);
+
+      const el = graphPanelRef.current;
+      if (!el) {
+        finishAutoScroll();
+        return;
+      }
+
+      cancelSmoothScrollRef.current = smoothScrollToElement(el, {
+        onComplete: finishAutoScroll,
+        onUserInterrupt: cancelAutoScroll,
+      });
+    }, SCROLL_DELAY_AFTER_GRAPH_MS);
+  }, [cancelAutoScroll, finishAutoScroll]);
+
+  useEffect(() => () => {
+    cancelAutoScroll();
+  }, [cancelAutoScroll]);
 
   useEffect(() => {
     const match = window.location.pathname.match(/^\/s\/([A-Za-z0-9]+)$/);

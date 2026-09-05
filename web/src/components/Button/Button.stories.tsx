@@ -75,6 +75,23 @@ export const PrimaryFocused: Story = {
   },
 };
 
+export const PrimaryDisabled: Story = {
+  name: 'Primary / Disabled',
+  decorators: [primaryWidthDecorator],
+  args: {
+    variant: 'primary',
+    children: 'Find paths',
+    disabled: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Muted CTA when both article inputs are empty.',
+      },
+    },
+  },
+};
+
 export const PrimaryLoading: Story = {
   name: 'Primary / Loading',
   decorators: [primaryWidthDecorator],

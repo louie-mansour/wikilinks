@@ -154,14 +154,19 @@ export const LongInputs: Story = {
   ),
 };
 
-/** Mirrors app “I’m feeling lucky” flow — empty fields roulette for 1s before landing. */
+export const EmptyInputs: Story = {
+  name: 'Empty inputs (disabled button)',
+  render: () => <HeaderDemo />,
+};
+
+/** Use the dice buttons on each input to pick articles, then search. */
 export const FeelingLuckyRoulette: Story = {
   name: 'Feeling Lucky (roulette)',
   parameters: {
     docs: {
       description: {
         story:
-          'Leave one or both fields empty and click **Find paths**. Inputs cycle random article titles for ~1s, slowing until they land on the chosen pair.',
+          'Use the dice on each input to pick random articles, then click **Find paths**. The button stays disabled until both fields have a value.',
       },
     },
   },

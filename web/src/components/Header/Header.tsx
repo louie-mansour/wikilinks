@@ -48,6 +48,8 @@ export function Header({
   isEndRandomizing = false,
   sharedArticles,
 }: HeaderProps) {
+  const canSearch = Boolean(startValue.trim() && endValue.trim());
+
   return (
     <header className={styles.topBar}>
       <div className={styles.themePicker}>
@@ -133,6 +135,7 @@ export function Header({
           className={styles.searchButton}
           onClick={onSearch}
           loading={isSearching}
+          disabled={!canSearch}
         >
           {searchLabel}
         </Button>

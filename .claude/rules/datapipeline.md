@@ -2,46 +2,31 @@
 
 Applies to: `datapipeline/**`
 
-Read `datapipeline/decisions/datasource.md` before choosing formats, sources, or stage boundaries. Operational checklist mirrors `.cursor/rules/datapipeline.mdc`.
+Read `datapipeline/decisions/datasource.md` before choosing formats or stage boundaries. Operational checklist mirrors `.cursor/rules/datapipeline.mdc`.
 
 ## Keys: ints internally, titles for display
 
 - **BFS and on-disk graph structures** use integer node IDs (frontier queues, parent maps, adjacency).
 - **Final paths** resolve `id → title` via an entities table — O(path length), not during search expansion.
-- After `extract_edges`, never build string-keyed adjacency; it does not scale at ~29M edges.
+- Never build string-keyed adjacency; it does not scale at ~1B edges.
 
-## Planned stage order
-
-```
-fetch           raw/links_export.csv          (done)
-extract_edges   data/edges.tsv                source_title, target_title only
-build_vocab     data/entities.tsv + data/edges_int.tsv
-build_adjacency data/adj_fwd.* + data/adj_rev.*   CSR graph bundle (see adjacency-csr.md)
-search          in-memory bidirectional BFS
-```
-
-Do not skip `extract_edges`. Downstream stages must not re-read the ~4.8 GB raw CSV.
-
-### Wikipedia SQL dumps path (`--source wikipedia`, preferred full-scale)
+## Stage order (Wikipedia SQL dumps path)
 
 ```
-fetch --source wikipedia   raw/enwiki-latest-page.sql.gz (~2.4GB)
-                            raw/enwiki-latest-linktarget.sql.gz (~1.4GB)
-                            raw/enwiki-latest-pagelinks.sql.gz (~7.0GB)
-build_title_index           data/entities.tsv + data/wiki_page_ids.tsv
-extract_wiki_edges           data/edges_int.tsv
-build_adjacency (unchanged)  data/adj_fwd.* + data/adj_rev.*
+fetch           raw/enwiki-latest-page.sql.gz (~2.4GB)
+                raw/enwiki-latest-linktarget.sql.gz (~1.4GB)
+                raw/enwiki-latest-pagelinks.sql.gz (~7.0GB)
+build_title_index  data/entities.tsv + data/wiki_page_ids.tsv
+extract_wiki_edges data/edges_int.tsv
+build_adjacency    data/adj_fwd.* + data/adj_rev.*   CSR graph bundle (see adjacency-csr.md)
+search             in-memory bidirectional BFS
 ```
 
 These three raw files are multi-GB `.sql.gz` dumps — stream via `lib/page_sql.py`,
 never load fully into memory. **Redirects are not resolved** in this path; see
 `datapipeline/decisions/datasource.md` "Known limitations / follow-ups".
 
-## Kaggle vs KONECT vs Wikipedia inputs
-
-- **Kaggle:** stream `raw/links_export.csv` only — ignore `raw/graph.json`.
-- **KONECT (superseded for full-scale; still used for stress tests):** join `ent.wikipedia_link_en` + `out.wikipedia_link_en` into the same `entities.tsv` / `edges_int.tsv` formats.
-- **Wikipedia SQL dumps (preferred full-scale):** join `page` + `linktarget` + `pagelinks` SQL dumps into `entities.tsv` / `edges_int.tsv` via `build_title_index` + `extract_wiki_edges`.
+Join `page` + `linktarget` + `pagelinks` SQL dumps into `entities.tsv` / `edges_int.tsv` via `build_title_index` + `extract_wiki_edges`.
 
 ## Large raw files
 

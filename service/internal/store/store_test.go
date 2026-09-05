@@ -58,18 +58,16 @@ func TestAnnotateRecordBadges_allTimeRecordBadgesEveryWindow(t *testing.T) {
 		{
 			Period: "All time",
 			Rows: []RecordRow{
-				{Key: "Most paths found", Value: "15"},
-				{Key: "Most articles in paths", Value: "10"},
-				{Key: "Most articles explored", Value: "5000000"},
+				{Key: "Most paths", Value: "15"},
+				{Key: "Most articles", Value: "10"},
 				{Key: "Longest path", Value: "3 hops"},
 			},
 		},
 		{
 			Period: "Past week",
 			Rows: []RecordRow{
-				{Key: "Most paths found", Value: "20"},
-				{Key: "Most articles in paths", Value: "12"},
-				{Key: "Most articles explored", Value: "5138199"},
+				{Key: "Most paths", Value: "20"},
+				{Key: "Most articles", Value: "12"},
 				{Key: "Longest path", Value: "4 hops"},
 			},
 		},
@@ -79,27 +77,24 @@ func TestAnnotateRecordBadges_allTimeRecordBadgesEveryWindow(t *testing.T) {
 		{
 			Period: "All time",
 			Rows: []RecordRow{
-				{Key: "Most paths found", Value: "20"},
-				{Key: "Most articles in paths", Value: "12"},
-				{Key: "Most articles explored", Value: "5138199"},
+				{Key: "Most paths", Value: "20"},
+				{Key: "Most articles", Value: "12"},
 				{Key: "Longest path", Value: "4 hops"},
 			},
 		},
 		{
 			Period: "Past day",
 			Rows: []RecordRow{
-				{Key: "Most paths found", Value: "20"},
-				{Key: "Most articles in paths", Value: "12"},
-				{Key: "Most articles explored", Value: "5138199"},
+				{Key: "Most paths", Value: "20"},
+				{Key: "Most articles", Value: "12"},
 				{Key: "Longest path", Value: "4 hops"},
 			},
 		},
 		{
 			Period: "Past week",
 			Rows: []RecordRow{
-				{Key: "Most paths found", Value: "20"},
-				{Key: "Most articles in paths", Value: "12"},
-				{Key: "Most articles explored", Value: "5138199"},
+				{Key: "Most paths", Value: "20"},
+				{Key: "Most articles", Value: "12"},
 				{Key: "Longest path", Value: "4 hops"},
 			},
 		},
@@ -116,22 +111,19 @@ func TestAnnotateRecordBadges_allTimeRecordBadgesEveryWindow(t *testing.T) {
 
 	wantBadge := map[string]map[string]bool{
 		"All time": {
-			"Most paths found":               true,
-			"Most articles in paths":   true,
-			"Most articles explored":   true,
-			"Longest path":             true,
+			"Most paths": true,
+			"Most articles":    true,
+			"Longest path":     true,
 		},
 		"Past day": {
-			"Most paths found":               true,
-			"Most articles in paths":   true,
-			"Most articles explored":   true,
-			"Longest path":             true,
+			"Most paths": true,
+			"Most articles":    true,
+			"Longest path":     true,
 		},
 		"Past week": {
-			"Most paths found":               true,
-			"Most articles in paths":   true,
-			"Most articles explored":   true,
-			"Longest path":             true,
+			"Most paths": true,
+			"Most articles":    true,
+			"Longest path":     true,
 		},
 	}
 
@@ -153,9 +145,8 @@ func TestAnnotateRecordBadges_longestPathBeatsPrevious(t *testing.T) {
 		{
 			Period: "All time",
 			Rows: []RecordRow{
-				{Key: "Most paths found", Value: "10"},
-				{Key: "Most articles in paths", Value: "5"},
-				{Key: "Most articles explored", Value: "100"},
+				{Key: "Most paths", Value: "10"},
+				{Key: "Most articles", Value: "5"},
 				{Key: "Longest path", Value: "3 hops"},
 			},
 		},
@@ -165,9 +156,8 @@ func TestAnnotateRecordBadges_longestPathBeatsPrevious(t *testing.T) {
 		{
 			Period: "All time",
 			Rows: []RecordRow{
-				{Key: "Most paths found", Value: "10"},
-				{Key: "Most articles in paths", Value: "5"},
-				{Key: "Most articles explored", Value: "100"},
+				{Key: "Most paths", Value: "10"},
+				{Key: "Most articles", Value: "5"},
 				{Key: "Longest path", Value: "6 hops"},
 			},
 		},
@@ -176,7 +166,7 @@ func TestAnnotateRecordBadges_longestPathBeatsPrevious(t *testing.T) {
 	meta := SearchMeta{PathsFound: 10, ArticlesInPaths: 5, NodesExplored: 100, MinHops: 6}
 	got := AnnotateRecordBadges(current, previous, meta)
 
-	if !got[0].Rows[3].Badge {
+	if !got[0].Rows[2].Badge {
 		t.Fatal("expected badge on Longest path row when beating previous max hops")
 	}
 }
@@ -186,9 +176,8 @@ func TestAnnotateRecordBadges_shortestPathLegacyKey(t *testing.T) {
 		{
 			Period: "All time",
 			Rows: []RecordRow{
-				{Key: "Most paths found", Value: "10"},
-				{Key: "Most articles in paths", Value: "5"},
-				{Key: "Most articles explored", Value: "100"},
+				{Key: "Most paths", Value: "10"},
+				{Key: "Most articles", Value: "5"},
 				{Key: "Shortest path", Value: "3 hops"},
 			},
 		},
@@ -198,9 +187,8 @@ func TestAnnotateRecordBadges_shortestPathLegacyKey(t *testing.T) {
 		{
 			Period: "All time",
 			Rows: []RecordRow{
-				{Key: "Most paths found", Value: "10"},
-				{Key: "Most articles in paths", Value: "5"},
-				{Key: "Most articles explored", Value: "100"},
+				{Key: "Most paths", Value: "10"},
+				{Key: "Most articles", Value: "5"},
 				{Key: "Longest path", Value: "6 hops"},
 			},
 		},
@@ -209,18 +197,18 @@ func TestAnnotateRecordBadges_shortestPathLegacyKey(t *testing.T) {
 	meta := SearchMeta{PathsFound: 10, ArticlesInPaths: 5, NodesExplored: 100, MinHops: 6}
 	got := AnnotateRecordBadges(current, previous, meta)
 
-	if !got[0].Rows[3].Badge {
+	if !got[0].Rows[2].Badge {
 		t.Fatal("expected badge on Longest path row when beating legacy Shortest path prev")
 	}
 }
 
-func TestAnnotateRecordBadges_legacyMostNodesKey(t *testing.T) {
+func TestAnnotateRecordBadges_legacyMostPathsFoundKey(t *testing.T) {
 	previous := []RecordPeriod{
 		{
 			Period: "All time",
 			Rows: []RecordRow{
 				{Key: "Most paths found", Value: "10"},
-				{Key: "Most nodes", Value: "100"},
+				{Key: "Most articles", Value: "5"},
 				{Key: "Longest path", Value: "3 hops"},
 			},
 		},
@@ -230,17 +218,48 @@ func TestAnnotateRecordBadges_legacyMostNodesKey(t *testing.T) {
 		{
 			Period: "All time",
 			Rows: []RecordRow{
-				{Key: "Most paths found", Value: "10"},
-				{Key: "Most articles explored", Value: "200"},
+				{Key: "Most paths", Value: "15"},
+				{Key: "Most articles", Value: "5"},
 				{Key: "Longest path", Value: "3 hops"},
 			},
 		},
 	}
 
-	meta := SearchMeta{PathsFound: 10, NodesExplored: 200, MinHops: 3}
+	meta := SearchMeta{PathsFound: 15, ArticlesInPaths: 5, MinHops: 3}
+	got := AnnotateRecordBadges(current, previous, meta)
+
+	if !got[0].Rows[0].Badge {
+		t.Fatal("expected badge on Most paths row when beating legacy Most paths found prev")
+	}
+}
+
+func TestAnnotateRecordBadges_legacyMostArticlesInPathsKey(t *testing.T) {
+	previous := []RecordPeriod{
+		{
+			Period: "All time",
+			Rows: []RecordRow{
+				{Key: "Most paths", Value: "10"},
+				{Key: "Most articles in paths", Value: "5"},
+				{Key: "Longest path", Value: "3 hops"},
+			},
+		},
+	}
+
+	current := []RecordPeriod{
+		{
+			Period: "All time",
+			Rows: []RecordRow{
+				{Key: "Most paths", Value: "10"},
+				{Key: "Most articles", Value: "8"},
+				{Key: "Longest path", Value: "3 hops"},
+			},
+		},
+	}
+
+	meta := SearchMeta{PathsFound: 10, ArticlesInPaths: 8, MinHops: 3}
 	got := AnnotateRecordBadges(current, previous, meta)
 
 	if !got[0].Rows[1].Badge {
-		t.Fatal("expected badge on Most articles explored row when beating legacy Most nodes prev")
+		t.Fatal("expected badge on Most articles row when beating legacy Most articles in paths prev")
 	}
 }

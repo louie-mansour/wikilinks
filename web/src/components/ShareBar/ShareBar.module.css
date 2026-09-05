@@ -13,34 +13,39 @@
   flex-wrap: wrap;
 }
 
+.textRow {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
 /* "SHARE" label */
 .label {
+  flex-shrink: 0;
   font-size: var(--text-caption);
   font-weight: 700;
+  line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--ink-muted);
-  flex-shrink: 0;
-}
-
-/* Layout slot for URL — not clickable; link sizes to its text */
-.urlWrap {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
 }
 
 .url {
-  display: inline-block;
-  max-width: 100%;
-  font-size: var(--text-ui);
+  min-width: 0;
+  font-size: var(--text-small);
   font-weight: 600;
+  line-height: 1;
   color: var(--terra);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  vertical-align: bottom;
+}
+
+.url strong {
+  font-weight: 700;
 }
 
 .url:hover {
@@ -58,4 +63,10 @@
   background: var(--sage-pale) !important;
   border-color: var(--sage) !important;
   color: var(--sage) !important;
+}
+
+@media (max-width: 520px) {
+  .textRow {
+    flex-basis: 100%;
+  }
 }
