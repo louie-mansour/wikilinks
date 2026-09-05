@@ -152,9 +152,9 @@ All sections below the top bar use `margin: 10px–14px 16px 0` on desktop, redu
 ### Border Radius Tokens
 | Token | Value | Usage |
 |---|---|---|
-| `--radius-sm` | `10px` | Nodes, control buttons, action buttons, copy button, select inputs, option icons |
-| `--radius-md` | `18px` | Input rows, dropdowns, records card, permalink bar, load-more button, bento cards |
-| `--radius-lg` | `26px` | Graph section, path list section |
+| `--radius-sm` | `5px` | Nodes, control buttons, action buttons, copy button, select inputs, option icons |
+| `--radius-md` | `8px` | Input rows, dropdowns, records card, permalink bar, load-more button, bento cards |
+| `--radius-lg` | `11px` | Graph section, path list section |
 
 ### Breakpoints
 

@@ -4,7 +4,7 @@ import { ThemePicker } from '../ThemePicker/ThemePicker';
 import styles from './Header.module.css';
 
 const DEFAULT_TAGLINE =
-  'Find the fewest hops between any two Wikipedia articles';
+  'Find all the shortest paths spanning any two Wikipedia articles';
 
 interface HeaderProps {
   startSuggestions: Suggestion[];

@@ -1,7 +1,7 @@
 import styles from './EmptyState.module.css';
 
 const DEFAULT_HINT =
-  "If you leave the inputs blank, we'll pick a pair at random.";
+  "A graph will be shown  after your seach";
 
 interface EmptyStateProps {
   hint?: string;

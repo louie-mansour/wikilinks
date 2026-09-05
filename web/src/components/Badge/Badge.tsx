@@ -11,7 +11,7 @@ const VARIANT_CLASS: Record<BadgeVariant, string> = {
 };
 
 const VARIANT_LABEL: Record<BadgeVariant, string> = {
-  first: '★ first',
+  first: '★ new',
   rare: '★ rare',
   uncommon: '★ uncommon',
   record: '★ record',

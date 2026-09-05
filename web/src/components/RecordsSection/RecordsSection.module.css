@@ -13,9 +13,8 @@
 
 /* "RECORDS" label */
 .header {
-  font-size: var(--text-caption);
+  font-size: var(--text-small);
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--ink-muted);
   margin-bottom: 12px;
