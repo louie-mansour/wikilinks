@@ -7,7 +7,13 @@ MAX_DATA_AGE_DAYS ?= 1
 -include service/.env
 export POSTHOG_API_KEY
 
-.PHONY: install setup-pipeline dev build storybook build-storybook _fetch _build-title-index _extract-wiki-edges _build-adjacency pipeline-wikipedia test-pipeline service-build service-start service-dev service-test service-lint reset-hits keygen server-setup add-github-secrets upload-data deploy-data
+.PHONY: install setup-pipeline dev build storybook build-storybook _fetch _build-title-index _extract-wiki-edges _build-adjacency pipeline-wikipedia test-pipeline service-build service-start service-dev service-test service-lint reset-hits keygen server-setup add-github-secrets upload-data deploy-data dashboards
+
+DASHBOARD_URLS := \
+	https://us.posthog.com/project/479444/insights/IIoGetA8 \
+	https://www.spaceship.com/application/domain-list-application/ \
+	https://dash.cloudflare.com/211c1cf73150263968422857b3b10f7b/wikihop.org/analytics/traffic \
+	https://console.hetzner.com/projects/15129191/servers
 
 install:
 	cd $(WEB) && npm install
@@ -81,25 +87,35 @@ add-github-secrets:
 
 # Rebuild the graph bundle only if the local data is stale (older than MAX_DATA_AGE_DAYS,
 # default 1), then ship it to the server. Pass MAX_DATA_AGE_DAYS=0 to always rebuild.
+# Prompts for the VPS IP if VPS_IP isn't passed in.
 deploy-data:
-	@test -n "$(VPS_IP)" || (echo "VPS_IP is not set. Pass it: make $@ VPS_IP=x.x.x.x"; exit 1)
-	@if [ -z "$$(find $(DATA_FRESHNESS_MARKER) -mtime -$(MAX_DATA_AGE_DAYS) 2>/dev/null)" ]; then \
+	@vps_ip="$(VPS_IP)"; \
+	if [ -z "$$vps_ip" ]; then read -p "VPS IP: " vps_ip; fi; \
+	test -n "$$vps_ip" || (echo "VPS IP is required"; exit 1); \
+	if [ -z "$$(find $(DATA_FRESHNESS_MARKER) -mtime -$(MAX_DATA_AGE_DAYS) 2>/dev/null)" ]; then \
 		echo "deploy-data: local data missing or older than $(MAX_DATA_AGE_DAYS)d — rebuilding"; \
 		$(MAKE) pipeline-wikipedia ARGS="$(ARGS)"; \
 	else \
 		echo "deploy-data: local data is fresh (<$(MAX_DATA_AGE_DAYS)d old) — skipping rebuild"; \
-	fi
-	$(MAKE) upload-data VPS_IP=$(VPS_IP)
+	fi; \
+	$(MAKE) upload-data VPS_IP="$$vps_ip"
 
+# Prompts for the VPS IP if VPS_IP isn't passed in.
 upload-data:
-	@test -n "$(VPS_IP)" || (echo "VPS_IP is not set. Pass it: make $@ VPS_IP=x.x.x.x"; exit 1)
+	@vps_ip="$(VPS_IP)"; \
+	if [ -z "$$vps_ip" ]; then read -p "VPS IP: " vps_ip; fi; \
+	test -n "$$vps_ip" || (echo "VPS IP is required"; exit 1); \
 	rsync -avz --progress -e "ssh -i ~/.ssh/wikihop_deploy" \
 		datapipeline/data/adj_fwd.neighbors.bin \
 		datapipeline/data/adj_fwd.offsets.bin \
 		datapipeline/data/adj_rev.neighbors.bin \
 		datapipeline/data/adj_rev.offsets.bin \
 		datapipeline/data/entities.tsv \
-		deploy@$(VPS_IP):/opt/wikihop/data/
+		deploy@$$vps_ip:/opt/wikihop/data/
+
+# Open the PostHog insight, domain registrar, Cloudflare analytics, and Hetzner console in the browser.
+dashboards:
+	@for url in $(DASHBOARD_URLS); do open "$$url"; done
 
 # --- Private targets below (not meant to be run standalone; called by the public targets above) ---
 
