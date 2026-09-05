@@ -1,11 +1,13 @@
 WEB := web
 SERVICE := service
 PYTHON := datapipeline/.venv/bin/python3
+DATA_FRESHNESS_MARKER := datapipeline/data/.build-adjacency-manifest.json
+MAX_DATA_AGE_DAYS ?= 1
 
 -include service/.env
 export POSTHOG_API_KEY
 
-.PHONY: install setup-pipeline dev build storybook build-storybook _fetch _build-title-index _extract-wiki-edges _build-adjacency pipeline-wikipedia test-pipeline service-build service-start service-dev service-test service-lint reset-hits keygen server-setup add-github-secrets upload-data
+.PHONY: install setup-pipeline dev build storybook build-storybook _fetch _build-title-index _extract-wiki-edges _build-adjacency pipeline-wikipedia test-pipeline service-build service-start service-dev service-test service-lint reset-hits keygen server-setup add-github-secrets upload-data deploy-data
 
 install:
 	cd $(WEB) && npm install
@@ -76,6 +78,18 @@ add-github-secrets:
 	gh secret set DEPLOY_SSH_KEY < ~/.ssh/wikihop_deploy
 	gh secret set VPS_IP --body "$(VPS_IP)"
 	@echo "Secrets set. Check: gh secret list"
+
+# Rebuild the graph bundle only if the local data is stale (older than MAX_DATA_AGE_DAYS,
+# default 1), then ship it to the server. Pass MAX_DATA_AGE_DAYS=0 to always rebuild.
+deploy-data:
+	@test -n "$(VPS_IP)" || (echo "VPS_IP is not set. Pass it: make $@ VPS_IP=x.x.x.x"; exit 1)
+	@if [ -z "$$(find $(DATA_FRESHNESS_MARKER) -mtime -$(MAX_DATA_AGE_DAYS) 2>/dev/null)" ]; then \
+		echo "deploy-data: local data missing or older than $(MAX_DATA_AGE_DAYS)d — rebuilding"; \
+		$(MAKE) pipeline-wikipedia ARGS="$(ARGS)"; \
+	else \
+		echo "deploy-data: local data is fresh (<$(MAX_DATA_AGE_DAYS)d old) — skipping rebuild"; \
+	fi
+	$(MAKE) upload-data VPS_IP=$(VPS_IP)
 
 upload-data:
 	@test -n "$(VPS_IP)" || (echo "VPS_IP is not set. Pass it: make $@ VPS_IP=x.x.x.x"; exit 1)

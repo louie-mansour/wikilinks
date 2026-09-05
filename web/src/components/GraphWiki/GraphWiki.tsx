@@ -431,9 +431,9 @@ function useMiddleButtonPan(
 }
 
 /**
- * Two-finger trackpad scroll fires plain `wheel` events (no ctrlKey); pinch-to-zoom
- * synthesizes `wheel` events with ctrlKey set. force-graph's own zoom behavior is
- * restricted to ctrlKey via `enableZoomInteraction`, so plain scroll reaches here to pan.
+ * Horizontal trackpad scroll (or shift+wheel) pans the graph. Vertical wheel/trackpad
+ * scroll is left to the browser so the page scrolls normally over the graph.
+ * Pinch-to-zoom still uses ctrlKey wheel events handled by force-graph.
  */
 function useWheelPan(
   wrapperRef: RefObject<HTMLDivElement | null>,
@@ -445,6 +445,9 @@ function useWheelPan(
 
     const onWheel = (e: WheelEvent) => {
       if (e.ctrlKey) return;
+      // Primarily vertical gesture — let the page scroll.
+      if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) return;
+
       const fg = fgRef.current;
       if (!fg) return;
       e.preventDefault();

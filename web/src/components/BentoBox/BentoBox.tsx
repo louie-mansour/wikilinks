@@ -76,7 +76,7 @@ export function BentoBox({
       />
 
       <SmallStatCard
-        label="Min hops"
+        label="Shortest path"
         value={minHops}
         cardClassName={styles.cardHops}
       />

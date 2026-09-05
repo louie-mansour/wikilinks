@@ -49,6 +49,7 @@ You can now run any Makefile target below.
 | `make service-lint` | Run golangci-lint on the service |
 | `make server-setup` | One-time VPS provisioning via SSH (requires `VPS_IP` in `.env`) |
 | `make upload-data` | Rsync graph files to the production server |
+| `make deploy-data` | Rebuild the graph bundle only if local data is older than `MAX_DATA_AGE_DAYS` (default 1, `MAX_DATA_AGE_DAYS=0` forces a rebuild), then rsync it to the server (`upload-data`). Requires `VPS_IP` |
 | `make reset-hits` | Clear article hit counts from the local SQLite database |
 
 `pipeline-wikipedia` is the only public datapipeline target — it orchestrates the underlying stages itself via `datapipeline.run`. The Makefile also defines underscore-prefixed private targets (`_fetch`, `_build-title-index`, `_extract-wiki-edges`, `_build-adjacency`) that run one stage each; they exist for debugging a single stage and aren't meant to be run as the normal way to build the graph.

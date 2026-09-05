@@ -18,6 +18,7 @@ import { fetchRandom } from './api/random';
 import { useDebouncedSuggestions } from './hooks/useDebouncedSuggestions';
 import { formatNumber, type SearchResult } from './data/mockSearch';
 import { searchPaths } from './api/search';
+import { sortPaths, type SortOrder } from './utils/sortPaths';
 import { getShare, createShare } from './api/share';
 import { submitFeedbackRating, submitFeedbackComment } from './api/feedback';
 import { SHARE_BASE_URL } from './config';
@@ -168,7 +169,7 @@ export function App() {
   const [isStartRouletting, setIsStartRouletting] = useState(false);
   const [isEndRouletting, setIsEndRouletting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [sortOrder, setSortOrder] = useState('interesting');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('interesting');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [isSharedView, setIsSharedView] = useState(false);
   const [isSelectedStart, setIsSelectedStart] = useState(false);
@@ -365,20 +366,7 @@ export function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEndRouletting, isRouletting, isSearching, startArticle]);
 
-  const newArticleCount = (path: SearchResult['paths'][number]) =>
-    path.crumbs.filter((crumb) => crumb.hitCount === 1).length;
-
-  const sortedPaths = result
-    ? [...result.paths].sort((a, b) => {
-        if (sortOrder === 'alpha') {
-          const aLabel = a.crumbs[1]?.label ?? '';
-          const bLabel = b.crumbs[1]?.label ?? '';
-          return aLabel.localeCompare(bLabel);
-        }
-        const diff = newArticleCount(a) - newArticleCount(b);
-        return sortOrder === 'least-interesting' ? diff : -diff;
-      })
-    : [];
+  const sortedPaths = result ? sortPaths(result.paths, sortOrder) : [];
 
   const visiblePaths = sortedPaths.slice(0, visibleCount);
   const remainingCount = sortedPaths.length - visibleCount;
@@ -472,7 +460,7 @@ export function App() {
               paths={visiblePaths}
               sortOptions={SORT_OPTIONS}
               sortValue={sortOrder}
-              onSortChange={(val) => { setSortOrder(val); setVisibleCount(PAGE_SIZE); }}
+              onSortChange={(val) => { setSortOrder(val as SortOrder); setVisibleCount(PAGE_SIZE); }}
               remainingCount={remainingCount > 0 ? Math.min(PAGE_SIZE, remainingCount) : undefined}
               totalRemainingCount={remainingCount > 0 ? remainingCount : undefined}
               onLoadMore={() => {
