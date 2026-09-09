@@ -4,12 +4,12 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] New endpoint accepts a guess (title/id) and implicitly uses today's puzzle date
-- [ ] Response contains all shortest paths between guess and hidden article, computed via `BidirectionalBFS`
-- [ ] The real end-node id/title is replaced by a stable placeholder id (same placeholder across all guesses for the same puzzle-day) in all responses prior to a correct guess
-- [ ] A guess with no path within the existing BFS depth cap returns the guess node with no connecting edges, not an error
-- [ ] A correct guess (guess == today's real answer) returns `correct: true` plus the real end-node id/title
-- [ ] Request/response contract tests, analogous to existing `/api/search` handler tests, cover: normal guess with paths found, guess with no path, correct/winning guess, and assert the real end-node identity never appears in the response body prior to a correct guess
-- [ ] `/api/search` endpoint and its existing contract are untouched
+- [x] New endpoint accepts a guess (title/id) and implicitly uses today's puzzle date
+- [x] Response contains all shortest paths between guess and hidden article, computed via `BidirectionalBFS`
+- [x] The real end-node id/title is replaced by a stable placeholder id (same placeholder across all guesses for the same puzzle-day) in all responses prior to a correct guess
+- [x] A guess with no path within the existing BFS depth cap returns the guess node with no connecting edges, not an error
+- [x] A correct guess (guess == today's real answer) returns `correct: true` plus the real end-node id/title
+- [x] Request/response contract tests, analogous to existing `/api/search` handler tests, cover: normal guess with paths found, guess with no path, correct/winning guess, and assert the real end-node identity never appears in the response body prior to a correct guess
+- [x] `/api/search` endpoint and its existing contract are untouched

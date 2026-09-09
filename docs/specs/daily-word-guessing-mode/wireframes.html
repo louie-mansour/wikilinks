@@ -1,0 +1,506 @@
+<title>Grill Wireframes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+  :root{
+    --sand:#f5ede0; --sand-mid:#e8d9c4; --sand-dark:#d4c0a4;
+    --ink:#2c2416; --ink-muted:#7a6a52; --ink-faint:#b8a888;
+    --terra:#c4572a; --terra-dark:#a8461f; --terra-light:#f2d5c8; --terra-pale:#faf0ea;
+    --sage:#4a7c59; --sage-light:#c8dece; --sage-pale:#edf6ef;
+    --clay:#e8a05a; --clay-border:#f5dbb0; --clay-pale:#fdf2e3;
+    --white:#fefcf8;
+    --radius-sm:5px; --radius-md:8px; --radius-lg:11px;
+    --board-bg:#eee3d1; --board-line:#c9b699;
+  }
+
+  *,*::before,*::after{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Figtree',system-ui,sans-serif;
+    background:var(--board-bg);
+    color:var(--ink);
+    background-image:
+      linear-gradient(var(--board-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--board-line) 1px, transparent 1px);
+    background-size:28px 28px;
+    background-attachment:fixed;
+  }
+
+  .board{ max-width:1400px; margin:0 auto; padding:36px 28px 80px; }
+
+  .board-head{ margin-bottom:30px; }
+  .board-eyebrow{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em;
+    color:var(--terra); margin-bottom:8px;
+  }
+  .board-title{
+    font-size:32px; font-weight:800; letter-spacing:-0.5px; margin:0 0 8px;
+  }
+  .board-sub{
+    font-size:14.5px; color:var(--ink-muted); max-width:640px; line-height:1.6; margin:0;
+  }
+
+  .deck{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:26px;
+    align-items:start;
+  }
+  @media (max-width:980px){ .deck{ grid-template-columns:1fr; } }
+
+  .frame-card{ display:flex; flex-direction:column; gap:10px; }
+  .frame-tag{
+    display:flex; align-items:baseline; gap:10px;
+  }
+  .frame-num{
+    font-size:11px; font-weight:800; color:var(--white); background:var(--ink);
+    padding:2px 7px; border-radius:4px; letter-spacing:.04em;
+  }
+  .frame-name{ font-size:14px; font-weight:700; color:var(--ink); }
+  .frame-desc{ font-size:12.5px; color:var(--ink-muted); margin:0 0 2px; line-height:1.5; }
+
+  .screen{
+    background:var(--sand);
+    border:1.5px solid var(--sand-mid);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 10px 30px rgba(44,36,22,0.10);
+  }
+  .chrome{
+    display:flex; align-items:center; gap:6px;
+    padding:9px 12px; background:var(--sand-dark);
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; background:rgba(44,36,22,0.25); }
+
+  /* ---- top bar ---- */
+  .top-bar{
+    padding:18px 20px 16px; background:var(--white);
+    border-bottom:1.5px solid var(--sand-mid);
+    display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;
+  }
+  .wordmark{
+    display:flex; align-items:center; gap:7px;
+    font-size:19px; font-weight:800; letter-spacing:-0.4px;
+  }
+  .wordmark-icon{
+    width:24px; height:24px; border-radius:7px; background:var(--terra);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .wordmark-icon svg{ display:block; }
+  .puzzle-meta{
+    display:flex; align-items:center; gap:8px; font-size:11px; color:var(--ink-muted);
+  }
+  .puzzle-num{
+    font-weight:700; color:var(--ink); background:var(--clay-pale);
+    border:1px solid var(--clay-border); padding:2px 8px; border-radius:10px;
+  }
+  .puzzle-sep{ color:var(--sand-dark); }
+
+  .guess-row{
+    display:flex; gap:8px; width:100%; max-width:400px; margin-top:4px;
+  }
+  .guess-input{
+    flex:1; display:flex; align-items:center; gap:6px;
+    background:var(--sand); border:1.5px solid var(--sand-mid); border-radius:var(--radius-md);
+    padding:9px 12px; font-size:13px; color:var(--ink-faint);
+  }
+  .guess-input.filled{ color:var(--ink); font-weight:600; }
+  .guess-btn{
+    padding:9px 18px; border:none; border-radius:var(--radius-md);
+    background:var(--terra); color:var(--white); font-weight:700; font-size:13px;
+    font-family:inherit; cursor:default;
+  }
+  .guess-warn{
+    font-size:11.5px; color:var(--terra-dark); background:var(--terra-pale);
+    border:1px solid var(--terra-light); border-radius:6px; padding:5px 10px;
+    max-width:400px; width:100%; margin-top:2px;
+  }
+
+  /* ---- graph ---- */
+  .graph{
+    position:relative; height:230px; background:var(--white);
+    border-bottom:1.5px solid var(--sand-mid); overflow:hidden;
+  }
+  .graph-empty{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:4px; color:var(--ink-faint);
+  }
+  .graph-empty-icon{
+    width:40px; height:40px; border-radius:50%; border:1.5px dashed var(--sand-dark);
+  }
+  .graph-empty-text{ font-size:12px; font-style:italic; }
+
+  .node{ position:absolute; border-radius:50%; transform:translate(-50%,-50%); }
+  .node.n-path{ width:9px; height:9px; background:var(--sand-dark); }
+  .node.n-guess{ width:15px; height:15px; background:var(--terra); box-shadow:0 0 0 3px var(--terra-light); }
+  .node.n-guess.n-first{ box-shadow:0 0 0 3px var(--terra-light), 0 0 0 5px rgba(196,87,42,0.15); }
+  .node.n-hidden{
+    width:15px; height:15px; background:var(--sand);
+    border:2px dashed var(--ink-muted);
+  }
+  .node.n-end{
+    width:17px; height:17px; background:var(--white); border:2.5px solid var(--ink);
+  }
+  .node.n-dim{ width:9px; height:9px; background:var(--sand-mid); opacity:.55; }
+
+  .glegend{
+    position:absolute; bottom:10px; right:10px; background:var(--white);
+    border:1.5px solid var(--sand-mid); border-radius:var(--radius-sm);
+    padding:8px 10px; display:flex; flex-direction:column; gap:5px;
+  }
+  .glegend-row{ display:flex; align-items:center; gap:6px; font-size:10px; color:var(--ink-muted); }
+  .gdot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .gdot.guess{ background:var(--terra); }
+  .gdot.path{ background:var(--sand-dark); }
+  .gdot.hidden{ background:var(--sand); border:1.5px dashed var(--ink-muted); }
+  .gdot.end{ background:var(--white); border:2px solid var(--ink); }
+
+  /* ---- guess feed ---- */
+  .feed{ background:var(--white); }
+  .feed-head{
+    padding:10px 20px; font-size:10px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.07em; color:var(--ink-muted); background:var(--sand);
+    border-bottom:1.5px solid var(--sand-mid);
+  }
+  .feed-row{
+    display:flex; align-items:center; gap:10px; padding:10px 20px;
+    border-bottom:1.5px solid var(--sand-mid); font-size:13px;
+  }
+  .feed-row:last-child{ border-bottom:none; }
+  .feed-idx{ font-weight:700; color:var(--sand-dark); font-size:12px; min-width:16px; }
+  .feed-title{ flex:1; font-weight:600; color:var(--ink); }
+  .feed-title.dim{ color:var(--ink-faint); font-weight:500; }
+  .hop-pill{
+    font-weight:700; font-size:11px; padding:3px 9px; border-radius:20px;
+    background:var(--terra-pale); color:var(--terra);
+  }
+  .hop-pill.none{ background:var(--sand); color:var(--ink-faint); font-weight:600; }
+  .hop-pill.win{ background:var(--sage-pale); color:var(--sage); }
+
+  /* ---- win banner ---- */
+  .win-banner{
+    padding:16px 20px; background:var(--sage-pale); border-bottom:1.5px solid var(--sage-light);
+    display:flex; align-items:center; justify-content:center; gap:10px; text-align:center; flex-direction:column;
+  }
+  .win-title{ font-size:16px; font-weight:800; color:var(--sage); }
+  .win-sub{ font-size:12.5px; color:var(--ink-muted); font-style:italic; }
+
+  .share-bar{
+    margin:14px 20px 18px; padding:10px 14px; background:var(--sand);
+    border:1.5px solid var(--sand-mid); border-radius:var(--radius-md);
+    display:flex; align-items:center; gap:10px; font-size:12px;
+  }
+  .share-label{ font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-size:9.5px; color:var(--ink-muted); }
+  .share-text{ flex:1; color:var(--ink); font-weight:600; }
+  .share-copy{
+    padding:5px 12px; border:1.5px solid var(--sand-mid); border-radius:var(--radius-sm);
+    background:var(--white); color:var(--ink-muted); font-size:11px; font-weight:600;
+  }
+
+  .callouts{ display:flex; flex-direction:column; gap:6px; margin-top:2px; }
+  .callout{
+    display:flex; gap:8px; align-items:flex-start; font-size:12px; color:var(--ink-muted);
+    line-height:1.45;
+  }
+  .callout .marker{
+    flex-shrink:0; width:16px; height:16px; border-radius:50%; background:var(--ink);
+    color:var(--white); font-size:9.5px; font-weight:800; display:flex; align-items:center;
+    justify-content:center; margin-top:1px;
+  }
+
+  .footer-note{
+    margin-top:44px; padding-top:20px; border-top:1.5px solid var(--board-line);
+    font-size:12px; color:var(--ink-muted); max-width:720px; line-height:1.6;
+  }
+  .footer-note b{ color:var(--ink); }
+</style>
+
+<div class="board">
+
+  <div class="board-head">
+    <div class="board-eyebrow">Wireframes — v1</div>
+    <h1 class="board-title">Grill — Daily Guessing Mode</h1>
+    <p class="board-sub">
+      Four states of the <code>/daily</code> screen, built on the existing WikiLinks
+      surfaces and tokens (warm sand/terra/sage, Figtree, 1.5px borders). The graph
+      panel follows the real <code>GraphWiki</code> rule: plain filled circles, no
+      labels on the canvas — article names live in the guess feed below it.
+    </p>
+  </div>
+
+  <div class="deck">
+
+    <!-- FRAME 1 — EMPTY STATE -->
+    <div class="frame-card">
+      <div class="frame-tag">
+        <span class="frame-num">01</span>
+        <span class="frame-name">Before the first guess</span>
+      </div>
+      <p class="frame-desc">Lands on a bare puzzle shell — no start/end to seed with, just today's date and an empty board.</p>
+
+      <div class="screen">
+        <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+
+        <div class="top-bar">
+          <div class="wordmark">
+            <span class="wordmark-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="2" fill="#fefcf8"/><circle cx="3" cy="13" r="2" fill="#fefcf8"/><circle cx="13" cy="13" r="2" fill="#fefcf8"/><line x1="8" y1="5" x2="3" y2="11" stroke="#fefcf8" stroke-width="1.5"/><line x1="8" y1="5" x2="13" y2="11" stroke="#fefcf8" stroke-width="1.5"/></svg>
+            </span>
+            Grill
+          </div>
+          <div class="puzzle-meta">
+            <span class="puzzle-num">#12</span>
+            <span class="puzzle-sep">·</span>
+            <span>Sep 8, 2026</span>
+            <span class="puzzle-sep">·</span>
+            <span>Guess an article to reveal how it connects</span>
+          </div>
+          <div class="guess-row">
+            <div class="guess-input">Search for an article…</div>
+            <button class="guess-btn">Guess</button>
+          </div>
+        </div>
+
+        <div class="graph">
+          <div class="graph-empty">
+            <div class="graph-empty-icon"></div>
+            <div class="graph-empty-text">The hidden article is somewhere in here</div>
+          </div>
+        </div>
+
+        <div class="feed">
+          <div class="feed-head">Your guesses — 0</div>
+        </div>
+      </div>
+
+      <div class="callouts">
+        <div class="callout"><span class="marker">i</span> No start/end pair — the guess input is the only control up top.</div>
+        <div class="callout"><span class="marker">i</span> Graph shows a dashed placeholder circle only, unlabeled, until a guess lands.</div>
+      </div>
+    </div>
+
+    <!-- FRAME 2 — MID PUZZLE -->
+    <div class="frame-card">
+      <div class="frame-tag">
+        <span class="frame-num">02</span>
+        <span class="frame-name">Mid-puzzle, graph accumulating</span>
+      </div>
+      <p class="frame-desc">Each guess merges its revealed shortest paths into one growing graph; the feed gives the Wordle-style hop signal per row.</p>
+
+      <div class="screen">
+        <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+
+        <div class="top-bar">
+          <div class="wordmark">
+            <span class="wordmark-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="2" fill="#fefcf8"/><circle cx="3" cy="13" r="2" fill="#fefcf8"/><circle cx="13" cy="13" r="2" fill="#fefcf8"/><line x1="8" y1="5" x2="3" y2="11" stroke="#fefcf8" stroke-width="1.5"/><line x1="8" y1="5" x2="13" y2="11" stroke="#fefcf8" stroke-width="1.5"/></svg>
+            </span>
+            Grill
+          </div>
+          <div class="puzzle-meta">
+            <span class="puzzle-num">#12</span>
+            <span class="puzzle-sep">·</span>
+            <span>Sep 8, 2026</span>
+          </div>
+          <div class="guess-row">
+            <div class="guess-input filled">Ohio</div>
+            <button class="guess-btn">Guess</button>
+          </div>
+        </div>
+
+        <div class="graph">
+          <svg style="position:absolute;inset:0;width:100%;height:100%;" xmlns="http://www.w3.org/2000/svg">
+            <line x1="20%" y1="30%" x2="38%" y2="45%" stroke="#d4c0a4" stroke-width="1.4"/>
+            <line x1="38%" y1="45%" x2="55%" y2="52%" stroke="#d4c0a4" stroke-width="1.4"/>
+            <line x1="55%" y1="52%" x2="70%" y2="48%" stroke="#d4c0a4" stroke-width="1.4"/>
+            <line x1="24%" y1="70%" x2="38%" y2="55%" stroke="#d4c0a4" stroke-width="1.4"/>
+            <line x1="38%" y1="55%" x2="55%" y2="52%" stroke="#d4c0a4" stroke-width="1.4"/>
+            <line x1="70%" y1="48%" x2="82%" y2="30%" stroke="#d4c0a4" stroke-width="1.4"/>
+            <line x1="70%" y1="48%" x2="80%" y2="68%" stroke="#d4c0a4" stroke-width="1.4"/>
+          </svg>
+          <div class="node n-guess n-first" style="top:30%; left:20%;"></div>
+          <div class="node n-guess" style="top:70%; left:24%;"></div>
+          <div class="node n-guess" style="top:30%; left:82%;"></div>
+          <div class="node n-path" style="top:45%; left:38%;"></div>
+          <div class="node n-path" style="top:55%; left:38%;"></div>
+          <div class="node n-hidden" style="top:52%; left:55%;"></div>
+          <div class="node n-path" style="top:48%; left:70%;"></div>
+          <div class="node n-path" style="top:68%; left:80%;"></div>
+
+          <div class="glegend">
+            <div class="glegend-row"><div class="gdot guess"></div>Your guesses</div>
+            <div class="glegend-row"><div class="gdot path"></div>Revealed step</div>
+            <div class="glegend-row"><div class="gdot hidden"></div>Hidden article</div>
+          </div>
+        </div>
+
+        <div class="feed">
+          <div class="feed-head">Your guesses — 3</div>
+          <div class="feed-row">
+            <span class="feed-idx">1</span>
+            <span class="feed-title">Nikola Tesla</span>
+            <span class="hop-pill">5 hops</span>
+          </div>
+          <div class="feed-row">
+            <span class="feed-idx">2</span>
+            <span class="feed-title">Basketball</span>
+            <span class="hop-pill">3 hops</span>
+          </div>
+          <div class="feed-row">
+            <span class="feed-idx">3</span>
+            <span class="feed-title">Rhode Island</span>
+            <span class="hop-pill">4 hops</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="callouts">
+        <div class="callout"><span class="marker">i</span> Larger terra dots = guesses; small sand dots = intermediate nodes on a revealed path; dashed ring = the still-hidden target.</div>
+        <div class="callout"><span class="marker">i</span> Shared nodes across guesses are drawn once — graph reads as one map, not stacked diagrams.</div>
+      </div>
+    </div>
+
+    <!-- FRAME 3 — NO PATH + DUPLICATE -->
+    <div class="frame-card">
+      <div class="frame-tag">
+        <span class="frame-num">03</span>
+        <span class="frame-name">No-path result &amp; repeat guess</span>
+      </div>
+      <p class="frame-desc">Two low-information moments: a guess with nothing within search depth, and blocking a guess already made.</p>
+
+      <div class="screen">
+        <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+
+        <div class="top-bar">
+          <div class="wordmark">
+            <span class="wordmark-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="2" fill="#fefcf8"/><circle cx="3" cy="13" r="2" fill="#fefcf8"/><circle cx="13" cy="13" r="2" fill="#fefcf8"/><line x1="8" y1="5" x2="3" y2="11" stroke="#fefcf8" stroke-width="1.5"/><line x1="8" y1="5" x2="13" y2="11" stroke="#fefcf8" stroke-width="1.5"/></svg>
+            </span>
+            Grill
+          </div>
+          <div class="puzzle-meta">
+            <span class="puzzle-num">#12</span>
+            <span class="puzzle-sep">·</span>
+            <span>Sep 8, 2026</span>
+          </div>
+          <div class="guess-row">
+            <div class="guess-input filled">Basketball</div>
+            <button class="guess-btn">Guess</button>
+          </div>
+          <div class="guess-warn">You've already guessed "Basketball" — try a different article.</div>
+        </div>
+
+        <div class="graph">
+          <svg style="position:absolute;inset:0;width:100%;height:100%;" xmlns="http://www.w3.org/2000/svg">
+            <line x1="20%" y1="35%" x2="40%" y2="50%" stroke="#d4c0a4" stroke-width="1.4"/>
+            <line x1="40%" y1="50%" x2="58%" y2="48%" stroke="#d4c0a4" stroke-width="1.4"/>
+          </svg>
+          <div class="node n-guess n-first" style="top:35%; left:20%;"></div>
+          <div class="node n-path" style="top:50%; left:40%;"></div>
+          <div class="node n-hidden" style="top:48%; left:58%;"></div>
+          <div class="node n-dim" style="top:75%; left:78%;"></div>
+        </div>
+
+        <div class="feed">
+          <div class="feed-head">Your guesses — 2</div>
+          <div class="feed-row">
+            <span class="feed-idx">1</span>
+            <span class="feed-title">Nikola Tesla</span>
+            <span class="hop-pill">5 hops</span>
+          </div>
+          <div class="feed-row">
+            <span class="feed-idx">2</span>
+            <span class="feed-title dim">Carex curaica</span>
+            <span class="hop-pill none">No path found</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="callouts">
+        <div class="callout"><span class="marker">i</span> No-path guess renders muted/dim in the feed and adds no new graph nodes — not treated as an error.</div>
+        <div class="callout"><span class="marker">i</span> Duplicate guess is caught client-side before submit; input keeps focus, no request fires.</div>
+      </div>
+    </div>
+
+    <!-- FRAME 4 — SOLVED -->
+    <div class="frame-card">
+      <div class="frame-tag">
+        <span class="frame-num">04</span>
+        <span class="frame-name">Solved</span>
+      </div>
+      <p class="frame-desc">Correct guess relabels the placeholder node in place; input row is replaced by a result banner and a copyable share line.</p>
+
+      <div class="screen">
+        <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+
+        <div class="top-bar" style="padding-bottom:0; border-bottom:none;">
+          <div class="wordmark">
+            <span class="wordmark-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="2" fill="#fefcf8"/><circle cx="3" cy="13" r="2" fill="#fefcf8"/><circle cx="13" cy="13" r="2" fill="#fefcf8"/><line x1="8" y1="5" x2="3" y2="11" stroke="#fefcf8" stroke-width="1.5"/><line x1="8" y1="5" x2="13" y2="11" stroke="#fefcf8" stroke-width="1.5"/></svg>
+            </span>
+            Grill
+          </div>
+          <div class="puzzle-meta">
+            <span class="puzzle-num">#12</span>
+            <span class="puzzle-sep">·</span>
+            <span>Sep 8, 2026</span>
+          </div>
+        </div>
+
+        <div class="win-banner">
+          <div class="win-title">Solved in 5 guesses!</div>
+          <div class="win-sub">The hidden article was Quantum mechanics</div>
+        </div>
+
+        <div class="graph" style="height:200px;">
+          <svg style="position:absolute;inset:0;width:100%;height:100%;" xmlns="http://www.w3.org/2000/svg">
+            <line x1="20%" y1="30%" x2="38%" y2="45%" stroke="#d4c0a4" stroke-width="1.4"/>
+            <line x1="38%" y1="45%" x2="55%" y2="52%" stroke="#c4572a" stroke-width="2"/>
+            <line x1="55%" y1="52%" x2="70%" y2="48%" stroke="#d4c0a4" stroke-width="1.4"/>
+            <line x1="24%" y1="70%" x2="38%" y2="55%" stroke="#d4c0a4" stroke-width="1.4"/>
+            <line x1="38%" y1="55%" x2="55%" y2="52%" stroke="#c4572a" stroke-width="2"/>
+            <line x1="70%" y1="48%" x2="82%" y2="30%" stroke="#d4c0a4" stroke-width="1.4"/>
+          </svg>
+          <div class="node n-guess" style="top:30%; left:20%;"></div>
+          <div class="node n-guess" style="top:70%; left:24%;"></div>
+          <div class="node n-guess" style="top:30%; left:82%;"></div>
+          <div class="node n-path" style="top:45%; left:38%;"></div>
+          <div class="node n-path" style="top:55%; left:38%;"></div>
+          <div class="node n-end" style="top:52%; left:55%;"></div>
+          <div class="node n-path" style="top:48%; left:70%;"></div>
+        </div>
+
+        <div class="share-bar">
+          <span class="share-label">Share</span>
+          <span class="share-text">Grill #12: 5 guesses (7→5→4→3→0)</span>
+          <button class="share-copy">Copy</button>
+        </div>
+
+        <div class="feed">
+          <div class="feed-head">Your guesses — 5</div>
+          <div class="feed-row">
+            <span class="feed-idx">5</span>
+            <span class="feed-title">Quantum mechanics</span>
+            <span class="hop-pill win">Correct!</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="callouts">
+        <div class="callout"><span class="marker">i</span> Placeholder node's dashed ring becomes the real "end" style (solid ring) in place — no re-fetch of the graph.</div>
+        <div class="callout"><span class="marker">i</span> Share text follows the existing permalink/copy pattern already used elsewhere in the app.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="footer-note">
+    <b>Not shown:</b> autocomplete dropdown on the guess input reuses the existing
+    combobox exactly as built for the main search game — no new interaction pattern
+    to design there. Node colors above are a proposal for the two new
+    <code>WikiNode</code> variants (<code>guess</code>, <code>hidden-end</code>) and
+    should be confirmed against <code>design-system.md</code> tokens before
+    implementation.
+  </p>
+
+</div>

@@ -53,3 +53,12 @@ func (s *DailySchedule) ArticleForDate(date time.Time) (string, error) {
 func (s *DailySchedule) Today() (string, error) {
 	return s.ArticleForDate(time.Now())
 }
+
+// PlaceholderID returns the stable, per-day placeholder node id used to mask
+// the real hidden-end article's identity in guess responses. It is identical
+// for every guess made on the same UTC calendar day and derived only from the
+// date, never the answer itself, so it carries no information about the
+// answer's identity.
+func PlaceholderID(date time.Time) string {
+	return "hidden-" + date.UTC().Format(dateLayout)
+}

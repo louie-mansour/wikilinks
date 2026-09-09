@@ -75,6 +75,7 @@ func main() {
 	endingNodesSvc := service.NewEndingNodes(g)
 	suggestSvc := service.NewSuggest(g)
 	randomSvc := service.NewRandom(g)
+	guessSvc := service.NewGuess(g, dailySchedule)
 	mux := http.NewServeMux()
 	controller.NewHealth().Register(mux)
 	controller.NewSearch(searchSvc, a).Register(mux)
@@ -84,6 +85,7 @@ func main() {
 	controller.NewEndingNodes(endingNodesSvc).Register(mux)
 	controller.NewSuggest(suggestSvc).Register(mux)
 	controller.NewRandom(randomSvc).Register(mux)
+	controller.NewGuess(guessSvc).Register(mux)
 
 	if *staticDir != "" {
 		mux.Handle("GET /assets/", http.FileServer(http.Dir(*staticDir)))
