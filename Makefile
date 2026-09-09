@@ -47,10 +47,10 @@ service-build:
 	cd $(SERVICE) && go build -o ../bin/wikilinks-server ./cmd/server
 
 service-start:
-	./bin/wikilinks-server --data-dir datapipeline/data
+	./bin/wikilinks-server --data-dir datapipeline/data --daily-schedule service/internal/config/daily_schedule.json
 
 service-dev:
-	cd $(SERVICE) && go run ./cmd/server --data-dir ../datapipeline/data
+	cd $(SERVICE) && go run ./cmd/server --data-dir ../datapipeline/data --daily-schedule ./internal/config/daily_schedule.json
 
 service-test:
 	cd $(SERVICE) && go test ./...

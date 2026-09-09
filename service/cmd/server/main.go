@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 
 	"github.com/louiemansour/wikilinks/service/internal/analytics"
+	"github.com/louiemansour/wikilinks/service/internal/config"
 	"github.com/louiemansour/wikilinks/service/internal/controller"
 	"github.com/louiemansour/wikilinks/service/internal/graph"
 	"github.com/louiemansour/wikilinks/service/internal/service"
@@ -25,6 +26,7 @@ func main() {
 	shareTTL := flag.Duration("share-ttl", 365*24*time.Hour, "how long share snapshots are retained (0 = keep forever)")
 	staticDir := flag.String("static-dir", "", "path to built frontend directory (enables static file serving + SPA fallback)")
 	appURL := flag.String("app-url", "https://wikihop.org", "public app URL used in OG tags (no trailing slash)")
+	dailySchedulePath := flag.String("daily-schedule", "service/internal/config/daily_schedule.json", "path to the daily puzzle schedule JSON file")
 	flag.Parse()
 
 	posthogKey := os.Getenv("POSTHOG_API_KEY")
@@ -49,6 +51,17 @@ func main() {
 		"startingNodes", len(g.StartingNodes()),
 		"endingNodes", len(g.EndingNodes()),
 	)
+
+	dailySchedule, err := config.LoadDailySchedule(*dailySchedulePath)
+	if err != nil {
+		slog.Error("failed to load daily schedule", "err", err)
+		os.Exit(1)
+	}
+	if today, err := dailySchedule.Today(); err != nil {
+		slog.Warn("no daily puzzle scheduled for today", "err", err)
+	} else {
+		slog.Info("daily puzzle loaded", "today", today)
+	}
 
 	st, err := store.New(filepath.Join(*dataDir, "wikilinks.db"), *shareTTL)
 	if err != nil {
