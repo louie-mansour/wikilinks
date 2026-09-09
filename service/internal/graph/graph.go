@@ -122,6 +122,26 @@ func (g *WikipediaGraph) RandomEndNodes(count int) []string {
 	return randomSample(g.endingNodes, count)
 }
 
+// RandomEndNodesMinDegree returns count distinct random end-eligible article
+// titles with in-degree at least minDegree. Plain end-eligibility (in-degree
+// > 0, see RandomEndNodes) admits obscure articles with only a single
+// incoming link, which makes for an unguessable puzzle answer. Callers that
+// need a recognizable answer (dev-mode random answers, daily schedule
+// generation) should use this instead.
+func (g *WikipediaGraph) RandomEndNodesMinDegree(count, minDegree int) []string {
+	candidates := make([]string, 0, len(g.endingNodes))
+	for _, title := range g.endingNodes {
+		id, ok := g.ResolveTitle(title)
+		if !ok {
+			continue
+		}
+		if int(g.revOffsets[id+1]-g.revOffsets[id]) >= minDegree {
+			candidates = append(candidates, title)
+		}
+	}
+	return randomSample(candidates, count)
+}
+
 // randomSample picks count distinct items from src using a partial Fisher-Yates shuffle.
 func randomSample(src []string, count int) []string {
 	if len(src) == 0 {

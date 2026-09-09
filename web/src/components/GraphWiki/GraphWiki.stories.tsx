@@ -71,3 +71,33 @@ export const MobileVertical: Story = {
     viewport: { defaultViewport: 'mobile1' },
   },
 };
+
+/** Daily mode: a guess revealing a path to the still-masked hidden article. */
+export const DailyGuessRevealed: Story = {
+  args: {
+    graphData: {
+      nodes: [
+        { id: 'Nikola Tesla', variant: 'guess', label: 'Nikola Tesla' },
+        { id: 'Electricity', variant: 'path', label: 'Electricity' },
+        { id: 'Physics', variant: 'path', label: 'Physics' },
+        { id: 'placeholder-day-1', variant: 'hidden-end' },
+      ],
+      links: [
+        { source: 'Nikola Tesla', target: 'Electricity' },
+        { source: 'Electricity', target: 'Physics' },
+        { source: 'Physics', target: 'placeholder-day-1' },
+      ],
+    },
+  },
+};
+
+/** Daily mode: a guess with no path found within the search depth — renders
+ *  muted/dim rather than as an error. */
+export const DailyGuessNoPath: Story = {
+  args: {
+    graphData: {
+      nodes: [{ id: 'Carex curaica', variant: 'guess', label: 'Carex curaica' }],
+      links: [],
+    },
+  },
+};

@@ -50,7 +50,7 @@ service-start:
 	./bin/wikilinks-server --data-dir datapipeline/data --daily-schedule service/internal/config/daily_schedule.json
 
 service-dev:
-	cd $(SERVICE) && go run ./cmd/server --data-dir ../datapipeline/data --daily-schedule ./internal/config/daily_schedule.json
+	cd $(SERVICE) && go run ./cmd/server --data-dir ../datapipeline/data --daily-schedule ./internal/config/daily_schedule.json --dev
 
 service-test:
 	cd $(SERVICE) && go test ./...

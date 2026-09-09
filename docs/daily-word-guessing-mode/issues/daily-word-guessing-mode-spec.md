@@ -18,7 +18,7 @@ A new daily mode, "Grill," where the end article is hidden from the player. The 
 6. As a player, I want new guesses' revealed subgraphs to merge with existing ones (shared nodes deduplicated, not duplicated), so that the graph reads as one coherent, growing picture rather than a stack of separate diagrams.
 7. As a player, I want to be told clearly when a guess has no path to the hidden article within the search depth, so that I understand that guess didn't yield useful new information, rather than assuming something broke.
 8. As a player, I want to be blocked from re-submitting a guess I've already made, so that I don't waste an action or clutter the graph with a duplicate reveal.
-9. As a player, I want unlimited guesses, so that the challenge is about deduction and exploration rather than a scarce-resource guessing budget.
+9. As a player, I want a limited number of guesses (5), so that the challenge has real stakes rather than an open-ended, un-losable exploration.
 10. As a player, I want the hidden article's identity to never appear anywhere in the network response or UI before I guess it correctly, so that the game can't be trivially spoiled via devtools.
 11. As a player, I want the game to clearly tell me when I've won, and reveal the true identity of the previously-hidden node, so that I get a satisfying resolution and can review the final full graph.
 12. As a player, I want my guesses and revealed graph state to persist across a page reload on the same day, so that refreshing the page doesn't lose my progress.
@@ -30,6 +30,7 @@ A new daily mode, "Grill," where the end article is hidden from the player. The 
 18. As a developer/operator, I want to generate a batch of upcoming daily puzzles (e.g. 14 days) via a single command, so that populating the schedule doesn't require manual research per day.
 19. As a developer/operator, I want the daily schedule to be a plain, hand-editable, committed file, so that I can swap out or correct a specific day's article without touching game logic or redeploying algorithmic changes.
 20. As a developer/operator, I want the candidate-article filtering (connectivity threshold) to reuse degree data the Go service already computes at startup, so that there's no duplicated or out-of-sync connectivity logic between the schedule generator and the live graph.
+21. As a player, I want to be told clearly when I've run out of guesses (5 without solving), with the hidden article revealed, so that I get resolution on a puzzle I didn't solve instead of being stuck guessing forever.
 
 ## Implementation Decisions
 
@@ -46,7 +47,8 @@ A new daily mode, "Grill," where the end article is hidden from the player. The 
 - **Candidate filtering**: Connectivity filtering (excluding near-orphan articles) is done in the Go service, reusing the in-degree/out-degree data it already loads at startup for `/internal/ending-nodes` / `/internal/starting-nodes` (`service/internal/service/ending_nodes.go`, `starting_nodes.go`), with a higher minimum-degree threshold than the existing `>0` check. No new datapipeline stage and no new persisted degree-stats artifact.
 - **Schedule generation tooling**: A one-off Go subcommand/flag on the existing server binary (e.g. `server -gen-schedule -days=14`) samples that many candidate articles above the degree threshold and writes/extends `daily_schedule.json`. Run manually and the output committed; not part of the automated datapipeline or a runtime code path.
 - **Persistence**: Client-only, via `localStorage`, keyed by the puzzle date. Stores the list of guesses made and the accumulated graph state for the current day. No backend session, account, or player identity is introduced.
-- **Sharing**: A share summary is generated client-side once the puzzle is solved, following the existing `ShareBar` pattern used by the main game, containing guess count and a compact hop-count sequence (e.g. `Grill #12: 4 guesses (7→4→2→0)`), copyable as text.
+- **Sharing**: A share summary is generated client-side once the puzzle is finished (solved or lost), following the existing `ShareBar` pattern used by the main game, containing guess count and a compact hop-count sequence (e.g. `Grill #12: 4 guesses (7→4→2→0)` when solved, `Grill #12: X/5 (7→4→2→1→3)` when lost), copyable as text.
+- **Loss state**: A player gets `MaxDailyGuesses` (5) incorrect guesses before losing. The client sends the 1-indexed attempt number (`guessNumber`) with each guess request; the server (not session-backed — trust here follows the same client-tracked model as repeat-guess prevention) reveals the real answer and marks the response `lost: true` once `guessNumber` reaches the limit without a correct guess. The reveal reuses the same graph-relabeling path as a win (`revealHiddenEnd`), so the accumulated graph shows the true answer node in place of the placeholder either way.
 - **Day rollover**: One puzzle per calendar day (UTC), identical for all players — no per-player randomization or personalized puzzles.
 
 ## Testing Decisions
@@ -62,7 +64,6 @@ A new daily mode, "Grill," where the end article is hidden from the player. The 
 - Archive of past puzzles / ability to play a missed day (explicitly deferred; schedule file structurally supports it later without change).
 - Backend-persisted player sessions, accounts, or cross-device continuity.
 - Leaderboards, stats tracking, or comparing results against other players beyond the copyable share summary text.
-- A guess-count cap or any loss/failure state.
 - Automated/algorithmic daily article selection at request time (the schedule is a static, pre-generated, hand-editable file, not computed live).
 - A new datapipeline stage for connectivity/degree computation.
 - Any change to the existing single-page search game's routing, state machine, or `/api/search` contract.

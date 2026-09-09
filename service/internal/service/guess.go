@@ -8,6 +8,13 @@ import (
 	"github.com/louiemansour/wikilinks/service/internal/graph"
 )
 
+// AnswerSource resolves the hidden article for a given date. In production
+// this is *config.DailySchedule; in dev mode it's a RandomAnswerSource that
+// ignores the date and returns a fixed random pick for the server's lifetime.
+type AnswerSource interface {
+	ArticleForDate(date time.Time) (string, error)
+}
+
 // ErrNoPuzzleToday is returned when the daily schedule has no article
 // configured for the current UTC calendar day.
 type ErrNoPuzzleToday struct{ Err error }
@@ -15,15 +22,21 @@ type ErrNoPuzzleToday struct{ Err error }
 func (e ErrNoPuzzleToday) Error() string { return fmt.Sprintf("no puzzle scheduled: %v", e.Err) }
 func (e ErrNoPuzzleToday) Unwrap() error { return e.Err }
 
+// MaxDailyGuesses is the number of incorrect guesses allowed before the
+// puzzle is lost and the real answer is revealed.
+const MaxDailyGuesses = 5
+
 // GuessResult is the response payload for a single daily-mode guess.
 //
-// Prior to a correct guess, the hidden end article's real id/title never
-// appears anywhere in this struct — it is replaced everywhere by a stable,
-// per-day placeholder id (see config.PlaceholderID) so the client can merge
-// multiple guesses' graphs without learning the answer early.
+// Prior to a correct guess (or the final, losing guess), the hidden end
+// article's real id/title never appears anywhere in this struct — it is
+// replaced everywhere by a stable, per-day placeholder id (see
+// config.PlaceholderID) so the client can merge multiple guesses' graphs
+// without learning the answer early.
 type GuessResult struct {
 	Guess       string     `json:"guess"`
 	Correct     bool       `json:"correct"`
+	Lost        bool       `json:"lost,omitempty"`
 	Answer      string     `json:"answer,omitempty"`
 	NoPathFound bool       `json:"noPathFound,omitempty"`
 	PathsFound  int        `json:"pathsFound"`
@@ -37,19 +50,25 @@ type GuessResult struct {
 // Guess is the service backing the daily-mode guess endpoint.
 type Guess struct {
 	g     *graph.WikipediaGraph
-	sched *config.DailySchedule
+	sched AnswerSource
 }
 
-// NewGuess creates a Guess service backed by the given graph and daily schedule.
-func NewGuess(g *graph.WikipediaGraph, sched *config.DailySchedule) *Guess {
+// NewGuess creates a Guess service backed by the given graph and answer source.
+func NewGuess(g *graph.WikipediaGraph, sched AnswerSource) *Guess {
 	return &Guess{g: g, sched: sched}
 }
 
 // Submit resolves guessTitle against today's hidden puzzle article and
 // returns all shortest paths between them via BidirectionalBFS, with the
 // real answer masked behind a stable per-day placeholder id unless the guess
-// is correct.
-func (s *Guess) Submit(guessTitle string) (*GuessResult, error) {
+// is correct or is the puzzle-losing guess.
+//
+// guessNumber is the 1-indexed attempt number for this guess, as tracked by
+// the client for the current puzzle-day (see .claude rules on daily-mode
+// scope: guess-count enforcement is client-tracked, not session-backed).
+// Once guessNumber reaches MaxDailyGuesses without a correct guess, the real
+// answer is revealed and the result is marked Lost.
+func (s *Guess) Submit(guessTitle string, guessNumber int) (*GuessResult, error) {
 	now := time.Now()
 
 	answerTitle, err := s.sched.ArticleForDate(now)
@@ -83,20 +102,27 @@ func (s *Guess) Submit(guessTitle string) (*GuessResult, error) {
 		}, nil
 	}
 
+	lost := guessNumber >= MaxDailyGuesses
 	placeholderID := config.PlaceholderID(now)
 
 	result, found := graph.BidirectionalBFS(s.g, guessID, answerID)
 	if !found {
+		graphData := GraphData{
+			Nodes: []WikiNode{{ID: guess, Variant: "guess", Label: guess}},
+			Links: []WikiLink{},
+		}
+		if lost {
+			graphData.Nodes = append(graphData.Nodes, WikiNode{ID: answerTitle, Variant: "end", Label: answerTitle})
+		}
 		return &GuessResult{
 			Guess:       guess,
+			Lost:        lost,
+			Answer:      lostAnswer(lost, answerTitle),
 			NoPathFound: true,
 			Paths:       [][]string{},
-			GraphData: GraphData{
-				Nodes: []WikiNode{{ID: guess, Variant: "guess", Label: guess}},
-				Links: []WikiLink{},
-			},
-			MaxHops:  graph.MaxDepth,
-			MaxPaths: graph.MaxPaths,
+			GraphData:   graphData,
+			MaxHops:     graph.MaxDepth,
+			MaxPaths:    graph.MaxPaths,
 		}, nil
 	}
 
@@ -105,7 +131,11 @@ func (s *Guess) Submit(guessTitle string) (*GuessResult, error) {
 		path := make([]string, len(ids))
 		for j, id := range ids {
 			if id == answerID {
-				path[j] = placeholderID
+				if lost {
+					path[j] = answerTitle
+				} else {
+					path[j] = placeholderID
+				}
 			} else {
 				path[j] = s.g.Title(id)
 			}
@@ -115,19 +145,33 @@ func (s *Guess) Submit(guessTitle string) (*GuessResult, error) {
 
 	return &GuessResult{
 		Guess:      guess,
+		Lost:       lost,
+		Answer:     lostAnswer(lost, answerTitle),
 		PathsFound: len(allPaths),
 		MinHops:    len(allPaths[0]) - 1,
 		Paths:      allPaths,
-		GraphData:  buildGuessGraphData(allPaths),
+		GraphData:  buildGuessGraphData(allPaths, lost),
 		MaxHops:    graph.MaxDepth,
 		MaxPaths:   graph.MaxPaths,
 	}, nil
 }
 
+// lostAnswer returns answerTitle when the puzzle was just lost, so the
+// response's Answer field is populated for a losing guess the same way it is
+// for a correct one — empty otherwise so the answer stays masked.
+func lostAnswer(lost bool, answerTitle string) string {
+	if lost {
+		return answerTitle
+	}
+	return ""
+}
+
 // buildGuessGraphData mirrors buildGraphData but uses the 'guess'/'hidden-end'
-// node variants and never assigns a Label to the placeholder node, so the
-// masked node carries no identity beyond its stable placeholder id.
-func buildGuessGraphData(allPaths [][]string) GraphData {
+// node variants. It never assigns a Label to the placeholder node so the
+// masked node carries no identity beyond its stable placeholder id — unless
+// lost is true, in which case the path's final node is the real answer
+// (already substituted by the caller) and is revealed as a normal 'end' node.
+func buildGuessGraphData(allPaths [][]string, lost bool) GraphData {
 	nodeVariant := make(map[string]string)
 	type edge struct{ src, dst string }
 	linkSet := make(map[edge]struct{})
@@ -139,8 +183,11 @@ func buildGuessGraphData(allPaths [][]string) GraphData {
 				variant = "guess"
 			} else if i == len(path)-1 {
 				variant = "hidden-end"
+				if lost {
+					variant = "end"
+				}
 			}
-			// Don't downgrade guess/hidden-end to path if already set.
+			// Don't downgrade guess/hidden-end/end to path if already set.
 			if existing, ok := nodeVariant[title]; !ok || existing == "path" {
 				nodeVariant[title] = variant
 			}

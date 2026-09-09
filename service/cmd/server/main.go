@@ -27,6 +27,7 @@ func main() {
 	staticDir := flag.String("static-dir", "", "path to built frontend directory (enables static file serving + SPA fallback)")
 	appURL := flag.String("app-url", "https://wikihop.org", "public app URL used in OG tags (no trailing slash)")
 	dailySchedulePath := flag.String("daily-schedule", "service/internal/config/daily_schedule.json", "path to the daily puzzle schedule JSON file")
+	devMode := flag.Bool("dev", false, "pick a random end-eligible article as the daily answer instead of reading daily_schedule.json (local development only)")
 	flag.Parse()
 
 	posthogKey := os.Getenv("POSTHOG_API_KEY")
@@ -52,15 +53,27 @@ func main() {
 		"endingNodes", len(g.EndingNodes()),
 	)
 
-	dailySchedule, err := config.LoadDailySchedule(*dailySchedulePath)
-	if err != nil {
-		slog.Error("failed to load daily schedule", "err", err)
-		os.Exit(1)
-	}
-	if today, err := dailySchedule.Today(); err != nil {
-		slog.Warn("no daily puzzle scheduled for today", "err", err)
+	var answerSource service.AnswerSource
+	if *devMode {
+		randomAnswer, err := service.NewRandomAnswerSource(g)
+		if err != nil {
+			slog.Error("failed to pick random dev answer", "err", err)
+			os.Exit(1)
+		}
+		answerSource = randomAnswer
+		slog.Info("dev mode: random daily answer selected", "answer", randomAnswer.Article())
 	} else {
-		slog.Info("daily puzzle loaded", "today", today)
+		dailySchedule, err := config.LoadDailySchedule(*dailySchedulePath)
+		if err != nil {
+			slog.Error("failed to load daily schedule", "err", err)
+			os.Exit(1)
+		}
+		if today, err := dailySchedule.Today(); err != nil {
+			slog.Warn("no daily puzzle scheduled for today", "err", err)
+		} else {
+			slog.Info("daily puzzle loaded", "today", today)
+		}
+		answerSource = dailySchedule
 	}
 
 	st, err := store.New(filepath.Join(*dataDir, "wikilinks.db"), *shareTTL)
@@ -75,7 +88,7 @@ func main() {
 	endingNodesSvc := service.NewEndingNodes(g)
 	suggestSvc := service.NewSuggest(g)
 	randomSvc := service.NewRandom(g)
-	guessSvc := service.NewGuess(g, dailySchedule)
+	guessSvc := service.NewGuess(g, answerSource)
 	mux := http.NewServeMux()
 	controller.NewHealth().Register(mux)
 	controller.NewSearch(searchSvc, a).Register(mux)

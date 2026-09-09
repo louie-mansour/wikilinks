@@ -28,7 +28,7 @@ const MIN_V_SPACING  = 4;             // floor so nodes never fully overlap
 const MOBILE_LAYOUT_MAX_WIDTH = 520;  // matches design-system §4 breakpoint
 const HOVER_DEBOUNCE_MS = 60;         // swallow hover flicker from fast cursor passes
 
-export type WikiNodeVariant = 'default' | 'start' | 'end' | 'path';
+export type WikiNodeVariant = 'default' | 'start' | 'end' | 'path' | 'guess' | 'hidden-end';
 
 export interface WikiNode {
   id: string;
@@ -72,14 +72,23 @@ function resolveVariant(node: WikiNode): WikiNodeVariant {
 }
 
 function nodeFill(variant: WikiNodeVariant, hitCount: number | undefined, colors: CanvasColors): string {
-  if (variant === 'start') return colors.ink;
+  if (variant === 'start' || variant === 'guess') return colors.ink;
   if (variant === 'end') return colors.sage;
+  if (variant === 'hidden-end') return colors.sandMid;
   if (hitCount === 1) return colors.clay;
   return colors.terra;
 }
 
 function nodeRadius(variant: WikiNodeVariant): number {
-  return variant === 'start' || variant === 'end' ? SPACE_2 + SPACE_1 + SPACE_1 : SPACE_2 + SPACE_1;
+  const isTerminalSized = variant === 'start' || variant === 'end' || variant === 'guess' || variant === 'hidden-end';
+  return isTerminalSized ? SPACE_2 + SPACE_1 + SPACE_1 : SPACE_2 + SPACE_1;
+}
+
+/** A guessed article with no revealed path renders muted/dim, like a plain path node,
+ *  rather than as an error state (daily-mode "no path found within depth" result). */
+function effectiveVariant(node: WikiNode, dimGuessIds: Set<string>): WikiNodeVariant {
+  const variant = resolveVariant(node);
+  return variant === 'guess' && dimGuessIds.has(node.id) ? 'path' : variant;
 }
 
 function nodeVal(variant: WikiNodeVariant): number {
@@ -129,9 +138,11 @@ function pickRandom<T>(items: T[]): T | null {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-/** Auto-highlight target: prefer a node two hops from start, else one hop from start. */
+/** Auto-highlight target: prefer a node two hops from start, else one hop from start.
+ *  Never the masked daily-mode placeholder — it carries no displayable identity. */
 function pickAutoHoverNode(nodes: WikiNode[], depths: Map<string, number>): WikiNode | null {
-  const atDepth = (depth: number) => nodes.filter(n => depths.get(n.id) === depth);
+  const atDepth = (depth: number) =>
+    nodes.filter(n => depths.get(n.id) === depth && resolveVariant(n) !== 'hidden-end');
   return pickRandom(atDepth(2)) ?? pickRandom(atDepth(1));
 }
 
@@ -348,8 +359,11 @@ function isLinkHighlighted(
     || (activeNodeId != null && linkTouchesNode(link, activeNodeId));
 }
 
+/** The masked daily-mode placeholder never displays text, even as a fallback —
+ *  its raw id must never leak to the player before a correct guess. */
 function nodeDisplayName(node: WikiNode): string {
-  return node.label ?? node.id;
+  if (node.label) return node.label;
+  return resolveVariant(node) === 'hidden-end' ? '' : node.id;
 }
 
 function nodeRole(variant: WikiNodeVariant): 'start' | 'end' | 'intermediate' {
@@ -687,6 +701,20 @@ export function GraphWiki({ graphData, onReady }: GraphWikiProps) {
     [hoveredNodeId, positionedData.links],
   );
 
+  const dimGuessIds = useMemo(() => {
+    const connected = new Set<string>();
+    for (const link of positionedData.links) {
+      const { source, target } = linkEndpoints(link);
+      connected.add(source);
+      connected.add(target);
+    }
+    return new Set(
+      positionedData.nodes
+        .filter(n => resolveVariant(n) === 'guess' && !connected.has(n.id))
+        .map(n => n.id),
+    );
+  }, [positionedData]);
+
   const terminalNodes = useMemo(
     () => positionedData.nodes.filter(n => resolveVariant(n) === 'start' || resolveVariant(n) === 'end'),
     [positionedData.nodes],
@@ -697,7 +725,7 @@ export function GraphWiki({ graphData, onReady }: GraphWikiProps) {
     const node = positionedData.nodes.find(n => n.id === hoveredNodeId);
     if (!node) return null;
     const variant = resolveVariant(node);
-    return variant === 'start' || variant === 'end' ? null : node;
+    return variant === 'start' || variant === 'end' || variant === 'hidden-end' ? null : node;
   }, [canHover, hoveredNodeId, positionedData.nodes]);
 
   const hoveredLabelNodes = useMemo(() => {
@@ -711,7 +739,7 @@ export function GraphWiki({ graphData, onReady }: GraphWikiProps) {
       ids.add(hoveredLink.source);
       ids.add(hoveredLink.target);
     }
-    return positionedData.nodes.filter(n => ids.has(n.id));
+    return positionedData.nodes.filter(n => ids.has(n.id) && resolveVariant(n) !== 'hidden-end');
   }, [canHover, hoveredNodeId, hoveredLink, positionedData.nodes, positionedData.links]);
 
   const handleRenderFramePost = useCallback(
@@ -903,8 +931,8 @@ export function GraphWiki({ graphData, onReady }: GraphWikiProps) {
         nodeId="id"
         nodeLabel=""
         nodeAutoColorBy={null}
-        nodeColor={(n) => nodeFill(resolveVariant(n), n.hitCount, colors)}
-        nodeVal={(n) => nodeVal(resolveVariant(n))}
+        nodeColor={(n) => nodeFill(effectiveVariant(n, dimGuessIds), n.hitCount, colors)}
+        nodeVal={(n) => nodeVal(effectiveVariant(n, dimGuessIds))}
         graphData={positionedData}
         nodeRelSize={NODE_REL_SIZE}
         enableZoomInteraction={(e) => (e as WheelEvent).ctrlKey}
@@ -928,7 +956,7 @@ export function GraphWiki({ graphData, onReady }: GraphWikiProps) {
           ctx.stroke();
         }}
         nodeCanvasObject={(node, ctx, globalScale) => {
-          const variant = resolveVariant(node);
+          const variant = effectiveVariant(node, dimGuessIds);
           const r = Math.sqrt(nodeVal(variant)) * NODE_REL_SIZE;
 
           ctx.beginPath();
@@ -954,6 +982,7 @@ export function GraphWiki({ graphData, onReady }: GraphWikiProps) {
         nodeCanvasObjectMode={() => 'replace'}
         onNodeClick={(node) => {
           const variant = resolveVariant(node);
+          if (variant === 'hidden-end') return;
           const props = {
             article_name: nodeDisplayName(node),
             node_role: nodeRole(variant),

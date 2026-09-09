@@ -1,6 +1,7 @@
 /** Colors read from CSS custom properties for canvas rendering. */
 export interface CanvasColors {
   white: string;
+  sandMid: string;
   sandDark: string;
   graphLink: string;
   ink: string;
@@ -18,6 +19,7 @@ export function readCanvasColors(el: HTMLElement = document.documentElement): Ca
 
   return {
     white: token('--white'),
+    sandMid: token('--sand-mid'),
     sandDark: token('--sand-dark'),
     graphLink: token('--graph-link') || token('--sand-dark'),
     ink: token('--ink'),

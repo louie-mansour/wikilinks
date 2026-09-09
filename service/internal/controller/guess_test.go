@@ -144,6 +144,114 @@ func TestGuessEndpoint_correctGuess(t *testing.T) {
 	}
 }
 
+func TestGuessEndpoint_lostRevealsAnswer_pathFound(t *testing.T) {
+	srv := newGuessTestServer(t)
+
+	resp, err := http.Get(srv.URL + "/api/guess?guess=Article_C&guessNumber=5")
+	if err != nil {
+		t.Fatalf("GET /api/guess: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+
+	body, _ := decodeGuessBody(t, resp)
+
+	if !body.Lost {
+		t.Fatal("lost = false, want true")
+	}
+	if body.Correct {
+		t.Fatal("correct = true, want false")
+	}
+	if body.Answer != "Article_E" {
+		t.Fatalf("answer = %q, want Article_E", body.Answer)
+	}
+
+	foundAnswer := false
+	for _, n := range body.GraphData.Nodes {
+		if n.ID == "Article_E" {
+			foundAnswer = true
+			if n.Variant != "end" {
+				t.Fatalf("answer node variant = %q, want end", n.Variant)
+			}
+			if n.Label != "Article_E" {
+				t.Fatalf("answer node label = %q, want Article_E", n.Label)
+			}
+		}
+		if n.Variant == "hidden-end" {
+			t.Fatalf("expected no hidden-end node once lost, got %+v", n)
+		}
+	}
+	if !foundAnswer {
+		t.Fatalf("expected Article_E in graphData.nodes, got %+v", body.GraphData.Nodes)
+	}
+}
+
+func TestGuessEndpoint_lostRevealsAnswer_noPathFound(t *testing.T) {
+	srv := newGuessTestServer(t)
+
+	resp, err := http.Get(srv.URL + "/api/guess?guess=Article_A&guessNumber=5")
+	if err != nil {
+		t.Fatalf("GET /api/guess: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := decodeGuessBody(t, resp)
+
+	if !body.Lost {
+		t.Fatal("lost = false, want true")
+	}
+	if !body.NoPathFound {
+		t.Fatal("noPathFound = false, want true")
+	}
+	if body.Answer != "Article_E" {
+		t.Fatalf("answer = %q, want Article_E", body.Answer)
+	}
+
+	foundAnswer := false
+	for _, n := range body.GraphData.Nodes {
+		if n.ID == "Article_E" && n.Variant == "end" {
+			foundAnswer = true
+		}
+	}
+	if !foundAnswer {
+		t.Fatalf("expected revealed Article_E end node, got %+v", body.GraphData.Nodes)
+	}
+}
+
+func TestGuessEndpoint_belowGuessLimit_answerStaysMasked(t *testing.T) {
+	srv := newGuessTestServer(t)
+
+	resp, err := http.Get(srv.URL + "/api/guess?guess=Article_C&guessNumber=4")
+	if err != nil {
+		t.Fatalf("GET /api/guess: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, raw := decodeGuessBody(t, resp)
+
+	if body.Lost {
+		t.Fatal("lost = true, want false at guessNumber=4")
+	}
+	assertNoRealAnswerLeak(t, raw)
+}
+
+func TestGuessEndpoint_invalidGuessNumber(t *testing.T) {
+	srv := newGuessTestServer(t)
+
+	resp, err := http.Get(srv.URL + "/api/guess?guess=Article_C&guessNumber=0")
+	if err != nil {
+		t.Fatalf("GET /api/guess: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", resp.StatusCode)
+	}
+}
+
 func TestGuessEndpoint_missingGuess(t *testing.T) {
 	srv := newGuessTestServer(t)
 
@@ -161,6 +269,7 @@ func TestGuessEndpoint_missingGuess(t *testing.T) {
 type guessResponseBody struct {
 	Guess       string     `json:"guess"`
 	Correct     bool       `json:"correct"`
+	Lost        bool       `json:"lost"`
 	Answer      string     `json:"answer"`
 	NoPathFound bool       `json:"noPathFound"`
 	PathsFound  int        `json:"pathsFound"`

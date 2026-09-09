@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/louiemansour/wikilinks/service/internal/service"
 )
@@ -29,7 +30,17 @@ func (c *Guess) guess(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := c.svc.Submit(guess)
+	guessNumber := 1
+	if raw := r.URL.Query().Get("guessNumber"); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < 1 {
+			http.Error(w, `{"error":"guessNumber must be a positive integer"}`, http.StatusBadRequest)
+			return
+		}
+		guessNumber = n
+	}
+
+	result, err := c.svc.Submit(guess, guessNumber)
 	if err != nil {
 		var notFound service.ErrTitleNotFound
 		var noPuzzle service.ErrNoPuzzleToday
