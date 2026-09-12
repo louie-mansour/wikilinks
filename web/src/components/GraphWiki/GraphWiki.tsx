@@ -1044,8 +1044,18 @@ export function GraphWiki({ graphData, onReady, focusNodeId }: GraphWikiProps) {
           }
         }}
         onNodeHover={(node) => {
-          if (!canHover || !node) return;
+          if (!canHover) return;
           if (hoverDebounceTimer.current) clearTimeout(hoverDebounceTimer.current);
+
+          if (!node) {
+            if (highlightTimer.current) clearTimeout(highlightTimer.current);
+            hoverDebounceTimer.current = setTimeout(() => {
+              setHoveredNodeId(null);
+              setHoveredLink(null);
+            }, HOVER_DEBOUNCE_MS);
+            return;
+          }
+
           hoverDebounceTimer.current = setTimeout(() => {
             setHoveredNodeId(node.id);
             setHoveredLink(null);
@@ -1063,8 +1073,17 @@ export function GraphWiki({ graphData, onReady, focusNodeId }: GraphWikiProps) {
           }, 1000);
         }}
         onLinkHover={(link) => {
-          if (!canHover || !link) return;
+          if (!canHover) return;
           if (hoverDebounceTimer.current) clearTimeout(hoverDebounceTimer.current);
+
+          if (!link) {
+            hoverDebounceTimer.current = setTimeout(() => {
+              setHoveredNodeId(null);
+              setHoveredLink(null);
+            }, HOVER_DEBOUNCE_MS);
+            return;
+          }
+
           const endpoints = linkEndpoints(link);
           hoverDebounceTimer.current = setTimeout(() => {
             setHoveredLink(endpoints);
