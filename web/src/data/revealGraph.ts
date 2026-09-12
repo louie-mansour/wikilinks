@@ -172,9 +172,13 @@ export function mergeRevealGuess(
 
   // 2. Path reveal: the hidden node is handled via its persistent `unknown`
   //    entry (or a future full-reveal transition) — skip it here. Every
-  //    other path node becomes `blank` unless already named/known.
+  //    other path node becomes `blank` unless already named/known. On a
+  //    correct/losing guess the server unmasks the hidden node's id to the
+  //    real answer title (see `RevealGuessResponse.answer` doc above), so it
+  //    no longer equals `hiddenId` — match on `response.answer` too, or this
+  //    loop would insert a second node for the same target article.
   for (const node of response.graphData.nodes) {
-    if (node.id === hiddenId) continue;
+    if (node.id === hiddenId || (response.answer && node.id === response.answer)) continue;
     upsertBlank(node.id, node.variant);
   }
 
