@@ -5,6 +5,7 @@ import { GraphWiki, type GraphData } from '../GraphWiki/GraphWiki';
 import { DirectConnectionsPanel } from '../DirectConnectionsPanel/DirectConnectionsPanel';
 import { EmptyState } from '../EmptyState/EmptyState';
 import { DailyShareSummary } from '../DailyShareSummary/DailyShareSummary';
+import { ModePicker } from '../ModePicker/ModePicker';
 import { useDebouncedSuggestions } from '../../hooks/useDebouncedSuggestions';
 import { submitGuess, type GuessResult } from '../../api/guess';
 import { fetchDailyInfo } from '../../api/dailyInfo';
@@ -134,6 +135,8 @@ export function DailyGame() {
         </p>
 
         {category && <span className={styles.categoryPill}>{category}</span>}
+
+        <ModePicker active="classic" />
 
         {won ? (
           <p className={styles.winBanner}>
