@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildDirectConnections,
   buildShareSummary,
   hasAlreadyGuessed,
   mergeGraphData,
@@ -55,8 +56,29 @@ describe('mergeGraphData', () => {
 
     const merged = mergeGraphData(accumulated, noPathGuess);
 
-    expect(merged.nodes).toEqual([...accumulated.nodes, ...noPathGuess.nodes]);
+    expect(merged.nodes).toEqual([...accumulated.nodes, { id: 'guess-2', variant: 'guess', hitCount: 1 }]);
     expect(merged.links).toEqual(accumulated.links);
+  });
+
+  it('increments hitCount each time a node reappears across separate guesses', () => {
+    const first: GraphData = {
+      nodes: [{ id: 'guess-1', variant: 'guess' }, { id: 'hop-a' }],
+      links: [{ source: 'guess-1', target: 'hop-a' }],
+    };
+    const second: GraphData = {
+      nodes: [{ id: 'guess-2', variant: 'guess' }, { id: 'hop-a' }],
+      links: [{ source: 'guess-2', target: 'hop-a' }],
+    };
+    const third: GraphData = {
+      nodes: [{ id: 'guess-3', variant: 'guess' }, { id: 'hop-a' }],
+      links: [{ source: 'guess-3', target: 'hop-a' }],
+    };
+
+    const empty: GraphData = { nodes: [], links: [] };
+    const merged = mergeGraphData(mergeGraphData(mergeGraphData(empty, first), second), third);
+
+    expect(merged.nodes.find((n) => n.id === 'hop-a')?.hitCount).toBe(3);
+    expect(merged.nodes.find((n) => n.id === 'guess-1')?.hitCount).toBe(1);
   });
 });
 
@@ -104,6 +126,88 @@ describe('revealHiddenEnd', () => {
     };
 
     expect(revealHiddenEnd(accumulated, 'World War II')).toEqual(accumulated);
+  });
+});
+
+describe('buildDirectConnections', () => {
+  it('sorts annotated nodes descending by combined score and ignores unannotated ones', () => {
+    const graph: GraphData = {
+      nodes: [
+        { id: 'guess-1', variant: 'guess' },
+        { id: 'Generic Hub', outDegree: 1000, edgeCountToEnd: 1, inDegree: 50000 },
+        { id: 'Specific Article', outDegree: 2, edgeCountToEnd: 1, inDegree: 3 },
+        { id: 'placeholder-end', variant: 'hidden-end' },
+      ],
+      links: [],
+    };
+
+    const connections = buildDirectConnections(graph);
+
+    expect(connections.map((c) => c.id)).toEqual(['Specific Article', 'Generic Hub']);
+    expect(connections[0].score).toBeGreaterThan(connections[1].score);
+  });
+
+  it('defaults inDegree/hitCount to neutral (1) when absent, falling back to ratio order', () => {
+    const graph: GraphData = {
+      nodes: [
+        { id: 'Generic Hub', outDegree: 1000, edgeCountToEnd: 1 },
+        { id: 'Specific Article', outDegree: 2, edgeCountToEnd: 1 },
+      ],
+      links: [],
+    };
+
+    const connections = buildDirectConnections(graph);
+
+    expect(connections.map((c) => c.id)).toEqual(['Specific Article', 'Generic Hub']);
+    expect(connections[0]).toMatchObject({ inDegree: 1, hitCount: 1 });
+  });
+
+  it('boosts a node that reappeared across multiple guesses (hitCount) over an obscurer one-off', () => {
+    const graph: GraphData = {
+      nodes: [
+        { id: 'Seen Once', outDegree: 2, edgeCountToEnd: 1, inDegree: 2, hitCount: 1 },
+        { id: 'Seen Thrice', outDegree: 2, edgeCountToEnd: 1, inDegree: 2, hitCount: 3 },
+      ],
+      links: [],
+    };
+
+    expect(buildDirectConnections(graph).map((c) => c.id)).toEqual(['Seen Thrice', 'Seen Once']);
+  });
+
+  it('ranks by hitCount first, even over a much stronger ratio', () => {
+    const graph: GraphData = {
+      nodes: [
+        { id: 'Seen Once, Strong Ratio', outDegree: 2, edgeCountToEnd: 1, inDegree: 2, hitCount: 1 },
+        { id: 'Seen Twice, Weak Ratio', outDegree: 1000, edgeCountToEnd: 1, inDegree: 2, hitCount: 2 },
+      ],
+      links: [],
+    };
+
+    expect(buildDirectConnections(graph).map((c) => c.id)).toEqual([
+      'Seen Twice, Weak Ratio',
+      'Seen Once, Strong Ratio',
+    ]);
+  });
+
+  it('discounts a high-inDegree generic hub relative to an obscure page at the same ratio/hitCount', () => {
+    const graph: GraphData = {
+      nodes: [
+        { id: 'Hub', outDegree: 2, edgeCountToEnd: 1, inDegree: 100000, hitCount: 1 },
+        { id: 'Obscure', outDegree: 2, edgeCountToEnd: 1, inDegree: 2, hitCount: 1 },
+      ],
+      links: [],
+    };
+
+    expect(buildDirectConnections(graph).map((c) => c.id)).toEqual(['Obscure', 'Hub']);
+  });
+
+  it('returns an empty list when nothing has been annotated yet', () => {
+    const graph: GraphData = {
+      nodes: [{ id: 'guess-1', variant: 'guess' }],
+      links: [],
+    };
+
+    expect(buildDirectConnections(graph)).toEqual([]);
   });
 });
 

@@ -1,12 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Combobox } from '../Combobox/Combobox';
 import { Button } from '../Button/Button';
 import { GraphWiki, type GraphData } from '../GraphWiki/GraphWiki';
+import { DirectConnectionsPanel } from '../DirectConnectionsPanel/DirectConnectionsPanel';
 import { EmptyState } from '../EmptyState/EmptyState';
 import { DailyShareSummary } from '../DailyShareSummary/DailyShareSummary';
 import { useDebouncedSuggestions } from '../../hooks/useDebouncedSuggestions';
 import { submitGuess, type GuessResult } from '../../api/guess';
+import { fetchDailyInfo } from '../../api/dailyInfo';
 import {
+  buildDirectConnections,
   buildShareSummary,
   hasAlreadyGuessed,
   MAX_DAILY_GUESSES,
@@ -17,6 +20,7 @@ import {
 import styles from './DailyGame.module.css';
 
 const EMPTY_GRAPH: GraphData = { nodes: [], links: [] };
+const CONNECTIONS_PAGE_SIZE = 10;
 
 const TODAY_LABEL = new Date().toLocaleDateString(undefined, {
   month: 'short',
@@ -41,8 +45,29 @@ export function DailyGame() {
   const [error, setError] = useState<string | null>(null);
   const [guesses, setGuesses] = useState<GuessResult[]>([]);
   const [graphData, setGraphData] = useState<GraphData>(EMPTY_GRAPH);
+  const [visibleConnectionsCount, setVisibleConnectionsCount] = useState(CONNECTIONS_PAGE_SIZE);
+  const [focusNodeId, setFocusNodeId] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchDailyInfo()
+      .then((info) => {
+        if (!cancelled) setCategory(info.category);
+      })
+      .catch(() => {
+        // Category hint is optional flavor — a failed fetch shouldn't block play.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const suggestions = useDebouncedSuggestions('start', guessValue);
+
+  const directConnections = useMemo(() => buildDirectConnections(graphData), [graphData]);
+  const visibleConnections = directConnections.slice(0, visibleConnectionsCount);
+  const remainingConnectionsCount = directConnections.length - visibleConnectionsCount;
 
   const won = guesses.some((g) => g.correct);
   const lost = guesses.some((g) => g.lost);
@@ -108,6 +133,8 @@ export function DailyGame() {
           to today's hidden article
         </p>
 
+        {category && <span className={styles.categoryPill}>{category}</span>}
+
         {won ? (
           <p className={styles.winBanner}>
             🎉 Solved! The hidden article was <strong>{guesses.find((g) => g.correct)?.answer}</strong>.
@@ -150,12 +177,26 @@ export function DailyGame() {
         {shareSummary && <DailyShareSummary summary={shareSummary} />}
       </header>
 
-      <div className={styles.graphPanel}>
-        {graphData.nodes.length > 0 ? (
-          <GraphWiki graphData={graphData} />
-        ) : (
-          <EmptyState hint="The hidden article is somewhere in here" />
-        )}
+      <div className={styles.mainRow}>
+        <div className={styles.graphPanel}>
+          {graphData.nodes.length > 0 ? (
+            <GraphWiki graphData={graphData} focusNodeId={focusNodeId} />
+          ) : (
+            <EmptyState hint="The hidden article is somewhere in here" />
+          )}
+        </div>
+
+        <DirectConnectionsPanel
+          entries={visibleConnections}
+          remainingCount={
+            remainingConnectionsCount > 0
+              ? Math.min(CONNECTIONS_PAGE_SIZE, remainingConnectionsCount)
+              : undefined
+          }
+          totalRemainingCount={remainingConnectionsCount > 0 ? remainingConnectionsCount : undefined}
+          onLoadMore={() => setVisibleConnectionsCount((c) => c + CONNECTIONS_PAGE_SIZE)}
+          onRowClick={setFocusNodeId}
+        />
       </div>
 
       <div className={styles.feed}>

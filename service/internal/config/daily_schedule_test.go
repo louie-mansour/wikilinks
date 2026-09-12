@@ -17,7 +17,7 @@ func writeSchedule(t *testing.T, contents string) string {
 }
 
 func TestArticleForDate_SeededDate(t *testing.T) {
-	path := writeSchedule(t, `{"2026-09-08": "Albert Einstein"}`)
+	path := writeSchedule(t, `{"2026-09-08": {"article": "Albert Einstein", "category": "Person"}}`)
 
 	sched, err := LoadDailySchedule(path)
 	if err != nil {
@@ -34,8 +34,26 @@ func TestArticleForDate_SeededDate(t *testing.T) {
 	}
 }
 
+func TestCategoryForDate_SeededDate(t *testing.T) {
+	path := writeSchedule(t, `{"2026-09-08": {"article": "Albert Einstein", "category": "Person"}}`)
+
+	sched, err := LoadDailySchedule(path)
+	if err != nil {
+		t.Fatalf("LoadDailySchedule: %v", err)
+	}
+
+	date := time.Date(2026, time.September, 8, 15, 30, 0, 0, time.UTC)
+	category, err := sched.CategoryForDate(date)
+	if err != nil {
+		t.Fatalf("CategoryForDate: %v", err)
+	}
+	if category != "Person" {
+		t.Fatalf("category = %q, want %q", category, "Person")
+	}
+}
+
 func TestArticleForDate_UsesUTCCalendarDay(t *testing.T) {
-	path := writeSchedule(t, `{"2026-09-08": "Albert Einstein"}`)
+	path := writeSchedule(t, `{"2026-09-08": {"article": "Albert Einstein", "category": "Person"}}`)
 
 	sched, err := LoadDailySchedule(path)
 	if err != nil {
@@ -53,7 +71,7 @@ func TestArticleForDate_UsesUTCCalendarDay(t *testing.T) {
 }
 
 func TestArticleForDate_MissingDate(t *testing.T) {
-	path := writeSchedule(t, `{"2026-09-08": "Albert Einstein"}`)
+	path := writeSchedule(t, `{"2026-09-08": {"article": "Albert Einstein", "category": "Person"}}`)
 
 	sched, err := LoadDailySchedule(path)
 	if err != nil {

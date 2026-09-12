@@ -34,7 +34,7 @@ func newGuessTestServer(t *testing.T) *httptest.Server {
 
 	schedulePath := filepath.Join(dir, "daily_schedule.json")
 	today := time.Now().UTC().Format("2006-01-02")
-	scheduleJSON := `{"` + today + `": "Article_E"}`
+	scheduleJSON := `{"` + today + `": {"article": "Article_E", "category": "Thing"}}`
 	if err := os.WriteFile(schedulePath, []byte(scheduleJSON), 0o644); err != nil {
 		t.Fatalf("write schedule: %v", err)
 	}
@@ -87,6 +87,39 @@ func TestGuessEndpoint_pathFound(t *testing.T) {
 		}
 	}
 	if !foundD {
+		t.Fatalf("expected Article_D in graphData.nodes, got %+v", body.GraphData.Nodes)
+	}
+}
+
+// Article_D is the only direct backlink of the answer (Article_E), via the
+// single edge Article_D -> Article_E, so guessing Article_C (whose shortest
+// path is C -> D -> E) should reveal Article_D annotated as a 1/1 direct
+// connection.
+func TestGuessEndpoint_directConnectionsAnnotated(t *testing.T) {
+	srv := newGuessTestServer(t)
+
+	resp, err := http.Get(srv.URL + "/api/guess?guess=Article_C")
+	if err != nil {
+		t.Fatalf("GET /api/guess: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := decodeGuessBody(t, resp)
+
+	var found bool
+	for _, n := range body.GraphData.Nodes {
+		if n.ID != "Article_D" {
+			if n.OutDegree != 0 || n.EdgeCountToEnd != 0 {
+				t.Fatalf("node %q unexpectedly annotated: %+v", n.ID, n)
+			}
+			continue
+		}
+		found = true
+		if n.OutDegree != 1 || n.EdgeCountToEnd != 1 || n.InDegree != 1 {
+			t.Fatalf("Article_D outDegree=%d edgeCountToEnd=%d inDegree=%d, want 1, 1, and 1", n.OutDegree, n.EdgeCountToEnd, n.InDegree)
+		}
+	}
+	if !found {
 		t.Fatalf("expected Article_D in graphData.nodes, got %+v", body.GraphData.Nodes)
 	}
 }
@@ -252,6 +285,38 @@ func TestGuessEndpoint_invalidGuessNumber(t *testing.T) {
 	}
 }
 
+func TestDailyInfoEndpoint_returnsCategory(t *testing.T) {
+	srv := newGuessTestServer(t)
+
+	resp, err := http.Get(srv.URL + "/api/daily-info")
+	if err != nil {
+		t.Fatalf("GET /api/daily-info: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read body: %v", err)
+	}
+	if strings.Contains(string(raw), "Article_E") {
+		t.Fatalf("response body leaks the real answer identity: %s", raw)
+	}
+
+	var body struct {
+		Category string `json:"category"`
+	}
+	if err := json.Unmarshal(raw, &body); err != nil {
+		t.Fatalf("decode body: %v (raw=%s)", err, raw)
+	}
+	if body.Category != "Thing" {
+		t.Fatalf("category = %q, want %q", body.Category, "Thing")
+	}
+}
+
 func TestGuessEndpoint_missingGuess(t *testing.T) {
 	srv := newGuessTestServer(t)
 
@@ -277,9 +342,12 @@ type guessResponseBody struct {
 	Paths       [][]string `json:"paths"`
 	GraphData   struct {
 		Nodes []struct {
-			ID      string `json:"id"`
-			Variant string `json:"variant"`
-			Label   string `json:"label"`
+			ID             string `json:"id"`
+			Variant        string `json:"variant"`
+			Label          string `json:"label"`
+			OutDegree      int    `json:"outDegree"`
+			EdgeCountToEnd int    `json:"edgeCountToEnd"`
+			InDegree       int    `json:"inDegree"`
 		} `json:"nodes"`
 		Links []struct {
 			Source string `json:"source"`

@@ -27,7 +27,7 @@ func main() {
 	staticDir := flag.String("static-dir", "", "path to built frontend directory (enables static file serving + SPA fallback)")
 	appURL := flag.String("app-url", "https://wikihop.org", "public app URL used in OG tags (no trailing slash)")
 	dailySchedulePath := flag.String("daily-schedule", "service/internal/config/daily_schedule.json", "path to the daily puzzle schedule JSON file")
-	devMode := flag.Bool("dev", false, "pick a random end-eligible article as the daily answer instead of reading daily_schedule.json (local development only)")
+	devMode := flag.Bool("dev", false, "pick a random article from daily_schedule.json as the daily answer instead of using today's date (local development only)")
 	flag.Parse()
 
 	posthogKey := os.Getenv("POSTHOG_API_KEY")
@@ -53,9 +53,15 @@ func main() {
 		"endingNodes", len(g.EndingNodes()),
 	)
 
+	dailySchedule, err := config.LoadDailySchedule(*dailySchedulePath)
+	if err != nil {
+		slog.Error("failed to load daily schedule", "err", err)
+		os.Exit(1)
+	}
+
 	var answerSource service.AnswerSource
 	if *devMode {
-		randomAnswer, err := service.NewRandomAnswerSource(g)
+		randomAnswer, err := service.NewRandomAnswerSource(dailySchedule.Puzzles())
 		if err != nil {
 			slog.Error("failed to pick random dev answer", "err", err)
 			os.Exit(1)
@@ -63,11 +69,6 @@ func main() {
 		answerSource = randomAnswer
 		slog.Info("dev mode: random daily answer selected", "answer", randomAnswer.Article())
 	} else {
-		dailySchedule, err := config.LoadDailySchedule(*dailySchedulePath)
-		if err != nil {
-			slog.Error("failed to load daily schedule", "err", err)
-			os.Exit(1)
-		}
 		if today, err := dailySchedule.Today(); err != nil {
 			slog.Warn("no daily puzzle scheduled for today", "err", err)
 		} else {

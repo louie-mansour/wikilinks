@@ -8,11 +8,13 @@ import (
 	"github.com/louiemansour/wikilinks/service/internal/graph"
 )
 
-// AnswerSource resolves the hidden article for a given date. In production
-// this is *config.DailySchedule; in dev mode it's a RandomAnswerSource that
-// ignores the date and returns a fixed random pick for the server's lifetime.
+// AnswerSource resolves the hidden article and its category hint for a given
+// date. In production this is *config.DailySchedule; in dev mode it's a
+// RandomAnswerSource that ignores the date and returns a fixed random pick
+// for the server's lifetime.
 type AnswerSource interface {
 	ArticleForDate(date time.Time) (string, error)
+	CategoryForDate(date time.Time) (string, error)
 }
 
 // ErrNoPuzzleToday is returned when the daily schedule has no article
@@ -56,6 +58,16 @@ type Guess struct {
 // NewGuess creates a Guess service backed by the given graph and answer source.
 func NewGuess(g *graph.WikipediaGraph, sched AnswerSource) *Guess {
 	return &Guess{g: g, sched: sched}
+}
+
+// Category returns today's category hint (e.g. "Person", "Place"), shown to
+// the player before their first guess. It never reveals the answer itself.
+func (s *Guess) Category() (string, error) {
+	category, err := s.sched.CategoryForDate(time.Now())
+	if err != nil {
+		return "", ErrNoPuzzleToday{err}
+	}
+	return category, nil
 }
 
 // Submit resolves guessTitle against today's hidden puzzle article and
@@ -114,6 +126,7 @@ func (s *Guess) Submit(guessTitle string, guessNumber int) (*GuessResult, error)
 		if lost {
 			graphData.Nodes = append(graphData.Nodes, WikiNode{ID: answerTitle, Variant: "end", Label: answerTitle})
 		}
+		graphData = annotateDirectConnections(s.g, graphData, answerID)
 		return &GuessResult{
 			Guess:       guess,
 			Lost:        lost,
@@ -143,6 +156,8 @@ func (s *Guess) Submit(guessTitle string, guessNumber int) (*GuessResult, error)
 		allPaths[i] = path
 	}
 
+	graphData := annotateDirectConnections(s.g, buildGuessGraphData(allPaths, lost), answerID)
+
 	return &GuessResult{
 		Guess:      guess,
 		Lost:       lost,
@@ -150,10 +165,51 @@ func (s *Guess) Submit(guessTitle string, guessNumber int) (*GuessResult, error)
 		PathsFound: len(allPaths),
 		MinHops:    len(allPaths[0]) - 1,
 		Paths:      allPaths,
-		GraphData:  buildGuessGraphData(allPaths, lost),
+		GraphData:  graphData,
 		MaxHops:    graph.MaxDepth,
 		MaxPaths:   graph.MaxPaths,
 	}, nil
+}
+
+// annotateDirectConnections sets OutDegree/EdgeCountToEnd/InDegree on every
+// node in graphData that is a direct backlink of the answer article — i.e.
+// id is one of RevNeighbors(answerID) — so the client can build the "direct
+// connections to the answer" panel without a further API round trip. Nodes
+// that aren't direct backlinks (including the masked/placeholder answer node
+// itself, which never resolves via ResolveTitle) are left untouched.
+func annotateDirectConnections(g *graph.WikipediaGraph, graphData GraphData, answerID uint32) GraphData {
+	backlinks := g.RevNeighbors(answerID)
+	if len(backlinks) == 0 {
+		return graphData
+	}
+	isBacklink := make(map[uint32]struct{}, len(backlinks))
+	for _, id := range backlinks {
+		isBacklink[id] = struct{}{}
+	}
+
+	nodes := make([]WikiNode, len(graphData.Nodes))
+	copy(nodes, graphData.Nodes)
+	for i, node := range nodes {
+		id, ok := g.ResolveTitle(node.ID)
+		if !ok || id == answerID {
+			continue
+		}
+		if _, ok := isBacklink[id]; !ok {
+			continue
+		}
+		neighbors := g.FwdNeighbors(id)
+		edgeCountToEnd := 0
+		for _, nb := range neighbors {
+			if nb == answerID {
+				edgeCountToEnd++
+			}
+		}
+		nodes[i].OutDegree = len(neighbors)
+		nodes[i].EdgeCountToEnd = edgeCountToEnd
+		nodes[i].InDegree = len(g.RevNeighbors(id))
+	}
+	graphData.Nodes = nodes
+	return graphData
 }
 
 // lostAnswer returns answerTitle when the puzzle was just lost, so the

@@ -10,14 +10,24 @@ function linkKey(link: WikiLink): string {
  * Nodes/edges already present (matched by stable id / source+target pair —
  * the placeholder id scheme keeps the hidden end node's id identical across
  * every guess for the day) are kept as-is rather than duplicated.
+ *
+ * `hitCount` is repurposed here to count how many *separate guesses'*
+ * revealed subgraphs have included a node (not, as elsewhere, hits within a
+ * single search) — a node surfaced by multiple guesses is more likely to sit
+ * structurally close to the answer than a one-off appearance. See
+ * `buildDirectConnections`.
  */
 export function mergeGraphData(accumulated: GraphData, incoming: GraphData): GraphData {
   const nodes = [...accumulated.nodes];
-  const nodeIds = new Set(nodes.map((n) => n.id));
+  const indexById = new Map(nodes.map((n, i) => [n.id, i]));
   for (const node of incoming.nodes) {
-    if (!nodeIds.has(node.id)) {
-      nodeIds.add(node.id);
-      nodes.push(node);
+    const existingIndex = indexById.get(node.id);
+    if (existingIndex === undefined) {
+      indexById.set(node.id, nodes.length);
+      nodes.push({ ...node, hitCount: 1 });
+    } else {
+      const existing = nodes[existingIndex];
+      nodes[existingIndex] = { ...existing, hitCount: (existing.hitCount ?? 1) + 1 };
     }
   }
 
@@ -32,6 +42,65 @@ export function mergeGraphData(accumulated: GraphData, incoming: GraphData): Gra
   }
 
   return { nodes, links };
+}
+
+export interface DirectConnection {
+  id: string;
+  outDegree: number;
+  edgeCountToEnd: number;
+  ratio: number;
+  inDegree: number;
+  hitCount: number;
+  score: number;
+}
+
+/**
+ * Tie-break relevance score for a direct connection candidate, used only to
+ * order nodes that have appeared in the same number of guesses (see
+ * `buildDirectConnections`):
+ *
+ * - `ratio` (N/D, edgeCountToEnd/outDegree) — the base signal: how specific
+ *   this page's own linking behavior is toward the answer.
+ * - `inDegree` — the candidate's own inbound-link count, an obscurity proxy.
+ *   A generic hub (large `inDegree`) is discounted logarithmically so it
+ *   doesn't outrank a rarely-linked page at the same ratio.
+ *
+ * `inDegree` defaults to 1 (neutral) when absent so older/partial data still
+ * ranks sanely by `ratio` alone.
+ */
+function scoreDirectConnection(ratio: number, inDegree: number): number {
+  return ratio / Math.log2(Math.max(inDegree, 1) + 2);
+}
+
+/**
+ * Direct connections to the answer discovered so far — nodes in the merged
+ * graph that are direct backlinks of the mystery article, per the
+ * `outDegree`/`edgeCountToEnd`/`inDegree` fields the guess endpoint annotates
+ * on them server-side (see `annotateDirectConnections` in
+ * `service/internal/service/guess.go`). Sorted descending primarily by
+ * `hitCount` (see `mergeGraphData`) — a node that keeps reappearing across
+ * the player's independent guesses is the strongest signal of structural
+ * closeness to the answer — with the ratio/inDegree score as a tie-breaker
+ * among nodes seen the same number of times.
+ */
+export function buildDirectConnections(graph: GraphData): DirectConnection[] {
+  return graph.nodes
+    .filter((n) => (n.edgeCountToEnd ?? 0) > 0 && (n.outDegree ?? 0) > 0)
+    .map((n) => {
+      const ratio = n.edgeCountToEnd! / n.outDegree!;
+      const inDegree = n.inDegree ?? 1;
+      const hitCount = n.hitCount ?? 1;
+      return {
+        id: n.id,
+        outDegree: n.outDegree!,
+        edgeCountToEnd: n.edgeCountToEnd!,
+        ratio,
+        inDegree,
+        hitCount,
+        score: scoreDirectConnection(ratio, inDegree),
+      };
+    })
+    .sort((a, b) => b.hitCount - a.hitCount || b.score - a.score);
 }
 
 /** Case-insensitive, trimmed match against the day's guesses made so far. */

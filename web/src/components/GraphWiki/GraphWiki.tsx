@@ -37,6 +37,12 @@ export interface WikiNode {
   label?: string;
   /** Number of times this article has been hit across searches; 1 means first discovery. */
   hitCount?: number;
+  /** Daily-mode direct-connections annotation — outbound-link count (D). See dailyGraph.ts. */
+  outDegree?: number;
+  /** Daily-mode direct-connections annotation — of those D edges, how many point at the answer (N). */
+  edgeCountToEnd?: number;
+  /** Daily-mode direct-connections annotation — this article's own inbound-link count, an obscurity proxy. See dailyGraph.ts. */
+  inDegree?: number;
 }
 
 /** Force-graph mutates nodes with simulation coordinates at runtime. */
@@ -616,9 +622,12 @@ interface GraphWikiProps {
   graphData: GraphData;
   /** Fires once after the graph has fitted to its container. */
   onReady?: () => void;
+  /** Node id to center/highlight on the canvas (e.g. a direct-connections panel row click).
+   *  Bump this on every click, even to the same id — see the effect below. */
+  focusNodeId?: string | null;
 }
 
-export function GraphWiki({ graphData, onReady }: GraphWikiProps) {
+export function GraphWiki({ graphData, onReady, focusNodeId }: GraphWikiProps) {
   const colors = useCanvasColors();
   const typography = useTypographySizes();
   const wrapperRef     = useRef<HTMLDivElement>(null);
@@ -700,6 +709,22 @@ export function GraphWiki({ graphData, onReady }: GraphWikiProps) {
     () => (hoveredNodeId ? neighborIds(hoveredNodeId, positionedData.links) : null),
     [hoveredNodeId, positionedData.links],
   );
+
+  // External focus request (e.g. a direct-connections panel row click): center the
+  // canvas on the node and highlight it the same way hover does. ForceGraph2D mutates
+  // x/y directly onto the node objects passed via `graphData` (react-force-graph-2d
+  // doesn't expose a getter for current simulated positions), so positionedData.nodes
+  // carries the live coordinates.
+  useEffect(() => {
+    if (!focusNodeId) return;
+    const fg = fgRef.current;
+    if (!fg) return;
+    const node = positionedData.nodes.find((n) => n.id === focusNodeId) as SimNode | undefined;
+    if (!node || node.x == null || node.y == null) return;
+    fg.centerAt(node.x, node.y, 600);
+    setHoveredNodeId(focusNodeId);
+    setHoveredLink(null);
+  }, [focusNodeId, positionedData]);
 
   const dimGuessIds = useMemo(() => {
     const connected = new Set<string>();

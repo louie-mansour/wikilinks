@@ -60,6 +60,19 @@ type WikiNode struct {
 	Variant  string `json:"variant,omitempty"`
 	Label    string `json:"label,omitempty"`
 	HitCount int    `json:"hitCount,omitempty"`
+	// OutDegree, EdgeCountToEnd, and InDegree are set only for daily-mode
+	// guess responses, on nodes that are direct backlinks of the puzzle
+	// answer (see annotateDirectConnections in guess.go). Zero means "not
+	// applicable" — a real direct backlink always has OutDegree >=
+	// EdgeCountToEnd >= 1, and InDegree >= 1 (it's linked from wherever the
+	// player's guess path passed through it).
+	OutDegree      int `json:"outDegree,omitempty"`
+	EdgeCountToEnd int `json:"edgeCountToEnd,omitempty"`
+	// InDegree is the connecting article's own inbound-link count (how many
+	// articles link to it) — a cheap "obscurity" proxy. A generic hub page
+	// (high InDegree) is less telling than a rarely-linked one at the same
+	// OutDegree/EdgeCountToEnd ratio.
+	InDegree int `json:"inDegree,omitempty"`
 }
 
 type WikiLink struct {
