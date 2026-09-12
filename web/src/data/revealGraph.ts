@@ -212,3 +212,52 @@ export function revealNode(
   nodes[index] = { ...nodes[index], label: title, state: 'named', ...(variant ? { variant } : {}) };
   return { nodes, links: graph.links };
 }
+
+/**
+ * Client-side repeat-guess prevention for Reveal mode — the Reveal sibling
+ * of Classic's `hasAlreadyGuessed` (`dailyGraph.ts`). Same case-insensitive,
+ * trimmed match against the day's guesses made so far, checked purely
+ * client-side (no network round-trip) before a guess is even submitted.
+ * Kept as its own copy here (rather than importing from `dailyGraph.ts`) so
+ * this module stays self-contained per its module doc above; the logic is
+ * intentionally identical.
+ */
+export function hasAlreadyGuessedReveal(guessedTitles: string[], candidate: string): boolean {
+  const normalized = candidate.trim().toLowerCase();
+  return guessedTitles.some((title) => title.trim().toLowerCase() === normalized);
+}
+
+/**
+ * The full-reveal transition driven by a winning **or losing** guess (see
+ * `docs/grill-reveal-mode/issues/06-guess-limit-loss-state.md` for loss,
+ * `07-win-detection-full-reveal-share.md` for win) — both endings deliver
+ * the same payload shape from `/api/reveal-guess` (`lost`/`correct` +
+ * `answer`), and both should drive this exact same client transition, so it
+ * lives here as one shared primitive rather than being duplicated per
+ * outcome:
+ *
+ * - The hidden node (`hiddenId`, `state: 'unknown'`) flips to `named` with
+ *   the real `answerTitle`, via `revealNode` (variant `'end'`).
+ * - Every remaining `blank` node flips to `named` too — using its own `id`
+ *   as the label. This is not new data from the server: per this module's
+ *   "Node identity" doc above, a `blank` node's `id` has been its real
+ *   Wikipedia title all along; `blank` only ever meant "known to exist, not
+ *   yet *confirmed* by name" on screen. Full reveal is the point that
+ *   distinction stops mattering.
+ *
+ * Already-`named` nodes are untouched (idempotent, matches `revealNode`'s
+ * own no-op-when-already-named behavior via the one-way transition rule).
+ */
+export function applyFullReveal(
+  graph: RevealGraphData,
+  hiddenId: string,
+  answerTitle: string,
+): RevealGraphData {
+  let next = revealNode(graph, hiddenId, answerTitle, 'end');
+  for (const node of graph.nodes) {
+    if (node.state === 'blank') {
+      next = revealNode(next, node.id, node.id);
+    }
+  }
+  return next;
+}

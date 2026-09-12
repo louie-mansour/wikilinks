@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyFullReveal,
   createInitialRevealGraph,
+  hasAlreadyGuessedReveal,
   mergeRevealGuess,
   revealNode,
   type RevealGuessResponse,
@@ -192,5 +194,81 @@ describe('revealNode', () => {
     const graph = createInitialRevealGraph(HIDDEN_ID);
     const revealed = revealNode(graph, 'not-there', 'Whatever');
     expect(revealed).toEqual(graph);
+  });
+});
+
+describe('hasAlreadyGuessedReveal', () => {
+  it('matches case-insensitively and ignores surrounding whitespace', () => {
+    expect(hasAlreadyGuessedReveal(['World War II', 'Physics'], '  world war ii  ')).toBe(true);
+    expect(hasAlreadyGuessedReveal(['World War II'], 'Physics')).toBe(false);
+  });
+
+  it('returns false for an empty guess list', () => {
+    expect(hasAlreadyGuessedReveal([], 'Anything')).toBe(false);
+  });
+});
+
+describe('applyFullReveal', () => {
+  it('flips the hidden node and every blank node to named on a losing guess (5th incorrect guess)', () => {
+    // Simulate the accumulated graph after 4 incorrect guesses: a mix of
+    // named (neighbor-revealed) and blank (path-revealed-only) nodes, plus
+    // the still-unknown hidden node.
+    let graph = createInitialRevealGraph(HIDDEN_ID);
+    graph = mergeRevealGuess(
+      graph,
+      response({
+        guess: 'Guess One',
+        neighbors: [{ id: 1, title: 'Neighbor A' }],
+        graphData: {
+          nodes: [
+            { id: 'Guess One', variant: 'guess' },
+            { id: 'Hop A', variant: 'path' },
+            { id: 'Hop B', variant: 'path' },
+            { id: HIDDEN_ID, variant: 'hidden-end' },
+          ],
+          links: [
+            { source: 'Guess One', target: 'Hop A' },
+            { source: 'Hop A', target: 'Hop B' },
+            { source: 'Hop B', target: HIDDEN_ID },
+          ],
+        },
+      }),
+      HIDDEN_ID,
+    );
+
+    // Sanity check on setup: some nodes are blank (path-only reveal, including
+    // the guess node itself — only a neighbor reveal or full reveal names it),
+    // one is unknown.
+    expect(graph.nodes.filter((n) => n.state === 'blank')).toHaveLength(3);
+    expect(graph.nodes.filter((n) => n.state === 'unknown')).toHaveLength(1);
+
+    // 5th guess comes back lost:true with the real answer.
+    const revealed = applyFullReveal(graph, HIDDEN_ID, 'World War II');
+
+    // No node remains blank or unknown — full reveal.
+    expect(revealed.nodes.filter((n) => n.state === 'blank')).toHaveLength(0);
+    expect(revealed.nodes.filter((n) => n.state === 'unknown')).toHaveLength(0);
+    expect(revealed.nodes.every((n) => n.state === 'named')).toBe(true);
+
+    // The formerly-blank nodes now show their real (already-known) titles.
+    expect(revealed.nodes.find((n) => n.id === 'Hop A')?.label).toBe('Hop A');
+    expect(revealed.nodes.find((n) => n.id === 'Hop B')?.label).toBe('Hop B');
+    expect(revealed.nodes.find((n) => n.id === 'Guess One')?.label).toBe('Guess One');
+
+    // The hidden node resolves to the real answer and flips variant to 'end'.
+    const hiddenNode = revealed.nodes.find((n) => n.id === HIDDEN_ID);
+    expect(hiddenNode?.label).toBe('World War II');
+    expect(hiddenNode?.variant).toBe('end');
+
+    // Already-named nodes are untouched.
+    expect(revealed.nodes.find((n) => n.id === 'Neighbor A')?.label).toBe('Neighbor A');
+  });
+
+  it('is idempotent when there are no blank/unknown nodes left', () => {
+    let graph = createInitialRevealGraph(HIDDEN_ID);
+    graph = revealNode(graph, HIDDEN_ID, 'World War II', 'end');
+
+    const revealedAgain = applyFullReveal(graph, HIDDEN_ID, 'World War II');
+    expect(revealedAgain).toEqual(graph);
   });
 });

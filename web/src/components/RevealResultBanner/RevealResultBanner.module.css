@@ -1,0 +1,39 @@
+@import '../../tokens.css';
+
+.wonBanner {
+  font-family: var(--font-body);
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--sage);
+  background: var(--sage-pale);
+  border: 1px solid var(--sage);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  margin: 0;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+}
+
+.wonBanner strong {
+  font-weight: 800;
+}
+
+.lostBanner {
+  font-family: var(--font-body);
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--terra-dark);
+  background: var(--terra-pale);
+  border: 1px solid var(--terra-light);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  margin: 0;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+}
+
+.lostBanner strong {
+  font-weight: 800;
+}
