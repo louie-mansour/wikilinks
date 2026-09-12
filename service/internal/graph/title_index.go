@@ -12,10 +12,25 @@ type TitleIndex struct {
 
 // NewTitleIndex copies and sorts titles for prefix lookup.
 func NewTitleIndex(titles []string) TitleIndex {
-	sorted := append([]string(nil), titles...)
-	sort.Slice(sorted, func(i, j int) bool {
-		return strings.ToLower(sorted[i]) < strings.ToLower(sorted[j])
+	// Precompute each title's lowercase form once: sort.Slice's comparator runs
+	// O(n log n) times, and calling strings.ToLower inside it (as opposed to
+	// once per title here) re-allocates and re-lowercases repeatedly — the
+	// dominant cost of graph startup at ~7M titles.
+	type entry struct {
+		lower string
+		title string
+	}
+	entries := make([]entry, len(titles))
+	for i, t := range titles {
+		entries[i] = entry{lower: strings.ToLower(t), title: t}
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].lower < entries[j].lower
 	})
+	sorted := make([]string, len(entries))
+	for i, e := range entries {
+		sorted[i] = e.title
+	}
 	return TitleIndex{titles: sorted}
 }
 

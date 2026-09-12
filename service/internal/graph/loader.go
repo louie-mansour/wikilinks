@@ -3,10 +3,14 @@ package graph
 import (
 	"bufio"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
+	"sync"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -18,6 +22,7 @@ func Load(dataDir string) (*WikipediaGraph, error) {
 		return nil, err
 	}
 
+	t0 := time.Now()
 	titles, sortedPerm, err := loadEntities(filepath.Join(dataDir, "entities.tsv"))
 	if err != nil {
 		return nil, fmt.Errorf("load entities: %w", err)
@@ -25,6 +30,7 @@ func Load(dataDir string) (*WikipediaGraph, error) {
 	if len(titles) == 0 {
 		return nil, fmt.Errorf("entities.tsv is empty")
 	}
+	slog.Info("timing: loadEntities", "dur", time.Since(t0))
 
 	type binResult struct {
 		raw  []byte
@@ -35,6 +41,7 @@ func Load(dataDir string) (*WikipediaGraph, error) {
 		return binResult{raw, u32s}, err
 	}
 
+	t1 := time.Now()
 	fwdOff, err := load("adj_fwd.offsets.bin")
 	if err != nil {
 		return nil, fmt.Errorf("adj_fwd.offsets.bin: %w", err)
@@ -51,6 +58,7 @@ func Load(dataDir string) (*WikipediaGraph, error) {
 	if err != nil {
 		return nil, fmt.Errorf("adj_rev.neighbors.bin: %w", err)
 	}
+	slog.Info("timing: mmap bins", "dur", time.Since(t1))
 
 	g := &WikipediaGraph{
 		titles:       titles,
@@ -62,13 +70,17 @@ func Load(dataDir string) (*WikipediaGraph, error) {
 		mmapRegions:  [][]byte{fwdOff.raw, fwdNbr.raw, revOff.raw, revNbr.raw},
 	}
 
+	t2 := time.Now()
 	if err := validate(g); err != nil {
 		return nil, fmt.Errorf("validation: %w", err)
 	}
+	slog.Info("timing: validate", "dur", time.Since(t2))
+	t3 := time.Now()
 	g.startingNodes = buildNodeTitles(g, g.fwdOffsets, len(g.titles)/30) // ~100K of ~3M
 	g.endingNodes = buildNodeTitles(g, g.revOffsets, len(g.titles))      // ~3M on Kaggle
 	g.startingIndex = NewTitleIndex(g.startingNodes)
 	g.endingIndex = NewTitleIndex(g.endingNodes)
+	slog.Info("timing: node lists + title index", "dur", time.Since(t3))
 	return g, nil
 }
 
@@ -171,14 +183,55 @@ func validate(g *WikipediaGraph) error {
 			return fmt.Errorf("rev offsets not monotonic at %d", i)
 		}
 	}
-	for i, nb := range g.fwdNeighbors {
-		if nb >= n {
-			return fmt.Errorf("fwd neighbor[%d]=%d >= entity_count=%d", i, nb, n)
-		}
+	if err := validateNeighborsBounded(g.fwdNeighbors, n, "fwd"); err != nil {
+		return err
 	}
-	for i, nb := range g.revNeighbors {
-		if nb >= n {
-			return fmt.Errorf("rev neighbor[%d]=%d >= entity_count=%d", i, nb, n)
+	if err := validateNeighborsBounded(g.revNeighbors, n, "rev"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// validateNeighborsBounded checks that every value in neighbors is < n,
+// splitting the scan across goroutines — at ~700M elements per table this
+// read-only bounds check is the dominant cost of validate() and is
+// embarrassingly parallel.
+func validateNeighborsBounded(neighbors []uint32, n uint32, label string) error {
+	if len(neighbors) == 0 {
+		return nil
+	}
+	workers := runtime.NumCPU()
+	if workers > len(neighbors) {
+		workers = 1
+	}
+	chunk := (len(neighbors) + workers - 1) / workers
+
+	var wg sync.WaitGroup
+	errs := make([]error, workers)
+	for w := 0; w < workers; w++ {
+		start := w * chunk
+		if start >= len(neighbors) {
+			break
+		}
+		end := start + chunk
+		if end > len(neighbors) {
+			end = len(neighbors)
+		}
+		wg.Add(1)
+		go func(w, start, end int) {
+			defer wg.Done()
+			for i := start; i < end; i++ {
+				if neighbors[i] >= n {
+					errs[w] = fmt.Errorf("%s neighbor[%d]=%d >= entity_count=%d", label, i, neighbors[i], n)
+					return
+				}
+			}
+		}(w, start, end)
+	}
+	wg.Wait()
+	for _, err := range errs {
+		if err != nil {
+			return err
 		}
 	}
 	return nil
