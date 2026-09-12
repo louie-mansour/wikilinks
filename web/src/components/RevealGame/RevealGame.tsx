@@ -4,13 +4,15 @@ import { Button } from '../Button/Button';
 import { GraphWikiReveal } from '../GraphWiki/GraphWikiReveal';
 import { RevealedNeighborsPanel } from '../RevealedNeighborsPanel/RevealedNeighborsPanel';
 import { RevealResultBanner } from '../RevealResultBanner/RevealResultBanner';
+import { DailyShareSummary } from '../DailyShareSummary/DailyShareSummary';
 import { ModePicker } from '../ModePicker/ModePicker';
 import { useDebouncedSuggestions } from '../../hooks/useDebouncedSuggestions';
 import { submitRevealGuess } from '../../api/revealGuess';
 import { fetchDailyInfo } from '../../api/dailyInfo';
-import { MAX_DAILY_GUESSES } from '../../data/dailyGraph';
+import { MAX_DAILY_GUESSES, puzzleNumberForDate } from '../../data/dailyGraph';
 import {
   applyFullReveal,
+  buildRevealShareSummary,
   createInitialRevealGraph,
   hasAlreadyGuessedReveal,
   mergeRevealGuess,
@@ -52,6 +54,10 @@ export function RevealGame() {
   // shared with Classic via the same `DailySchedule` (no new schedule file).
   const dateKey = useMemo(() => dateKeyUTC(new Date()), []);
   const hiddenId = useMemo(() => revealHiddenId(dateKey), [dateKey]);
+  // Same daily schedule/puzzle numbering as Classic (`puzzleNumberForDate` in
+  // `dailyGraph.ts`) — derived from `dateKey` rather than a fresh `new Date()`
+  // so it can never drift from the puzzle this session is actually playing.
+  const puzzleNumber = useMemo(() => puzzleNumberForDate(new Date(dateKey)), [dateKey]);
 
   const [hasHydrated, setHasHydrated] = useState(false);
   const [guesses, setGuesses] = useState<RevealGuessResponse[]>([]);
@@ -96,6 +102,16 @@ export function RevealGame() {
   const lost = guesses.some((g) => g.lost);
   const finished = won || lost;
   const answer = guesses.find((g) => g.correct || g.lost)?.answer;
+
+  // Reveal's own share string (distinct format from Classic's hop-chain
+  // string — see `buildRevealShareSummary`). Computed off `graphData` after
+  // the `applyFullReveal` transition below has already run, so
+  // `totalRevealed` counts the just-resolved hidden node and every
+  // formerly-blank node too.
+  const shareSummary = useMemo(
+    () => (finished ? buildRevealShareSummary(puzzleNumber, guesses, graphData, lost) : null),
+    [finished, puzzleNumber, guesses, graphData, lost],
+  );
 
   // Persist on every change, once the initial hydration read has happened —
   // otherwise the pre-hydration empty state would immediately clobber
@@ -149,10 +165,6 @@ export function RevealGame() {
         }
         return merged;
       });
-      // TODO(issue 07): win detection currently only flips graph/banner
-      // state via `won` above. Building the win share string (the
-      // `buildShareSummary`-style summary Classic has) and any win-specific
-      // flourish beyond `RevealResultBanner`'s banner belongs here.
       setGuessValue('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Guess failed');
@@ -187,7 +199,10 @@ export function RevealGame() {
         <ModePicker active="reveal" />
 
         {finished ? (
-          <RevealResultBanner outcome={won ? 'won' : 'lost'} answer={answer ?? ''} />
+          <>
+            <RevealResultBanner outcome={won ? 'won' : 'lost'} answer={answer ?? ''} />
+            {shareSummary && <DailyShareSummary summary={shareSummary} />}
+          </>
         ) : (
           <>
             <div className={styles.guessRow}>

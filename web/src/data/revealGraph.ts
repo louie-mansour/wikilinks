@@ -1,4 +1,5 @@
 import type { GraphData, WikiLink, WikiNode, WikiNodeVariant } from '../components/GraphWiki/GraphWiki';
+import { MAX_DAILY_GUESSES } from './dailyGraph';
 
 /**
  * === Grill: Reveal — client-side graph accumulation ===
@@ -260,4 +261,32 @@ export function applyFullReveal(
     }
   }
   return next;
+}
+
+/**
+ * Build the copyable share summary text for a finished Reveal puzzle,
+ * mirroring `buildShareSummary` (`dailyGraph.ts`, Classic) but in Reveal's
+ * own format — no hop-chain, since Reveal's mechanic is "how much of the
+ * graph did you have to expose", not "how short a path did you find":
+ *
+ * - Win: `Grill: Reveal #N: solved in {guessCount} guesses ({totalRevealed} nodes revealed)`
+ * - Loss: `Grill: Reveal #N: X/5 ({totalRevealed} nodes revealed)`
+ *
+ * `totalRevealed` is derived from `graph` directly (count of `named`-state
+ * nodes) rather than passed in separately, so callers can't drift it out of
+ * sync with what's actually on screen — pass `graph` *after* `applyFullReveal`
+ * has already run so the just-resolved hidden node and any formerly-blank
+ * nodes are counted too.
+ */
+export function buildRevealShareSummary(
+  puzzleNumber: number,
+  guesses: RevealGuessResponse[],
+  graph: RevealGraphData,
+  lost = false,
+): string {
+  const totalRevealed = graph.nodes.filter((n) => n.state === 'named').length;
+  if (lost) {
+    return `Grill: Reveal #${puzzleNumber}: X/${MAX_DAILY_GUESSES} (${totalRevealed} nodes revealed)`;
+  }
+  return `Grill: Reveal #${puzzleNumber}: solved in ${guesses.length} guess${guesses.length === 1 ? '' : 'es'} (${totalRevealed} nodes revealed)`;
 }
