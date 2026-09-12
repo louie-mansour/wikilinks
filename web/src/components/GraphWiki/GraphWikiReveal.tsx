@@ -54,6 +54,21 @@ function linkEndId(val: string | { id: string }): string {
   return typeof val === 'string' ? val : val.id;
 }
 
+// A link's source/target is mutated in-place from a string id to a node-object
+// reference once ForceGraph2D's simulation resolves it. Reused link objects
+// (the accumulated reveal graph carries the same link objects forward across
+// guesses) arrive here already resolved to a *stale* node object from a
+// previous render — d3-force only re-resolves an endpoint when it's still a
+// plain string, so a stale reference never updates again and the link
+// renders frozen while nodes move on. Rebuilding fresh {source, target}
+// string pairs every time forces re-resolution against the current nodes.
+function resetLinkEndpoints(links: WikiLink[]): WikiLink[] {
+  return links.map((l) => ({
+    source: linkEndId(l.source as string | { id: string }),
+    target: linkEndId(l.target as string | { id: string }),
+  }));
+}
+
 function findUnknownId(nodes: RevealNode[]): string | undefined {
   return nodes.find((n) => n.state === 'unknown')?.id;
 }
@@ -304,7 +319,7 @@ export function GraphWikiReveal({ graphData, onReady }: GraphWikiRevealProps) {
   const positionedData = useMemo(() => {
     const positions = computeLayeredPositions(graphData.nodes, graphData.links, orientation);
     setInitialPositions(graphData.nodes, positions);
-    return graphData;
+    return { nodes: graphData.nodes, links: resetLinkEndpoints(graphData.links) };
   }, [graphData, orientation]);
 
   const fitBounds = useMemo(

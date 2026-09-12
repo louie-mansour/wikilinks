@@ -329,6 +329,20 @@ function setInitialPositions(
   }
 }
 
+// A link object's source/target gets mutated in-place from a string id to a
+// node-object reference once ForceGraph2D's simulation resolves it (see
+// `linkEndId` above). Reused link objects (e.g. `mergeGraphData`/
+// `mergeRevealGuess` carry the same link objects forward across guesses)
+// therefore arrive here already resolved to a *stale* node object from a
+// previous render — d3-force only re-resolves a link endpoint when it's
+// still a plain string, so a stale object reference is never updated again
+// and the link renders frozen at its old position while nodes move on.
+// Rebuilding fresh {source, target} string pairs every time forces
+// re-resolution against the current node objects.
+function resetLinkEndpoints(links: WikiLink[]): WikiLink[] {
+  return links.map(linkEndpoints);
+}
+
 function linkTouchesNode(link: WikiLink, nodeId: string): boolean {
   return linkEndId(link.source as string | { id: string }) === nodeId
     || linkEndId(link.target as string | { id: string }) === nodeId;
@@ -690,7 +704,7 @@ export function GraphWiki({ graphData, onReady, focusNodeId }: GraphWikiProps) {
   const positionedData = useMemo(() => {
     const positions = computeLayeredPositions(graphData.nodes, graphData.links, orientation);
     setInitialPositions(graphData.nodes, positions);
-    return graphData;
+    return { nodes: graphData.nodes, links: resetLinkEndpoints(graphData.links) };
   }, [graphData, orientation]);
 
   const fitBounds = useMemo(
