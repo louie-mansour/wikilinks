@@ -71,6 +71,8 @@ export interface GraphData {
 /** Left-to-right on desktop; top-to-bottom on narrow viewports. */
 export type GraphOrientation = 'horizontal' | 'vertical';
 
+type GraphWikiMode = 'classic' | 'reveal';
+
 function graphOrientation(viewportWidth: number): GraphOrientation {
   return viewportWidth <= MOBILE_LAYOUT_MAX_WIDTH ? 'vertical' : 'horizontal';
 }
@@ -134,7 +136,7 @@ function linkEndId(val: string | { id: string }): string {
 
 /** BFS hop depth from the start node(s) along directed links. Reveal mode has
  *  multiple simultaneous roots (one per guess); classic mode has exactly one. */
-function computeBfsDepths(nodes: WikiNode[], links: WikiLink[]): Map<string, number> {
+function computeBfsDepthsFromRoots(nodes: WikiNode[], links: WikiLink[]): Map<string, number> {
   const depths = new Map<string, number>();
   const queue = rootIds(nodes);
   if (queue.length === 0) return depths;
@@ -157,17 +159,57 @@ function computeBfsDepths(nodes: WikiNode[], links: WikiLink[]): Map<string, num
   return depths;
 }
 
-function pickRandom<T>(items: T[]): T | null {
-  if (items.length === 0) return null;
-  return items[Math.floor(Math.random() * items.length)];
+/**
+ * Reveal mode has no start article — every guess funnels toward the one
+ * `end` (the "Unknown" node) instead. Grouping nodes by hops from the
+ * guess side puts the same node in different columns depending on which
+ * guess happened to reach it first, and leaves the end node's own column
+ * (and therefore its cross-axis position) to whatever depth a *forward*
+ * BFS from the guesses happened to find it at — sometimes not at all,
+ * so it could land in a shared, variably-sized layer instead of staying
+ * put. Rooting the BFS at `endId` and walking links backwards instead
+ * fixes both: every node's depth is now "hops from the target", and the
+ * target itself is always alone at depth 0 — after inversion below,
+ * always the single occupant of the rightmost column, centered.
+ */
+function computeBfsDepthsFromEnd(nodes: WikiNode[], links: WikiLink[], endId: string): Map<string, number> {
+  const reverseDepths = new Map<string, number>();
+  reverseDepths.set(endId, 0);
+  const queue = [endId];
+
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    const d  = reverseDepths.get(id)! + 1;
+    for (const link of links) {
+      const src = linkEndId(link.source as string | { id: string });
+      const tgt = linkEndId(link.target as string | { id: string });
+      if (tgt === id && !reverseDepths.has(src)) {
+        reverseDepths.set(src, d);
+        queue.push(src);
+      }
+    }
+  }
+
+  const maxDepth = reverseDepths.size > 0 ? Math.max(...reverseDepths.values()) : 0;
+  const depths = new Map<string, number>();
+  for (const node of nodes) {
+    const rd = reverseDepths.get(node.id);
+    // Invert so the end node (rd = 0) lands at maxDepth — the rightmost
+    // column — and everything else is placed by how far it is from that
+    // column. Nodes with no discovered path back to the end yet (an
+    // unconnected guess, a dead-end neighbor reveal) sort one column
+    // further out than the farthest connected node.
+    depths.set(node.id, rd !== undefined ? maxDepth - rd : maxDepth + 1);
+  }
+  return depths;
 }
 
-/** Auto-highlight target: prefer a node two hops from start, else one hop from start.
- *  Never the masked daily-mode placeholder — it carries no displayable identity. */
-function pickAutoHoverNode(nodes: WikiNode[], depths: Map<string, number>): WikiNode | null {
-  const atDepth = (depth: number) =>
-    nodes.filter(n => depths.get(n.id) === depth && resolveVariant(n) !== 'hidden-end');
-  return pickRandom(atDepth(2)) ?? pickRandom(atDepth(1));
+function computeBfsDepths(nodes: WikiNode[], links: WikiLink[], mode: GraphWikiMode): Map<string, number> {
+  if (mode === 'reveal') {
+    const { endId } = terminalIds(nodes);
+    if (endId) return computeBfsDepthsFromEnd(nodes, links, endId);
+  }
+  return computeBfsDepthsFromRoots(nodes, links);
 }
 
 /**
@@ -184,8 +226,9 @@ function computeLayeredPositions(
   nodes: WikiNode[],
   links: WikiLink[],
   orientation: GraphOrientation,
+  mode: GraphWikiMode,
 ): Map<string, { x: number; y: number }> {
-  const depths = computeBfsDepths(nodes, links);
+  const depths = computeBfsDepths(nodes, links, mode);
   const { endId } = terminalIds(nodes);
 
   // If end isn't reachable via links, place it one layer past the deepest node.
@@ -246,8 +289,9 @@ function computeFitBounds(
   height: number,
   orientation: GraphOrientation,
   labelFontSize: number,
+  mode: GraphWikiMode,
 ): GraphBounds | null {
-  const positions = computeLayeredPositions(nodes, links, orientation);
+  const positions = computeLayeredPositions(nodes, links, orientation, mode);
   let xMin = Infinity;
   let xMax = -Infinity;
   let yMin = Infinity;
@@ -688,22 +732,14 @@ export function GraphWiki({ graphData, onReady, focusNodeId, mode = 'classic' }:
   useWheelPan(wrapperRef, fgRef);
 
   const bfsDepths = useMemo(
-    () => computeBfsDepths(graphData.nodes, graphData.links),
-    [graphData],
+    () => computeBfsDepths(graphData.nodes, graphData.links, mode),
+    [graphData, mode],
   );
 
   const totalLayers = useMemo(
     () => (bfsDepths.size > 0 ? Math.max(...bfsDepths.values()) + 1 : 1),
     [bfsDepths],
   );
-
-  // Default hover target so the graph reads as "explored" before the user moves the cursor.
-  useEffect(() => {
-    const node = pickAutoHoverNode(graphData.nodes, bfsDepths);
-    if (!node) return;
-    setHoveredNodeId(node.id);
-    setHoveredLink(null);
-  }, [graphData, bfsDepths]);
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -726,10 +762,10 @@ export function GraphWiki({ graphData, onReady, focusNodeId, mode = 'classic' }:
 
   // Set initial x/y without pinning — simulation starts from correct positions.
   const positionedData = useMemo(() => {
-    const positions = computeLayeredPositions(graphData.nodes, graphData.links, orientation);
+    const positions = computeLayeredPositions(graphData.nodes, graphData.links, orientation, mode);
     setInitialPositions(graphData.nodes, positions);
     return { nodes: graphData.nodes, links: resetLinkEndpoints(graphData.links) };
-  }, [graphData, orientation]);
+  }, [graphData, orientation, mode]);
 
   const fitBounds = useMemo(
     () => computeFitBounds(
@@ -739,8 +775,9 @@ export function GraphWiki({ graphData, onReady, focusNodeId, mode = 'classic' }:
       dims.height,
       orientation,
       typography.label,
+      mode,
     ),
-    [positionedData, dims, orientation, typography.label],
+    [positionedData, dims, orientation, typography.label, mode],
   );
 
   const hoveredNeighborIds = useMemo(
@@ -881,7 +918,7 @@ export function GraphWiki({ graphData, onReady, focusNodeId, mode = 'classic' }:
     const fg = fgRef.current;
     if (!fg) return;
 
-    const positions = computeLayeredPositions(positionedData.nodes, positionedData.links, orientation);
+    const positions = computeLayeredPositions(positionedData.nodes, positionedData.links, orientation, mode);
 
     // Springy link force — connects neighbors like rubber bands.
     fg.d3Force('link', forceLink<SimNode, WikiLink>()
@@ -907,7 +944,7 @@ export function GraphWiki({ graphData, onReady, focusNodeId, mode = 'classic' }:
 
     fg.d3Force('center', null);
     fg.d3ReheatSimulation();
-  }, [positionedData, orientation]);
+  }, [positionedData, orientation, mode]);
 
   return (
     <div
