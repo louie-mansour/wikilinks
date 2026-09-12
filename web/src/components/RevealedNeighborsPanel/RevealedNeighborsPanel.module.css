@@ -1,0 +1,92 @@
+@import '../../tokens.css';
+
+.section {
+  background: var(--white);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+}
+
+.listHeader {
+  padding: 16px 20px;
+  border-bottom: 1.5px solid var(--sand-mid);
+  background: var(--white);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.empty {
+  margin: 0;
+  padding: 24px 20px;
+  font-size: var(--text-ui);
+  font-style: italic;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  border-bottom: 1.5px solid var(--sand-mid);
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: var(--text-ui);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.list li:last-child .row {
+  border-bottom: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .row {
+    transition: background 0.12s;
+  }
+}
+
+.row:hover,
+.row:focus-visible {
+  background: var(--sand);
+}
+
+.rowTitle {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.loadMore {
+  padding: 18px;
+  text-align: center;
+  background: var(--sand);
+  border-top: 1.5px solid var(--sand-mid);
+}
+
+@media (max-width: 600px) {
+  .row {
+    padding: 12px 16px;
+  }
+}
