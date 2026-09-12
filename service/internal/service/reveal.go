@@ -13,9 +13,11 @@ import (
 // Like GuessResult, the hidden end article's real id/title never appears
 // anywhere in this struct prior to a correct guess (or the final, losing
 // guess) — it is replaced everywhere by the stable per-day placeholder id
-// (config.PlaceholderID). Neighbors additionally filters the hidden article
-// out of the guess's outbound-link list entirely (see graph.RevealNeighbors)
-// so a direct link to the answer never leaks its identity either.
+// (config.PlaceholderID). Neighbors is restricted to the guess's outbound
+// neighbor(s) that lie on a shortest path to the hidden article (see
+// graph.RevealNeighbors), not its full outbound-link list, and always
+// excludes the hidden article itself so a direct link to the answer never
+// leaks its identity either.
 type RevealGuessResult struct {
 	Guess       string               `json:"guess"`
 	Correct     bool                 `json:"correct"`
@@ -32,11 +34,11 @@ type RevealGuessResult struct {
 }
 
 // SubmitReveal resolves guessTitle against today's hidden puzzle article and
-// returns the Reveal-mode payload: the guess's outbound-neighbor reveal (with
-// the hidden article filtered out, see graph.RevealNeighbors) plus the same
-// shortest-path reveal Classic's Submit computes via BidirectionalBFS, masked
-// behind the stable per-day placeholder id unless the guess is correct or is
-// the puzzle-losing guess.
+// returns the Reveal-mode payload: the same shortest-path reveal Classic's
+// Submit computes via BidirectionalBFS, masked behind the stable per-day
+// placeholder id unless the guess is correct or is the puzzle-losing guess,
+// plus the guess's shortest-path-only neighbor reveal (see
+// graph.RevealNeighbors) — never the guess's full outbound-link list.
 //
 // guessNumber is the 1-indexed attempt number for this guess, exactly as
 // Classic's Submit expects it. Once guessNumber reaches MaxDailyGuesses
@@ -59,14 +61,13 @@ func (s *Guess) SubmitReveal(guessTitle string, guessNumber int) (*RevealGuessRe
 		return nil, fmt.Errorf("scheduled answer %q not found in graph", answerTitle)
 	}
 	guess := s.g.Title(guessID)
-	neighbors := s.g.RevealNeighbors(guessID, answerID)
 
 	if guessID == answerID {
 		return &RevealGuessResult{
 			Guess:      guess,
 			Correct:    true,
 			Answer:     answerTitle,
-			Neighbors:  neighbors,
+			Neighbors:  []graph.NeighborInfo{},
 			PathsFound: 1,
 			Paths:      [][]string{{guess}},
 			GraphData: GraphData{
@@ -95,7 +96,7 @@ func (s *Guess) SubmitReveal(guessTitle string, guessNumber int) (*RevealGuessRe
 			Guess:       guess,
 			Lost:        lost,
 			Answer:      lostAnswer(lost, answerTitle),
-			Neighbors:   neighbors,
+			Neighbors:   []graph.NeighborInfo{},
 			NoPathFound: true,
 			Paths:       [][]string{},
 			GraphData:   graphData,
@@ -103,6 +104,8 @@ func (s *Guess) SubmitReveal(guessTitle string, guessNumber int) (*RevealGuessRe
 			MaxPaths:    graph.MaxPaths,
 		}, nil
 	}
+
+	neighbors := s.g.RevealNeighbors(answerID, result.Paths)
 
 	allPaths := make([][]string, len(result.Paths))
 	for i, ids := range result.Paths {

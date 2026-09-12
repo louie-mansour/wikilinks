@@ -58,17 +58,36 @@ type NeighborInfo struct {
 	Title string `json:"title"`
 }
 
-// RevealNeighbors returns the outbound neighbors of guessID with titles
-// resolved, excluding hiddenID from the result (Reveal mode must never leak
-// the hidden article via a guess's outbound links). Returns an empty slice
-// (never nil-with-error) when guessID has no outbound neighbors.
-func (g *WikipediaGraph) RevealNeighbors(guessID, hiddenID uint32) []NeighborInfo {
-	neighbors := g.FwdNeighbors(guessID)
-	result := make([]NeighborInfo, 0, len(neighbors))
-	for _, id := range neighbors {
-		if id == hiddenID {
+// RevealNeighbors returns, with titles resolved, the single outbound
+// neighbor of the guess that lies on each shortest path to hiddenID — i.e.
+// the second node (index 1) of every path in paths, deduplicated. paths is
+// the shortest-path set already computed by BidirectionalBFS(guessID,
+// hiddenID); each path is expected to start at the guess. hiddenID itself is
+// always excluded from the result, even when a path reaches it in a single
+// hop, so a direct link to the answer never leaks its identity via the
+// neighbor list. Returns an empty slice (never nil-with-error) when paths is
+// empty or every path is a single node.
+func (g *WikipediaGraph) RevealNeighbors(hiddenID uint32, paths [][]uint32) []NeighborInfo {
+	seen := make(map[uint32]struct{})
+	ids := make([]uint32, 0, len(paths))
+	for _, path := range paths {
+		if len(path) < 2 {
 			continue
 		}
+		next := path[1]
+		if next == hiddenID {
+			continue
+		}
+		if _, ok := seen[next]; ok {
+			continue
+		}
+		seen[next] = struct{}{}
+		ids = append(ids, next)
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+
+	result := make([]NeighborInfo, 0, len(ids))
+	for _, id := range ids {
 		result = append(result, NeighborInfo{ID: id, Title: g.Title(id)})
 	}
 	return result
