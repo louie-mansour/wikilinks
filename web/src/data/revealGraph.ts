@@ -228,24 +228,19 @@ export function revealNode(
   return { nodes, links: graph.links };
 }
 
-/** Synthetic id for the pseudo "Start" node `toWikiGraphData` roots the graph
- * at — never a real Wikipedia title, so it can't collide with one. */
-const WIKI_START_ID = '__reveal-start__';
-
 /**
  * Adapt a `RevealGraphData` to the plain `GraphData` shape `GraphWiki` (the
  * sandbox/Classic canvas) expects, reusing `GraphWiki`'s own BFS-layered
  * layout unmodified (see `.claude/rules/graphwiki-node-connections.md`) —
  * this module does the adapting, not `GraphWiki` itself.
  *
- * `GraphWiki`'s layering roots at a `variant: 'start'` node and follows
- * forward links outward; Reveal has no such node (every guess is its own
- * independent root funneling toward the one hidden article), so one is
- * synthesized here (`WIKI_START_ID`) with an edge to every guessed article
- * (`variant: 'guess'` nodes, regardless of state) — this is what gives
- * `GraphWiki` a single connected root to BFS from instead of falling back to
- * `nodes[0]` (arbitrary, and unreachable from the guess->hidden edge
- * direction) and collapsing everything into one layer.
+ * `GraphWiki`'s layering roots depth 0 at every `variant: 'start'` node, or —
+ * when there is none — every `variant: 'guess'` node (a multi-source BFS, see
+ * `rootIds`/`computeBfsDepths` in `GraphWiki.tsx`). Reveal has no start
+ * article (every guess is its own independent root funneling toward the one
+ * hidden article), so no synthetic node is needed here: passing `graph.nodes`
+ * and `graph.links` straight through already gives `GraphWiki` one root per
+ * guess.
  *
  * Per-state mapping:
  * - `named` — passes through as-is (variant included, e.g. a `guess` node
@@ -265,30 +260,20 @@ const WIKI_START_ID = '__reveal-start__';
  *   `hidden-end` so `GraphWiki` renders it as an unlabeled masked node.
  */
 export function toWikiGraphData(graph: RevealGraphData): GraphData {
-  const nodes: WikiNode[] = [
-    { id: WIKI_START_ID, variant: 'start', label: 'Start' },
-    ...graph.nodes.map((n): WikiNode => {
-      if (n.state === 'named') {
-        return { id: n.id, label: n.label, variant: n.variant };
-      }
-      if (n.state === 'unknown') {
-        return { id: n.id, label: n.label, variant: 'end' };
-      }
-      if (n.variant === 'guess') {
-        return { id: n.id, variant: 'guess' };
-      }
-      return { id: n.id, variant: 'hidden-end' };
-    }),
-  ];
-
-  const links: WikiLink[] = [...graph.links];
-  for (const n of graph.nodes) {
-    if (n.variant === 'guess') {
-      links.push({ source: WIKI_START_ID, target: n.id });
+  const nodes: WikiNode[] = graph.nodes.map((n): WikiNode => {
+    if (n.state === 'named') {
+      return { id: n.id, label: n.label, variant: n.variant };
     }
-  }
+    if (n.state === 'unknown') {
+      return { id: n.id, label: n.label, variant: 'end' };
+    }
+    if (n.variant === 'guess') {
+      return { id: n.id, variant: 'guess' };
+    }
+    return { id: n.id, variant: 'hidden-end' };
+  });
 
-  return { nodes, links };
+  return { nodes, links: graph.links };
 }
 
 /**

@@ -121,9 +121,9 @@ function revealResponse(overrides: Partial<RevealGuessResponse>): RevealGuessRes
 const HIDDEN_ID = 'placeholder-day-1';
 
 /** Reveal mode, adapted via `toWikiGraphData` (`revealGraph.ts`): multiple
- *  independent guesses fan out from a synthetic "Start" node so `GraphWiki`'s
- *  BFS layering has one connected root — each guess's own path, plus the
- *  still-masked mystery article as the `end` layer. */
+ *  independent guesses, each its own root at depth 0 (`GraphWiki`'s BFS
+ *  layering seeds from every `guess` node when there's no `start` node), fan
+ *  out toward the still-masked mystery article as the `end` layer. */
 export const RevealMultiGuess: Story = {
   args: {
     mode: 'reveal',
@@ -169,5 +169,15 @@ export const RevealMultiGuess: Story = {
       );
       return toWikiGraphData(graph);
     })(),
+  },
+};
+
+/** Reveal mode before any guess: just the still-masked mystery article. With
+ *  no `start`/`guess` node, layout roots on this lone node, so fit-to-view
+ *  must not zoom in on its tiny bounding box until it fills the panel. */
+export const RevealNoGuessesYet: Story = {
+  args: {
+    mode: 'reveal',
+    graphData: toWikiGraphData(createInitialRevealGraph(HIDDEN_ID)),
   },
 };

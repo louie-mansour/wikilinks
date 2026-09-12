@@ -284,7 +284,7 @@ describe('applyFullReveal', () => {
 });
 
 describe('toWikiGraphData', () => {
-  it('adds a synthetic start node wired to every guess, and maps the unknown node to end', () => {
+  it('passes guess nodes through with no synthetic start node, and maps the unknown node to end', () => {
     let graph = createInitialRevealGraph(HIDDEN_ID);
     graph = mergeRevealGuess(
       graph,
@@ -308,9 +308,8 @@ describe('toWikiGraphData', () => {
 
     const wiki = toWikiGraphData(graph);
 
-    const start = wiki.nodes.find((n) => n.variant === 'start');
-    expect(start).toBeDefined();
-    expect(wiki.links).toContainEqual({ source: start!.id, target: 'Guess One' });
+    // No synthetic start node: GraphWiki roots its layout at every 'guess' node directly.
+    expect(wiki.nodes.some((n) => n.variant === 'start')).toBe(false);
 
     // The still-hidden node is mapped to 'end' so GraphWiki roots its layout on it.
     const hidden = wiki.nodes.find((n) => n.id === HIDDEN_ID);

@@ -23,6 +23,11 @@ const BORDER_STD     = 1.5;
 const LAYER_SPACING  = SPACE_7 * 14;  // gap between BFS layers along the primary axis
 const NODE_V_SPACING = SPACE_7;       // max cross-axis gap; reduced adaptively for dense layers
 const FIT_PADDING    = SPACE_7 * 2;
+// Caps how far fit-to-view can zoom in — without this, a graph with just one
+// or two tiny nodes (e.g. reveal mode's lone "Unknown" node before any guess)
+// gets zoomed until its small bounding box fills the panel, making the node
+// itself look huge. Matches the zoom a normal two-node graph settles at.
+const MAX_FIT_ZOOM   = 3;
 const TARGET_ASPECT  = 1.8;           // desired width:height (horizontal layout)
 const MIN_V_SPACING  = 4;             // floor so nodes never fully overlap
 const MOBILE_LAYOUT_MAX_WIDTH = 520;  // matches design-system §4 breakpoint
@@ -108,20 +113,33 @@ function terminalIds(nodes: WikiNode[]): { startId?: string; endId?: string } {
   };
 }
 
+/** Nodes that anchor depth 0 of the layout: the classic-mode start node, or —
+ *  in reveal mode, which has no start article — every guess node at once. */
+function rootIds(nodes: WikiNode[]): string[] {
+  const roots = nodes
+    .filter(n => {
+      const variant = resolveVariant(n);
+      return variant === 'start' || variant === 'guess';
+    })
+    .map(n => n.id);
+  if (roots.length > 0) return roots;
+  return nodes[0] ? [nodes[0].id] : [];
+}
+
 // ForceGraph2D mutates link.source/target from strings to node objects in-place.
 // This normalizes both forms so BFS works whether or not the simulation has run.
 function linkEndId(val: string | { id: string }): string {
   return typeof val === 'string' ? val : val.id;
 }
 
-/** BFS hop depth from the start node along directed links. */
+/** BFS hop depth from the start node(s) along directed links. Reveal mode has
+ *  multiple simultaneous roots (one per guess); classic mode has exactly one. */
 function computeBfsDepths(nodes: WikiNode[], links: WikiLink[]): Map<string, number> {
   const depths = new Map<string, number>();
-  const rootId = terminalIds(nodes).startId ?? nodes[0]?.id;
-  if (!rootId) return depths;
+  const queue = rootIds(nodes);
+  if (queue.length === 0) return depths;
 
-  const queue = [rootId];
-  depths.set(rootId, 0);
+  for (const id of queue) depths.set(id, 0);
 
   while (queue.length > 0) {
     const id = queue.shift()!;
@@ -306,6 +324,7 @@ function fitGraphView(
   const k = Math.min(
     (width - FIT_PADDING * 2) / graphW,
     (height - FIT_PADDING * 2) / graphH,
+    MAX_FIT_ZOOM,
   );
 
   fg.centerAt(cx, cy, durationMs);
