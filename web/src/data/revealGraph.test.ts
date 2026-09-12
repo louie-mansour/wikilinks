@@ -6,6 +6,7 @@ import {
   hasAlreadyGuessedReveal,
   mergeRevealGuess,
   revealNode,
+  toWikiGraphData,
   type RevealGraphData,
   type RevealGuessResponse,
 } from './revealGraph';
@@ -176,8 +177,15 @@ describe('mergeRevealGuess', () => {
     expect(graph.nodes.find((n) => n.id === 'Hop A')?.state).toBe('blank');
     expect(graph.nodes.find((n) => n.id === 'Hop B')?.state).toBe('blank');
 
-    // Edges from both guesses accumulate without duplication.
-    expect(graph.links).toHaveLength(4);
+    // Edges from both guesses accumulate without duplication — 2 path edges
+    // plus 1 synthesized guess->neighbor edge per guess.
+    expect(graph.links).toHaveLength(6);
+    expect(graph.links).toEqual(
+      expect.arrayContaining([
+        { source: 'Guess One', target: 'Neighbor A' },
+        { source: 'Guess Two', target: 'Neighbor B' },
+      ]),
+    );
   });
 });
 
@@ -272,6 +280,65 @@ describe('applyFullReveal', () => {
 
     const revealedAgain = applyFullReveal(graph, HIDDEN_ID, 'World War II');
     expect(revealedAgain).toEqual(graph);
+  });
+});
+
+describe('toWikiGraphData', () => {
+  it('adds a synthetic start node wired to every guess, and maps the unknown node to end', () => {
+    let graph = createInitialRevealGraph(HIDDEN_ID);
+    graph = mergeRevealGuess(
+      graph,
+      response({
+        guess: 'Guess One',
+        neighbors: [{ id: 1, title: 'Neighbor A' }],
+        graphData: {
+          nodes: [
+            { id: 'Guess One', variant: 'guess' },
+            { id: 'Hop A', variant: 'path' },
+            { id: HIDDEN_ID, variant: 'hidden-end' },
+          ],
+          links: [
+            { source: 'Guess One', target: 'Hop A' },
+            { source: 'Hop A', target: HIDDEN_ID },
+          ],
+        },
+      }),
+      HIDDEN_ID,
+    );
+
+    const wiki = toWikiGraphData(graph);
+
+    const start = wiki.nodes.find((n) => n.variant === 'start');
+    expect(start).toBeDefined();
+    expect(wiki.links).toContainEqual({ source: start!.id, target: 'Guess One' });
+
+    // The still-hidden node is mapped to 'end' so GraphWiki roots its layout on it.
+    const hidden = wiki.nodes.find((n) => n.id === HIDDEN_ID);
+    expect(hidden?.variant).toBe('end');
+    expect(hidden?.label).toBe('Unknown');
+
+    // The guess node (blank, real title, not a secret) keeps variant 'guess' with no label.
+    const guessNode = wiki.nodes.find((n) => n.id === 'Guess One');
+    expect(guessNode?.variant).toBe('guess');
+    expect(guessNode?.label).toBeUndefined();
+
+    // The path-only waypoint stays masked.
+    const hop = wiki.nodes.find((n) => n.id === 'Hop A');
+    expect(hop?.variant).toBe('hidden-end');
+
+    // Named nodes pass through untouched.
+    const neighbor = wiki.nodes.find((n) => n.id === 'Neighbor A');
+    expect(neighbor?.variant).toBe('default');
+    expect(neighbor?.label).toBe('Neighbor A');
+  });
+
+  it('passes through the revealed hidden node as a named end node after a full reveal', () => {
+    let graph = createInitialRevealGraph(HIDDEN_ID);
+    graph = applyFullReveal(graph, HIDDEN_ID, 'World War II');
+
+    const wiki = toWikiGraphData(graph);
+    const hidden = wiki.nodes.find((n) => n.id === HIDDEN_ID);
+    expect(hidden).toEqual({ id: HIDDEN_ID, label: 'World War II', variant: 'end' });
   });
 });
 

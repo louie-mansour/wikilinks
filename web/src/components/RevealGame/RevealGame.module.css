@@ -10,16 +10,7 @@
 }
 
 .mainRow {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
-}
-
-@media (max-width: 760px) {
-  .mainRow {
-    grid-template-columns: 1fr;
-  }
+  width: 100%;
 }
 
 .topBar {

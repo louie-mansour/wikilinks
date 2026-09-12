@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Combobox } from '../Combobox/Combobox';
 import { Button } from '../Button/Button';
-import { GraphWikiReveal } from '../GraphWiki/GraphWikiReveal';
-import { RevealedNeighborsPanel } from '../RevealedNeighborsPanel/RevealedNeighborsPanel';
+import { GraphWiki } from '../GraphWiki/GraphWiki';
 import { RevealResultBanner } from '../RevealResultBanner/RevealResultBanner';
 import { DailyShareSummary } from '../DailyShareSummary/DailyShareSummary';
 import { ModePicker } from '../ModePicker/ModePicker';
@@ -16,6 +15,7 @@ import {
   createInitialRevealGraph,
   hasAlreadyGuessedReveal,
   mergeRevealGuess,
+  toWikiGraphData,
   type RevealGraphData,
   type RevealGuessResponse,
 } from '../../data/revealGraph';
@@ -27,8 +27,6 @@ import {
   saveRevealState,
 } from '../../data/revealPersistence';
 import styles from './RevealGame.module.css';
-
-const CONNECTIONS_PAGE_SIZE = 10;
 
 const TODAY_LABEL = new Date().toLocaleDateString(undefined, {
   month: 'short',
@@ -65,7 +63,6 @@ export function RevealGame() {
   const [guessValue, setGuessValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [visibleNamedCount, setVisibleNamedCount] = useState(CONNECTIONS_PAGE_SIZE);
   const [category, setCategory] = useState<string | null>(null);
 
   // Restore this mode's persisted state for today, and garbage-collect any
@@ -123,20 +120,7 @@ export function RevealGame() {
 
   const suggestions = useDebouncedSuggestions('start', guessValue);
 
-  const namedNodes = useMemo(() => graphData.nodes.filter((n) => n.state === 'named'), [graphData]);
-  const visibleNamed = namedNodes.slice(0, visibleNamedCount);
-  const remainingNamedCount = namedNodes.length - visibleNamed.length;
-  // `RevealedNeighborsPanel` derives its row list by filtering its `graphData`
-  // prop to `state === 'named'` itself (see that component) — it has no
-  // separate pagination prop, so paging is done here by handing it a
-  // trimmed-down graph rather than the full accumulated one.
-  const panelGraphData = useMemo<RevealGraphData>(
-    () => ({
-      nodes: [...graphData.nodes.filter((n) => n.state !== 'named'), ...visibleNamed],
-      links: graphData.links,
-    }),
-    [graphData, visibleNamed],
-  );
+  const wikiGraphData = useMemo(() => toWikiGraphData(graphData), [graphData]);
 
   const handleSubmit = useCallback(async () => {
     const guess = guessValue.trim();
@@ -236,15 +220,8 @@ export function RevealGame() {
 
       <div className={styles.mainRow}>
         <div className={styles.graphPanel}>
-          <GraphWikiReveal graphData={graphData} />
+          <GraphWiki graphData={wikiGraphData} />
         </div>
-
-        <RevealedNeighborsPanel
-          graphData={panelGraphData}
-          remainingCount={remainingNamedCount > 0 ? Math.min(CONNECTIONS_PAGE_SIZE, remainingNamedCount) : undefined}
-          totalRemainingCount={remainingNamedCount > 0 ? remainingNamedCount : undefined}
-          onLoadMore={() => setVisibleNamedCount((c) => c + CONNECTIONS_PAGE_SIZE)}
-        />
       </div>
 
       <div className={styles.feed}>

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { GraphWiki } from './GraphWiki';
 import type { GraphData } from './GraphWiki';
 import { buildGraphForDegrees, buildMultiPathGraph } from '../../data/buildGraphData';
+import { createInitialRevealGraph, mergeRevealGuess, toWikiGraphData, type RevealGuessResponse } from '../../data/revealGraph';
 
 function withNewNode(graphData: GraphData, nodeId: string): GraphData {
   return {
@@ -99,5 +100,73 @@ export const DailyGuessNoPath: Story = {
       nodes: [{ id: 'Carex curaica', variant: 'guess', label: 'Carex curaica' }],
       links: [],
     },
+  },
+};
+
+function revealResponse(overrides: Partial<RevealGuessResponse>): RevealGuessResponse {
+  return {
+    guess: 'Guess',
+    correct: false,
+    neighbors: [],
+    pathsFound: 0,
+    minHops: 0,
+    paths: [],
+    graphData: { nodes: [], links: [] },
+    maxHops: 10,
+    maxPaths: 10000,
+    ...overrides,
+  };
+}
+
+const HIDDEN_ID = 'placeholder-day-1';
+
+/** Reveal mode, adapted via `toWikiGraphData` (`revealGraph.ts`): multiple
+ *  independent guesses fan out from a synthetic "Start" node so `GraphWiki`'s
+ *  BFS layering has one connected root — each guess's own path, plus the
+ *  still-masked mystery article as the `end` layer. */
+export const RevealMultiGuess: Story = {
+  args: {
+    graphData: (() => {
+      let graph = createInitialRevealGraph(HIDDEN_ID);
+      graph = mergeRevealGuess(
+        graph,
+        revealResponse({
+          guess: 'Nikola Tesla',
+          neighbors: [{ id: 1, title: 'Electricity' }],
+          graphData: {
+            nodes: [
+              { id: 'Nikola Tesla', variant: 'guess' },
+              { id: 'Magnetism', variant: 'path' },
+              { id: HIDDEN_ID, variant: 'hidden-end' },
+            ],
+            links: [
+              { source: 'Nikola Tesla', target: 'Magnetism' },
+              { source: 'Magnetism', target: HIDDEN_ID },
+            ],
+          },
+        }),
+        HIDDEN_ID,
+      );
+      graph = mergeRevealGuess(
+        graph,
+        revealResponse({
+          guess: 'Albert Einstein',
+          neighbors: [{ id: 2, title: 'Physics' }],
+          graphData: {
+            nodes: [
+              { id: 'Albert Einstein', variant: 'guess' },
+              { id: 'Relativity', variant: 'path' },
+              { id: HIDDEN_ID, variant: 'hidden-end' },
+            ],
+            links: [
+              { source: 'Albert Einstein', target: 'Relativity' },
+              { source: 'Relativity', target: HIDDEN_ID },
+            ],
+          },
+        }),
+        HIDDEN_ID,
+      );
+      return toWikiGraphData(graph);
+    })(),
   },
 };

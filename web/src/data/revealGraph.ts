@@ -180,12 +180,26 @@ export function mergeRevealGuess(
 
   const links = [...accumulated.links];
   const linkKeys = new Set(links.map(linkKey));
-  for (const link of response.graphData.links) {
+
+  function addLink(link: WikiLink) {
     const key = linkKey(link);
     if (!linkKeys.has(key)) {
       linkKeys.add(key);
       links.push(link);
     }
+  }
+
+  for (const link of response.graphData.links) {
+    addLink(link);
+  }
+
+  // The server reports neighbor titles alone (see `graph.NeighborInfo` /
+  // `RevealNeighbors`) — it never emits edges for them, so the guess ->
+  // neighbor link has to be synthesized here or these nodes come in
+  // disconnected from the rest of the graph (and pile up at depth 0 in
+  // `GraphWikiReveal`'s BFS layering).
+  for (const neighbor of response.neighbors) {
+    addLink({ source: response.guess, target: neighbor.title });
   }
 
   return { nodes, links };
@@ -212,6 +226,69 @@ export function revealNode(
   const nodes = [...graph.nodes];
   nodes[index] = { ...nodes[index], label: title, state: 'named', ...(variant ? { variant } : {}) };
   return { nodes, links: graph.links };
+}
+
+/** Synthetic id for the pseudo "Start" node `toWikiGraphData` roots the graph
+ * at — never a real Wikipedia title, so it can't collide with one. */
+const WIKI_START_ID = '__reveal-start__';
+
+/**
+ * Adapt a `RevealGraphData` to the plain `GraphData` shape `GraphWiki` (the
+ * sandbox/Classic canvas) expects, reusing `GraphWiki`'s own BFS-layered
+ * layout unmodified (see `.claude/rules/graphwiki-node-connections.md`) —
+ * this module does the adapting, not `GraphWiki` itself.
+ *
+ * `GraphWiki`'s layering roots at a `variant: 'start'` node and follows
+ * forward links outward; Reveal has no such node (every guess is its own
+ * independent root funneling toward the one hidden article), so one is
+ * synthesized here (`WIKI_START_ID`) with an edge to every guessed article
+ * (`variant: 'guess'` nodes, regardless of state) — this is what gives
+ * `GraphWiki` a single connected root to BFS from instead of falling back to
+ * `nodes[0]` (arbitrary, and unreachable from the guess->hidden edge
+ * direction) and collapsing everything into one layer.
+ *
+ * Per-state mapping:
+ * - `named` — passes through as-is (variant included, e.g. a `guess` node
+ *   that was later confirmed by a neighbor reveal, or the hidden node once
+ *   revealed via `revealNode`/`applyFullReveal`, already carrying `variant:
+ *   'end'`).
+ * - `unknown` — the hidden node pre-reveal: mapped to `variant: 'end'` (so
+ *   `GraphWiki` treats it as the layout's terminal end, same as Classic's
+ *   revealed answer) with its `label` ("Unknown") passed through so it never
+ *   renders its placeholder `id` as text.
+ * - `blank`, `variant: 'guess'` — the article the player actually typed;
+ *   passes through as `variant: 'guess'` with no `label`, so `GraphWiki`
+ *   falls back to its `id` (the real guess title — not a secret, the player
+ *   just typed it) rather than the empty string it uses for `hidden-end`.
+ * - `blank`, otherwise — a path-only waypoint whose `id` is a real,
+ *   unconfirmed Wikipedia title (see "Node identity" above): mapped to
+ *   `hidden-end` so `GraphWiki` renders it as an unlabeled masked node.
+ */
+export function toWikiGraphData(graph: RevealGraphData): GraphData {
+  const nodes: WikiNode[] = [
+    { id: WIKI_START_ID, variant: 'start', label: 'Start' },
+    ...graph.nodes.map((n): WikiNode => {
+      if (n.state === 'named') {
+        return { id: n.id, label: n.label, variant: n.variant };
+      }
+      if (n.state === 'unknown') {
+        return { id: n.id, label: n.label, variant: 'end' };
+      }
+      if (n.variant === 'guess') {
+        return { id: n.id, variant: 'guess' };
+      }
+      return { id: n.id, variant: 'hidden-end' };
+    }),
+  ];
+
+  const links: WikiLink[] = [...graph.links];
+  for (const n of graph.nodes) {
+    if (n.variant === 'guess') {
+      links.push({ source: WIKI_START_ID, target: n.id });
+    }
+  }
+
+  return { nodes, links };
 }
 
 /**
