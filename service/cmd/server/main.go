@@ -100,6 +100,7 @@ func main() {
 	controller.NewSuggest(suggestSvc).Register(mux)
 	controller.NewRandom(randomSvc).Register(mux)
 	controller.NewGuess(guessSvc).Register(mux)
+	controller.NewRevealGuess(guessSvc).Register(mux)
 
 	if *staticDir != "" {
 		mux.Handle("GET /assets/", http.FileServer(http.Dir(*staticDir)))

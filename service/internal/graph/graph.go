@@ -54,8 +54,8 @@ func (g *WikipediaGraph) RevNeighbors(id uint32) []uint32 {
 
 // NeighborInfo pairs a node ID with its resolved title for display.
 type NeighborInfo struct {
-	ID    uint32
-	Title string
+	ID    uint32 `json:"id"`
+	Title string `json:"title"`
 }
 
 // RevealNeighbors returns the outbound neighbors of guessID with titles
