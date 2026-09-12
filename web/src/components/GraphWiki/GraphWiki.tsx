@@ -639,9 +639,14 @@ interface GraphWikiProps {
   /** Node id to center/highlight on the canvas (e.g. a direct-connections panel row click).
    *  Bump this on every click, even to the same id — see the effect below. */
   focusNodeId?: string | null;
+  /** 'classic' (default): Daily/sandbox legend (New discovery / Connecting article).
+   *  'reveal': Reveal mode's legend (Start / Guess / Target / Unknown) — always
+   *  shows all four, even before any guess exists, since Reveal's graph doesn't
+   *  reliably carry a 'guess' node from the first render (see revealGraph.ts). */
+  mode?: 'classic' | 'reveal';
 }
 
-export function GraphWiki({ graphData, onReady, focusNodeId }: GraphWikiProps) {
+export function GraphWiki({ graphData, onReady, focusNodeId, mode = 'classic' }: GraphWikiProps) {
   const colors = useCanvasColors();
   const typography = useTypographySizes();
   const wrapperRef     = useRef<HTMLDivElement>(null);
@@ -758,6 +763,7 @@ export function GraphWiki({ graphData, onReady, focusNodeId }: GraphWikiProps) {
     () => positionedData.nodes.filter(n => resolveVariant(n) === 'start' || resolveVariant(n) === 'end'),
     [positionedData.nodes],
   );
+
 
   const highlightedInteriorNode = useMemo(() => {
     if (canHover || !hoveredNodeId) return null;
@@ -898,14 +904,41 @@ export function GraphWiki({ graphData, onReady, focusNodeId }: GraphWikiProps) {
     >
       <div className={styles.legend}>
         <div className={styles.legendTitle}>Legend</div>
-        <div className={styles.legendRow}>
-          <span className={`${styles.legendDot} ${styles.legendDotNew}`} />
-          New discovery
-        </div>
-        <div className={styles.legendRow}>
-          <span className={`${styles.legendDot} ${styles.legendDotDefault}`} />
-          Connecting article
-        </div>
+        {mode === 'reveal' ? (
+          <>
+            <div className={styles.legendRow}>
+              <span className={`${styles.legendDot} ${styles.legendDotStart}`} />
+              Start
+            </div>
+            <div className={styles.legendRow}>
+              <span className={`${styles.legendDot} ${styles.legendDotStart}`} />
+              Guess
+            </div>
+            <div className={styles.legendRow}>
+              <span className={`${styles.legendDot} ${styles.legendDotTarget}`} />
+              Target
+            </div>
+            <div className={styles.legendRow}>
+              <span className={`${styles.legendDot} ${styles.legendDotUnknown}`} />
+              Unknown
+            </div>
+            <div className={styles.legendRow}>
+              <span className={`${styles.legendDot} ${styles.legendDotDefault}`} />
+              Connecting article
+            </div>
+          </>
+        ) : (
+          <>
+            <div className={styles.legendRow}>
+              <span className={`${styles.legendDot} ${styles.legendDotNew}`} />
+              New discovery
+            </div>
+            <div className={styles.legendRow}>
+              <span className={`${styles.legendDot} ${styles.legendDotDefault}`} />
+              Connecting article
+            </div>
+          </>
+        )}
       </div>
       <div className={styles.labelOverlay}>
         {terminalNodes.map(node => {

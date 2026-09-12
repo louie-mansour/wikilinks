@@ -220,7 +220,7 @@ export function RevealGame() {
 
       <div className={styles.mainRow}>
         <div className={styles.graphPanel}>
-          <GraphWiki graphData={wikiGraphData} />
+          <GraphWiki graphData={wikiGraphData} mode="reveal" />
         </div>
       </div>
 

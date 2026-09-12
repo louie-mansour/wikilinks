@@ -59,6 +59,18 @@
   background: var(--terra);
 }
 
+.legendDotStart {
+  background: var(--ink);
+}
+
+.legendDotUnknown {
+  background: var(--sand-mid);
+}
+
+.legendDotTarget {
+  background: var(--sage);
+}
+
 .labelOverlay {
   position: absolute;
   inset: 0;

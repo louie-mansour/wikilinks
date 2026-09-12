@@ -126,6 +126,7 @@ const HIDDEN_ID = 'placeholder-day-1';
  *  still-masked mystery article as the `end` layer. */
 export const RevealMultiGuess: Story = {
   args: {
+    mode: 'reveal',
     graphData: (() => {
       let graph = createInitialRevealGraph(HIDDEN_ID);
       graph = mergeRevealGuess(
