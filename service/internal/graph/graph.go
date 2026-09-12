@@ -52,6 +52,28 @@ func (g *WikipediaGraph) RevNeighbors(id uint32) []uint32 {
 	return g.revNeighbors[start:end]
 }
 
+// NeighborInfo pairs a node ID with its resolved title for display.
+type NeighborInfo struct {
+	ID    uint32
+	Title string
+}
+
+// RevealNeighbors returns the outbound neighbors of guessID with titles
+// resolved, excluding hiddenID from the result (Reveal mode must never leak
+// the hidden article via a guess's outbound links). Returns an empty slice
+// (never nil-with-error) when guessID has no outbound neighbors.
+func (g *WikipediaGraph) RevealNeighbors(guessID, hiddenID uint32) []NeighborInfo {
+	neighbors := g.FwdNeighbors(guessID)
+	result := make([]NeighborInfo, 0, len(neighbors))
+	for _, id := range neighbors {
+		if id == hiddenID {
+			continue
+		}
+		result = append(result, NeighborInfo{ID: id, Title: g.Title(id)})
+	}
+	return result
+}
+
 // StartingNodes returns article titles that can be used as BFS start points:
 // nodes with at least one outgoing link in adj_fwd.
 func (g *WikipediaGraph) StartingNodes() []string {
