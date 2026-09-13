@@ -20,22 +20,28 @@ import { MAX_DAILY_GUESSES } from './dailyGraph';
  *   one of these at any time (before a win/loss reveal). It is present in
  *   the graph from the very first render, before any guess is made — see
  *   `createInitialRevealGraph`. Rendered as "Unknown" until solved.
- * - `'named'` — revealed via some guess's *neighbor reveal* (the guessed
- *   article's outbound links, all named). Has a real title, is hoverable on
- *   canvas, and belongs in the revealed-neighbors side panel.
- * - `'blank'` — appears only via a *path reveal* (the shortest-path subgraph
- *   between a guess and the hidden article) and has not (yet) been
- *   independently named via a neighbor reveal. Deliberately has no `label`
- *   even though the server-computed path technically knows its title —
- *   Reveal mode's whole mechanic is that path nodes render as blank,
- *   unlabeled circles until confirmed by name (see spec, story 7).
+ * - `'named'` — revealed, via some guess's *neighbor reveal* (the guessed
+ *   article's outbound links) or its *path reveal* (the shortest-path
+ *   subgraph between that guess and the hidden article, capped at
+ *   `revealPathNodeCap` — see `service/internal/service/reveal.go`). Both
+ *   reveal a real title immediately; a path/backlink node is never left as
+ *   an unlabeled placeholder just because a neighbor reveal hasn't
+ *   independently surfaced it too — that defeats the entire point of the
+ *   cap mechanic (up to 50 nodes revealed per guess). Has a real title, is
+ *   hoverable on canvas, and belongs in the revealed-neighbors side panel.
+ * - `'blank'` — the article the player actually *guessed*, specifically
+ *   (and, for a stale persisted graph, any path node saved before path
+ *   nodes were named immediately). Its `id` is a real, known title (not a
+ *   secret — the player just typed it), but it isn't independently
+ *   "revealed" until named via a neighbor reveal or full reveal — mirrors
+ *   the backend's own accounting, where `revealPathNodeCap` is explicitly a
+ *   cap on *non-guess, non-target* nodes.
  *
- * ## The one hard constraint: `blank → named` is one-way
+ * ## The one hard constraint: state only ever upgrades, never downgrades
  *
- * The moment any guess (this one or a past/future one) names a node via its
- * neighbor reveal, that node is `named` forever. A later merge that only
- * re-sees the same node via a *path* reveal must never downgrade it back to
- * `blank`. `mergeRevealGuess` below enforces this by always upgrading
+ * The moment any guess (this one or a past/future one) names a node — via
+ * either its neighbor reveal or its path reveal — that node is `named`
+ * forever. `mergeRevealGuess` below enforces this by always upgrading
  * (`blank`/absent → `named`) and never downgrading (`named` → `blank`).
  *
  * The other transition, `unknown → named`, happens exactly once, for the
@@ -85,7 +91,7 @@ export interface RevealNeighbor {
  * - `neighbors` — this guess's neighbor reveal (→ `named` nodes).
  * - `graphData` — this guess's path reveal, same shape Classic uses, with
  *   the hidden article masked behind the stable per-day placeholder id
- *   (`hiddenId`) unless `correct`/`lost` is true (→ `blank`/unknown nodes).
+ *   (`hiddenId`) unless `correct`/`lost` is true (→ `named`/unknown nodes).
  * - `answer` — only populated on `correct`/`lost`; the real hidden title.
  */
 export interface RevealGuessResponse {
@@ -126,12 +132,11 @@ function linkKey(link: WikiLink): string {
  * the hidden article appears masked) so the "Unknown" node's identity lines
  * up across every call.
  *
- * Merge order matters for correctness, not just cosmetics: neighbor-reveal
- * nodes are folded in first (establishing `named` state), then path-reveal
- * nodes are folded in second and only ever added as `blank` when not
- * already present/named — this is what makes `blank → named` one-way (see
- * module doc above). Edges accumulate without duplication, keyed by
- * `source→target`, same convention as `dailyGraph.ts`'s `mergeGraphData`.
+ * Neighbor-reveal nodes are folded in first, then path-reveal nodes second —
+ * both via `upsertNamed`, so either can name a node first and neither can
+ * ever downgrade it afterward (see module doc above). Edges accumulate
+ * without duplication, keyed by `source→target`, same convention as
+ * `dailyGraph.ts`'s `mergeGraphData`.
  */
 export function mergeRevealGuess(
   accumulated: RevealGraphData,
@@ -171,15 +176,27 @@ export function mergeRevealGuess(
   }
 
   // 2. Path reveal: the hidden node is handled via its persistent `unknown`
-  //    entry (or a future full-reveal transition) — skip it here. Every
-  //    other path node becomes `blank` unless already named/known. On a
-  //    correct/losing guess the server unmasks the hidden node's id to the
-  //    real answer title (see `RevealGuessResponse.answer` doc above), so it
-  //    no longer equals `hiddenId` — match on `response.answer` too, or this
-  //    loop would insert a second node for the same target article.
+  //    entry (or a future full-reveal transition) — skip it here. The guess
+  //    node itself stays `blank` (real title, just not independently
+  //    "revealed" — only a neighbor reveal or full reveal names it, same as
+  //    before), matching the backend's own accounting: `revealPathNodeCap`
+  //    (`service/internal/service/reveal.go`) is explicitly a cap on
+  //    non-guess, non-target nodes. Every other path/backlink node — the up
+  //    to 50 nodes that cap exists to reveal, radiating outward from the
+  //    guess and then backfilled around the target — is named immediately;
+  //    that is the whole point of the cap mechanic, so one of these nodes
+  //    must never sit there as an unlabeled placeholder. On a correct/losing
+  //    guess the server unmasks the hidden node's id to the real answer
+  //    title (see `RevealGuessResponse.answer` doc above), so it no longer
+  //    equals `hiddenId` — match on `response.answer` too, or this loop
+  //    would insert a second node for the same target article.
   for (const node of response.graphData.nodes) {
     if (node.id === hiddenId || (response.answer && node.id === response.answer)) continue;
-    upsertBlank(node.id, node.variant);
+    if (node.variant === 'guess') {
+      upsertBlank(node.id, node.variant);
+      continue;
+    }
+    upsertNamed(node.id, node.id, node.variant);
   }
 
   const links = [...accumulated.links];
@@ -198,11 +215,23 @@ export function mergeRevealGuess(
   }
 
   // The server reports neighbor titles alone (see `graph.NeighborInfo` /
-  // `RevealNeighbors`) — it never emits edges for them, so the guess ->
-  // neighbor link has to be synthesized here or these nodes come in
-  // disconnected from the rest of the graph (and pile up at depth 0 in
-  // `GraphWikiReveal`'s BFS layering).
+  // `RevealNeighbors`) — it never emits edges for them, and `RevealNeighbors`
+  // is deliberately uncapped (every index-1 node across every shortest path,
+  // not just the ones `buildRevealGraphData` had cap budget to keep — see
+  // `service/internal/service/reveal.go`). So most of `response.neighbors`
+  // has no revealed continuation toward the target this guess: synthesizing
+  // a guess -> neighbor edge for all of them would draw a line from the
+  // guess to a node that, as far as the revealed graph shows, goes nowhere —
+  // exactly the "connected to guess but doesn't eventually link to the
+  // target" bug reported against this mode. Only wire the edge when the
+  // neighbor is also part of this guess's own capped, connected path reveal
+  // (`response.graphData.nodes`), which `buildRevealGraphData` guarantees is
+  // a real, complete chain through to the target; the node itself is still
+  // named above so it still appears in the revealed-neighbors panel, just
+  // without a misleading edge on the canvas.
+  const connectedNodeIds = new Set(response.graphData.nodes.map((n) => n.id));
   for (const neighbor of response.neighbors) {
+    if (!connectedNodeIds.has(neighbor.title)) continue;
     addLink({ source: response.guess, target: neighbor.title });
   }
 
@@ -259,9 +288,10 @@ export function revealNode(
  *   passes through as `variant: 'guess'` with no `label`, so `GraphWiki`
  *   falls back to its `id` (the real guess title — not a secret, the player
  *   just typed it) rather than the empty string it uses for `hidden-end`.
- * - `blank`, otherwise — a path-only waypoint whose `id` is a real,
- *   unconfirmed Wikipedia title (see "Node identity" above): mapped to
- *   `hidden-end` so `GraphWiki` renders it as an unlabeled masked node.
+ * - `blank`, otherwise — only reachable via a stale graph persisted before
+ *   path nodes were named immediately (`mergeRevealGuess` no longer
+ *   produces this combination itself): mapped to `hidden-end` so
+ *   `GraphWiki` renders it as an unlabeled masked node.
  */
 export function toWikiGraphData(graph: RevealGraphData): GraphData {
   const nodes: WikiNode[] = graph.nodes.map((n): WikiNode => {

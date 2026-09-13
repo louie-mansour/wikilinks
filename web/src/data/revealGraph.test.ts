@@ -37,10 +37,11 @@ describe('createInitialRevealGraph', () => {
 });
 
 describe('mergeRevealGuess', () => {
-  it('never regresses a node named by a later guess back to blank (blank -> named is one-way)', () => {
+  it('names a node the moment any guess reveals it, whether by neighbor reveal or path reveal', () => {
     let graph = createInitialRevealGraph(HIDDEN_ID);
 
-    // Guess 1: path reveal only surfaces "Hop A" as a blank waypoint.
+    // Guess 1: path reveal surfaces "Hop A" as a waypoint — named immediately,
+    // per the reveal-cap mechanic (up to 50 path/backlink nodes revealed per guess).
     const guess1 = response({
       guess: 'Guess One',
       neighbors: [],
@@ -59,8 +60,8 @@ describe('mergeRevealGuess', () => {
     graph = mergeRevealGuess(graph, guess1, HIDDEN_ID);
 
     const hopAAfterGuess1 = graph.nodes.find((n) => n.id === 'Hop A');
-    expect(hopAAfterGuess1?.state).toBe('blank');
-    expect(hopAAfterGuess1?.label).toBeUndefined();
+    expect(hopAAfterGuess1?.state).toBe('named');
+    expect(hopAAfterGuess1?.label).toBe('Hop A');
 
     // Guess 2: an unrelated guess's neighbor reveal happens to name "Hop A".
     const guess2 = response({
@@ -171,20 +172,70 @@ describe('mergeRevealGuess', () => {
     expect(graph.nodes.filter((n) => n.state === 'unknown')).toHaveLength(1);
     expect(graph.nodes.find((n) => n.id === HIDDEN_ID)?.label).toBe('Unknown');
 
-    // Named vs. blank states line up with neighbor reveal vs. path-only reveal.
+    // Both neighbor reveal and path reveal name nodes immediately.
     expect(graph.nodes.find((n) => n.id === 'Neighbor A')?.state).toBe('named');
     expect(graph.nodes.find((n) => n.id === 'Neighbor B')?.state).toBe('named');
-    expect(graph.nodes.find((n) => n.id === 'Hop A')?.state).toBe('blank');
-    expect(graph.nodes.find((n) => n.id === 'Hop B')?.state).toBe('blank');
+    expect(graph.nodes.find((n) => n.id === 'Hop A')?.state).toBe('named');
+    expect(graph.nodes.find((n) => n.id === 'Hop B')?.state).toBe('named');
 
     // Edges from both guesses accumulate without duplication — 2 path edges
-    // plus 1 synthesized guess->neighbor edge per guess.
-    expect(graph.links).toHaveLength(6);
+    // per guess. Neither guess's `graphData` includes its neighbor
+    // ('Neighbor A' / 'Neighbor B') as a path node, so no guess->neighbor
+    // edge is synthesized for either (see the dead-end regression tests
+    // below) — they're named for the revealed-neighbors panel only.
+    expect(graph.links).toHaveLength(4);
     expect(graph.links).toEqual(
       expect.arrayContaining([
-        { source: 'Guess One', target: 'Neighbor A' },
-        { source: 'Guess Two', target: 'Neighbor B' },
+        { source: 'Guess One', target: 'Hop A' },
+        { source: 'Guess Two', target: 'Hop B' },
       ]),
+    );
+    expect(graph.links).not.toEqual(
+      expect.arrayContaining([{ source: 'Guess One', target: 'Neighbor A' }]),
+    );
+  });
+
+  it('synthesizes a guess->neighbor edge only when the neighbor is also part of this guess\'s connected path reveal', () => {
+    // Regression test: `RevealNeighbors` (server-side) is deliberately
+    // uncapped — it returns every index-1 node across every shortest path,
+    // while `graphData` is capped at `revealPathNodeCap` nodes total. A
+    // neighbor missing from `graphData.nodes` has no revealed continuation
+    // toward the target this guess, so drawing a guess->neighbor edge for it
+    // would show a node "connected to the guess" that visually dead-ends —
+    // the exact bug reported against this mode.
+    let graph = createInitialRevealGraph(HIDDEN_ID);
+
+    const guess = response({
+      guess: 'Guess One',
+      neighbors: [
+        { id: 1, title: 'Connected Neighbor' }, // also a path node below
+        { id: 2, title: 'Orphaned Neighbor' }, // not part of graphData at all
+      ],
+      graphData: {
+        nodes: [
+          { id: 'Guess One', variant: 'guess' },
+          { id: 'Connected Neighbor', variant: 'path' },
+          { id: HIDDEN_ID, variant: 'hidden-end' },
+        ],
+        links: [
+          { source: 'Guess One', target: 'Connected Neighbor' },
+          { source: 'Connected Neighbor', target: HIDDEN_ID },
+        ],
+      },
+    });
+
+    graph = mergeRevealGuess(graph, guess, HIDDEN_ID);
+
+    // Both neighbors are still named (revealed-neighbors panel shows both).
+    expect(graph.nodes.find((n) => n.id === 'Connected Neighbor')?.state).toBe('named');
+    expect(graph.nodes.find((n) => n.id === 'Orphaned Neighbor')?.state).toBe('named');
+
+    // Only the connected neighbor gets a canvas edge from the guess.
+    expect(graph.links).toEqual(
+      expect.arrayContaining([{ source: 'Guess One', target: 'Connected Neighbor' }]),
+    );
+    expect(graph.links.some((l) => l.source === 'Guess One' && l.target === 'Orphaned Neighbor')).toBe(
+      false,
     );
   });
 });
@@ -220,9 +271,10 @@ describe('hasAlreadyGuessedReveal', () => {
 
 describe('applyFullReveal', () => {
   it('flips the hidden node and every blank node to named on a losing guess (5th incorrect guess)', () => {
-    // Simulate the accumulated graph after 4 incorrect guesses: a mix of
-    // named (neighbor-revealed) and blank (path-revealed-only) nodes, plus
-    // the still-unknown hidden node.
+    // Simulate the accumulated graph after 4 incorrect guesses: path nodes
+    // are named immediately by the reveal-cap mechanic, the guess node
+    // itself stays blank (only a neighbor reveal or full reveal names it),
+    // and the hidden node is still unknown.
     let graph = createInitialRevealGraph(HIDDEN_ID);
     graph = mergeRevealGuess(
       graph,
@@ -246,11 +298,11 @@ describe('applyFullReveal', () => {
       HIDDEN_ID,
     );
 
-    // Sanity check on setup: some nodes are blank (path-only reveal, including
-    // the guess node itself — only a neighbor reveal or full reveal names it),
-    // one is unknown.
-    expect(graph.nodes.filter((n) => n.state === 'blank')).toHaveLength(3);
+    // Sanity check on setup: the guess node is blank, path nodes and the
+    // neighbor reveal are already named, the hidden node is unknown.
+    expect(graph.nodes.filter((n) => n.state === 'blank')).toHaveLength(1); // Guess One
     expect(graph.nodes.filter((n) => n.state === 'unknown')).toHaveLength(1);
+    expect(graph.nodes.filter((n) => n.state === 'named')).toHaveLength(3); // Hop A, Hop B, Neighbor A
 
     // 5th guess comes back lost:true with the real answer.
     const revealed = applyFullReveal(graph, HIDDEN_ID, 'World War II');
@@ -260,9 +312,11 @@ describe('applyFullReveal', () => {
     expect(revealed.nodes.filter((n) => n.state === 'unknown')).toHaveLength(0);
     expect(revealed.nodes.every((n) => n.state === 'named')).toBe(true);
 
-    // The formerly-blank nodes now show their real (already-known) titles.
+    // The already-named path nodes keep their real titles.
     expect(revealed.nodes.find((n) => n.id === 'Hop A')?.label).toBe('Hop A');
     expect(revealed.nodes.find((n) => n.id === 'Hop B')?.label).toBe('Hop B');
+
+    // The formerly-blank guess node now shows its real (already-known) title.
     expect(revealed.nodes.find((n) => n.id === 'Guess One')?.label).toBe('Guess One');
 
     // The hidden node resolves to the real answer and flips variant to 'end'.
@@ -321,9 +375,11 @@ describe('toWikiGraphData', () => {
     expect(guessNode?.variant).toBe('guess');
     expect(guessNode?.label).toBeUndefined();
 
-    // The path-only waypoint stays masked.
+    // The path-only waypoint is named immediately (the reveal-cap mechanic)
+    // and passes through with its real variant and title.
     const hop = wiki.nodes.find((n) => n.id === 'Hop A');
-    expect(hop?.variant).toBe('hidden-end');
+    expect(hop?.variant).toBe('path');
+    expect(hop?.label).toBe('Hop A');
 
     // Named nodes pass through untouched.
     const neighbor = wiki.nodes.find((n) => n.id === 'Neighbor A');

@@ -33,7 +33,7 @@ const MIN_V_SPACING  = 4;             // floor so nodes never fully overlap
 const MOBILE_LAYOUT_MAX_WIDTH = 520;  // matches design-system §4 breakpoint
 const HOVER_DEBOUNCE_MS = 60;         // swallow hover flicker from fast cursor passes
 
-export type WikiNodeVariant = 'default' | 'start' | 'end' | 'path' | 'guess' | 'hidden-end';
+export type WikiNodeVariant = 'default' | 'start' | 'end' | 'path' | 'guess' | 'hidden-end' | 'backlink';
 
 export interface WikiNode {
   id: string;
@@ -111,7 +111,7 @@ function nodeVal(variant: WikiNodeVariant): number {
 function terminalIds(nodes: WikiNode[]): { startId?: string; endId?: string } {
   return {
     startId: nodes.find(n => resolveVariant(n) === 'start')?.id,
-    endId:   nodes.find(n => resolveVariant(n) === 'end')?.id,
+    endId:   nodes.find(n => { const v = resolveVariant(n); return v === 'end' || v === 'hidden-end'; })?.id,
   };
 }
 
