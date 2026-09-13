@@ -1,7 +1,7 @@
 @import '../../tokens.css';
 
 .page {
-  max-width: 960px;
+  max-width: 920px;
   margin: 0 auto;
   padding: 14px 16px 60px;
   display: flex;
@@ -15,8 +15,6 @@
 
 .topBar {
   width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
   padding: 24px 20px 20px;
   display: flex;
   flex-direction: column;
@@ -113,8 +111,6 @@
 
 .feed {
   width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
   background: var(--white);
   border: 1.5px solid var(--sand-mid);
   border-radius: var(--radius-md);

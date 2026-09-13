@@ -962,6 +962,9 @@ export function GraphWiki({ graphData, onReady, focusNodeId, mode = 'classic' }:
             : 'default',
       }}
     >
+      <p className={styles.hint}>
+        {canHover ? 'Hover over nodes to find out more' : 'Tap nodes to find out more'}
+      </p>
       <div className={styles.legend}>
         <div className={styles.legendTitle}>Legend</div>
         {mode === 'reveal' ? (

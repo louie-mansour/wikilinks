@@ -11,6 +11,20 @@
   overflow: hidden;
 }
 
+.hint {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+  background: var(--white);
+  border: 1.5px solid var(--sand-mid);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: var(--text-label);
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+
 .legend {
   position: absolute;
   bottom: 16px;

@@ -606,51 +606,41 @@ describe('buildRevealShareSummary', () => {
     };
   }
 
-  function namedGraph(namedCount: number, otherStates: RevealGraphData['nodes'] = []): RevealGraphData {
-    const named = Array.from({ length: namedCount }, (_, i) => ({
-      id: `Node ${i}`,
-      label: `Node ${i}`,
-      state: 'named' as const,
-    }));
-    return { nodes: [...named, ...otherStates], links: [] };
-  }
+  it('formats hop counts as digit emojis, ending with a tick for the winning guess', () => {
+    const guesses = [
+      guessResult({ guess: 'A', minHops: 7 }),
+      guessResult({ guess: 'B', minHops: 4 }),
+      guessResult({ guess: 'C', minHops: 2 }),
+      guessResult({ guess: 'Answer', correct: true, minHops: 0 }),
+    ];
 
-  it('formats a win with the guess count and total-revealed node count', () => {
-    const guesses = [guessResult({ guess: 'A' }), guessResult({ guess: 'B', correct: true })];
-    const graph = namedGraph(7);
-
-    expect(buildRevealShareSummary(12, guesses, graph)).toBe(
-      'Grill: Reveal #12: solved in 2 guesses (7 nodes revealed)',
-    );
+    expect(buildRevealShareSummary(guesses)).toBe('7️⃣ 4️⃣ 2️⃣ ✅');
   });
 
-  it('uses singular "guess" for a one-guess win', () => {
-    const guesses = [guessResult({ guess: 'A', correct: true })];
-    const graph = namedGraph(3);
+  it('formats a single winning guess as a tick', () => {
+    const guesses = [guessResult({ guess: 'A', correct: true, minHops: 0 })];
 
-    expect(buildRevealShareSummary(1, guesses, graph)).toBe(
-      'Grill: Reveal #1: solved in 1 guess (3 nodes revealed)',
-    );
+    expect(buildRevealShareSummary(guesses)).toBe('✅');
   });
 
-  it('formats a loss as X/5 with the total-revealed node count, ignoring guess count', () => {
-    const guesses = Array.from({ length: 5 }, (_, i) => guessResult({ guess: `Guess ${i}` }));
-    const graph = namedGraph(9);
+  it('includes every guess hop emoji on a loss', () => {
+    const guesses = [
+      guessResult({ guess: 'A', minHops: 7 }),
+      guessResult({ guess: 'B', minHops: 4 }),
+      guessResult({ guess: 'C', minHops: 2 }),
+      guessResult({ guess: 'D', minHops: 1 }),
+      guessResult({ guess: 'E', lost: true, answer: 'Answer', minHops: 3 }),
+    ];
 
-    expect(buildRevealShareSummary(3, guesses, graph, true)).toBe(
-      'Grill: Reveal #3: X/5 (9 nodes revealed)',
-    );
+    expect(buildRevealShareSummary(guesses)).toBe('7️⃣ 4️⃣ 2️⃣ 1️⃣ 3️⃣');
   });
 
-  it('excludes non-named nodes from the total-revealed count', () => {
-    const guesses = [guessResult({ guess: 'A', correct: true })];
-    const graph = namedGraph(4, [
-      { id: 'still-blank', state: 'blank' },
-      { id: 'still-unknown', state: 'unknown' },
-    ]);
+  it('uses a cross emoji for a no-path guess', () => {
+    const guesses = [
+      guessResult({ guess: 'A', noPathFound: true, pathsFound: 0 }),
+      guessResult({ guess: 'B', correct: true, minHops: 0 }),
+    ];
 
-    expect(buildRevealShareSummary(5, guesses, graph)).toBe(
-      'Grill: Reveal #5: solved in 1 guess (4 nodes revealed)',
-    );
+    expect(buildRevealShareSummary(guesses)).toBe('❌ ✅');
   });
 });

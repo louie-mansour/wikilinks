@@ -1,5 +1,4 @@
 import type { GraphData, WikiLink, WikiNode, WikiNodeVariant } from '../components/GraphWiki/GraphWiki';
-import { MAX_DAILY_GUESSES } from './dailyGraph';
 
 /**
  * === Grill: Reveal — client-side graph accumulation ===
@@ -332,9 +331,9 @@ export function revealNode(
  * `computeBfsDepthsFromEnd` in `GraphWiki.tsx`) — every dead-end neighbor
  * from every guess piles into that same stray column, rendering as a
  * cluster of floating, unconnected dots (the bug this filter exists to
- * fix). The node stays `named` in `graph.nodes` untouched — still counted
- * by `buildRevealShareSummary` and still available to a future
- * revealed-neighbors side panel — this filter only affects what reaches the
+ * fix). The node stays `named` in `graph.nodes` untouched — still available
+ * to a future revealed-neighbors side panel — this filter only affects what
+ * reaches the
  * canvas.
  *
  * Every other variant is exempt even when linkless, because each is already
@@ -423,30 +422,20 @@ export function applyFullReveal(
   return next;
 }
 
+const HOP_DIGIT_EMOJI = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'];
+
+function revealShareEmoji(g: RevealGuessResponse): string {
+  if (g.correct) return '✅';
+  if (g.noPathFound) return '❌';
+  if (g.minHops >= 0 && g.minHops <= 9) return HOP_DIGIT_EMOJI[g.minHops];
+  return String(g.minHops);
+}
+
 /**
- * Build the copyable share summary text for a finished Reveal puzzle,
- * mirroring `buildShareSummary` (`dailyGraph.ts`, Classic) but in Reveal's
- * own format — no hop-chain, since Reveal's mechanic is "how much of the
- * graph did you have to expose", not "how short a path did you find":
- *
- * - Win: `Grill: Reveal #N: solved in {guessCount} guesses ({totalRevealed} nodes revealed)`
- * - Loss: `Grill: Reveal #N: X/5 ({totalRevealed} nodes revealed)`
- *
- * `totalRevealed` is derived from `graph` directly (count of `named`-state
- * nodes) rather than passed in separately, so callers can't drift it out of
- * sync with what's actually on screen — pass `graph` *after* `applyFullReveal`
- * has already run so the just-resolved hidden node and any formerly-blank
- * nodes are counted too.
+ * Build the copyable share summary text for a finished Reveal puzzle — one
+ * emoji per guess, e.g. `7️⃣ 4️⃣ 2️⃣ ✅`. Digit keycaps for hop counts, ✅ for
+ * a correct guess, ❌ for no path found.
  */
-export function buildRevealShareSummary(
-  puzzleNumber: number,
-  guesses: RevealGuessResponse[],
-  graph: RevealGraphData,
-  lost = false,
-): string {
-  const totalRevealed = graph.nodes.filter((n) => n.state === 'named').length;
-  if (lost) {
-    return `Grill: Reveal #${puzzleNumber}: X/${MAX_DAILY_GUESSES} (${totalRevealed} nodes revealed)`;
-  }
-  return `Grill: Reveal #${puzzleNumber}: solved in ${guesses.length} guess${guesses.length === 1 ? '' : 'es'} (${totalRevealed} nodes revealed)`;
+export function buildRevealShareSummary(guesses: RevealGuessResponse[]): string {
+  return guesses.map(revealShareEmoji).join(' ');
 }

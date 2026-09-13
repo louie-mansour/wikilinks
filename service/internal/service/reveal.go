@@ -81,6 +81,7 @@ func (s *Guess) SubmitReveal(guessTitle string, guessNumber int, known []string)
 	guess := s.g.Title(guessID)
 
 	if guessID == answerID {
+		s.maybeReroll(true)
 		return &RevealGuessResult{
 			Guess:      guess,
 			Correct:    true,
@@ -110,6 +111,7 @@ func (s *Guess) SubmitReveal(guessTitle string, guessNumber int, known []string)
 			graphData.Nodes = append(graphData.Nodes, WikiNode{ID: answerTitle, Variant: "end", Label: answerTitle})
 		}
 		graphData = annotateDirectConnections(s.g, graphData, answerID)
+		s.maybeReroll(lost)
 		return &RevealGuessResult{
 			Guess:       guess,
 			Lost:        lost,
@@ -144,6 +146,7 @@ func (s *Guess) SubmitReveal(guessTitle string, guessNumber int, known []string)
 
 	graphData := annotateDirectConnections(s.g, buildRevealGraphData(s.g, allPaths, lost, answerID, known), answerID)
 
+	s.maybeReroll(lost)
 	return &RevealGuessResult{
 		Guess:      guess,
 		Lost:       lost,

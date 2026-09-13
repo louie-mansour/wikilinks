@@ -8,7 +8,7 @@ import { ModePicker } from '../ModePicker/ModePicker';
 import { useDebouncedSuggestions } from '../../hooks/useDebouncedSuggestions';
 import { submitRevealGuess } from '../../api/revealGuess';
 import { fetchDailyInfo } from '../../api/dailyInfo';
-import { MAX_DAILY_GUESSES, puzzleNumberForDate } from '../../data/dailyGraph';
+import { MAX_DAILY_GUESSES } from '../../data/dailyGraph';
 import {
   applyFullReveal,
   buildRevealShareSummary,
@@ -52,10 +52,6 @@ export function RevealGame() {
   // shared with Classic via the same `DailySchedule` (no new schedule file).
   const dateKey = useMemo(() => dateKeyUTC(new Date()), []);
   const hiddenId = useMemo(() => revealHiddenId(dateKey), [dateKey]);
-  // Same daily schedule/puzzle numbering as Classic (`puzzleNumberForDate` in
-  // `dailyGraph.ts`) — derived from `dateKey` rather than a fresh `new Date()`
-  // so it can never drift from the puzzle this session is actually playing.
-  const puzzleNumber = useMemo(() => puzzleNumberForDate(new Date(dateKey)), [dateKey]);
 
   const [hasHydrated, setHasHydrated] = useState(false);
   const [guesses, setGuesses] = useState<RevealGuessResponse[]>([]);
@@ -100,14 +96,20 @@ export function RevealGame() {
   const finished = won || lost;
   const answer = guesses.find((g) => g.correct || g.lost)?.answer;
 
-  // Reveal's own share string (distinct format from Classic's hop-chain
-  // string — see `buildRevealShareSummary`). Computed off `graphData` after
-  // the `applyFullReveal` transition below has already run, so
-  // `totalRevealed` counts the just-resolved hidden node and every
-  // formerly-blank node too.
+  // Note: the Go server's `-dev` flag rerolls to a new random target the
+  // instant a puzzle finishes (see `Guess.maybeReroll` in
+  // `service/internal/service/guess.go`), but the client does NOT auto-reset
+  // to match. The finished result banner sticks around — same as production —
+  // until the player clears this mode's persisted state (`grill-reveal:*` in
+  // localStorage, see `revealPersistence.ts`) and reloads, same as a real
+  // day's rollover would. This is deliberate: an automatic client-side reset
+  // right after finishing made dev mode feel like it "immediately reset"
+  // instead of giving the player a moment to see the result.
+  //
+  // Reveal's own share string — see `buildRevealShareSummary`.
   const shareSummary = useMemo(
-    () => (finished ? buildRevealShareSummary(puzzleNumber, guesses, graphData, lost) : null),
-    [finished, puzzleNumber, guesses, graphData, lost],
+    () => (finished ? buildRevealShareSummary(guesses) : null),
+    [finished, guesses],
   );
 
   // Persist on every change, once the initial hydration read has happened —

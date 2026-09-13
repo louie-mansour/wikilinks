@@ -17,6 +17,28 @@ type AnswerSource interface {
 	CategoryForDate(date time.Time) (string, error)
 }
 
+// Rerollable is an optional capability of an AnswerSource: implementing it
+// lets Guess move on to a new answer as soon as a puzzle finishes (see
+// maybeReroll below). Only *RandomAnswerSource (local dev mode) implements
+// it — production's *config.DailySchedule does not, so maybeReroll is a
+// no-op there and the scheduled answer stays put regardless of outcome.
+type Rerollable interface {
+	Reroll()
+}
+
+// maybeReroll asks sched for a new answer once a puzzle has just finished
+// (done is the guess's own correct||lost), so a local dev server picks up a
+// fresh random target for the very next guess instead of requiring a
+// restart. It is a no-op for any AnswerSource that isn't Rerollable.
+func (s *Guess) maybeReroll(done bool) {
+	if !done {
+		return
+	}
+	if r, ok := s.sched.(Rerollable); ok {
+		r.Reroll()
+	}
+}
+
 // ErrNoPuzzleToday is returned when the daily schedule has no article
 // configured for the current UTC calendar day.
 type ErrNoPuzzleToday struct{ Err error }
@@ -99,6 +121,7 @@ func (s *Guess) Submit(guessTitle string, guessNumber int) (*GuessResult, error)
 	guess := s.g.Title(guessID)
 
 	if guessID == answerID {
+		s.maybeReroll(true)
 		return &GuessResult{
 			Guess:      guess,
 			Correct:    true,
@@ -127,6 +150,7 @@ func (s *Guess) Submit(guessTitle string, guessNumber int) (*GuessResult, error)
 			graphData.Nodes = append(graphData.Nodes, WikiNode{ID: answerTitle, Variant: "end", Label: answerTitle})
 		}
 		graphData = annotateDirectConnections(s.g, graphData, answerID)
+		s.maybeReroll(lost)
 		return &GuessResult{
 			Guess:       guess,
 			Lost:        lost,
@@ -158,6 +182,7 @@ func (s *Guess) Submit(guessTitle string, guessNumber int) (*GuessResult, error)
 
 	graphData := annotateDirectConnections(s.g, buildGuessGraphData(allPaths, lost), answerID)
 
+	s.maybeReroll(lost)
 	return &GuessResult{
 		Guess:      guess,
 		Lost:       lost,
