@@ -224,8 +224,21 @@ export function mergeRevealGuess(
     }
   }
 
+  // Same unmasking as the node loop above: on a correct/losing guess the
+  // server's own graphData.links are keyed to the real answer title, not
+  // hiddenId — but the accumulated target node keeps id === hiddenId
+  // forever (revealNode only ever changes its label, never its id, so
+  // earlier guesses' edges into it stay valid). Left unmapped, this guess's
+  // final hop(s) into the target would point at an id no node in the graph
+  // actually has — the target renders under hiddenId with its real label,
+  // while this guess's own connected cluster dangles off a same-named but
+  // absent node, splitting it from the rest of the graph on canvas.
+  function unmaskAnswer(id: string): string {
+    return response.answer && id === response.answer ? hiddenId : id;
+  }
+
   for (const link of response.graphData.links) {
-    addLink(link);
+    addLink({ source: unmaskAnswer(link.source), target: unmaskAnswer(link.target) });
   }
 
   // The server reports neighbor titles alone (see `graph.NeighborInfo` /

@@ -53,7 +53,16 @@ type RevealGuessResult struct {
 // Classic's Submit expects it. Once guessNumber reaches MaxDailyGuesses
 // without a correct guess, the real answer is revealed and the result is
 // marked Lost — same cap, same constant, as Classic.
-func (s *Guess) SubmitReveal(guessTitle string, guessNumber int) (*RevealGuessResult, error) {
+// known is the set of article titles already present in the caller's
+// accumulated Reveal graph (every node from every prior guess this puzzle,
+// however it was revealed — see revealGraph.ts's module doc for the client's
+// side of this) — titles the player has already seen, so this guess's
+// buildRevealGraphData/backfillAroundTarget can walk through them for free
+// instead of re-spending the 50-node cap re-revealing them (see
+// backfillAroundTarget's doc for why that free walk-through is what makes
+// each guess surface a genuinely new batch instead of the same alphabetical
+// backlinks every time).
+func (s *Guess) SubmitReveal(guessTitle string, guessNumber int, known []string) (*RevealGuessResult, error) {
 	now := time.Now()
 
 	answerTitle, err := s.sched.ArticleForDate(now)
@@ -133,7 +142,7 @@ func (s *Guess) SubmitReveal(guessTitle string, guessNumber int) (*RevealGuessRe
 		allPaths[i] = path
 	}
 
-	graphData := annotateDirectConnections(s.g, buildRevealGraphData(s.g, allPaths, lost, answerID), answerID)
+	graphData := annotateDirectConnections(s.g, buildRevealGraphData(s.g, allPaths, lost, answerID, known), answerID)
 
 	return &RevealGuessResult{
 		Guess:      guess,
@@ -177,13 +186,39 @@ func (s *Guess) SubmitReveal(guessTitle string, guessNumber int) (*RevealGuessRe
 // additional nodes around the target rather than the guess. allPaths must be
 // non-empty; every path's final element is the masked placeholder id, or,
 // when lost, the real answer title.
-func buildRevealGraphData(g *graph.WikipediaGraph, allPaths [][]string, lost bool, targetID uint32) GraphData {
+//
+// known lists titles the caller has already had revealed by a prior guess
+// this puzzle (see SubmitReveal's doc). Every interior/backlink candidate
+// below — including allPaths[0]'s own guaranteed backbone — costs against
+// the revealPathNodeCap budget only if it is *not* in known, and an
+// already-known node is never re-added to the emitted node list either
+// (mirroring backfillAroundTarget's identical treatment of known
+// backlinks): it can still be kept/walked-through for free so a chain that
+// passes through it stays connected and backfillAroundTarget can walk past
+// it to reach further hop-layers, but re-sending a title the caller already
+// has would only waste this guess's own reveal budget and payload on
+// content that's already on screen. Without this, every guess whose
+// shortest route is dominated by nodes the player has already seen would
+// spend its entire 50-node budget re-revealing them instead of surfacing
+// new ones — see reveal_cap_test.go's "eachGuessSurfacesNewBacklinks"-style
+// cases for the behavior this prevents.
+func buildRevealGraphData(g *graph.WikipediaGraph, allPaths [][]string, lost bool, targetID uint32, known []string) GraphData {
 	guessTitle := allPaths[0][0]
 	targetTitle := allPaths[0][len(allPaths[0])-1]
 
+	knownSet := make(map[string]struct{}, len(known))
+	for _, title := range known {
+		knownSet[title] = struct{}{}
+	}
+
 	kept := make(map[string]struct{})
+	backboneCost := 0
 	for i := 1; i < len(allPaths[0])-1; i++ {
-		kept[allPaths[0][i]] = struct{}{}
+		title := allPaths[0][i]
+		kept[title] = struct{}{}
+		if _, ok := knownSet[title]; !ok {
+			backboneCost++
+		}
 	}
 
 	type candidatePath struct {
@@ -205,27 +240,32 @@ func buildRevealGraphData(g *graph.WikipediaGraph, allPaths [][]string, lost boo
 		return len(a) < len(b)
 	})
 
-	budget := revealPathNodeCap - len(kept)
+	budget := revealPathNodeCap - backboneCost
 	for _, c := range candidates {
 		if budget <= 0 {
 			break
 		}
 		newTitles := make([]string, 0, len(c.interior))
+		cost := 0
 		for _, title := range c.interior {
-			if _, ok := kept[title]; !ok {
-				newTitles = append(newTitles, title)
+			if _, ok := kept[title]; ok {
+				continue
+			}
+			newTitles = append(newTitles, title)
+			if _, ok := knownSet[title]; !ok {
+				cost++
 			}
 		}
-		if len(newTitles) == 0 || len(newTitles) > budget {
+		if len(newTitles) == 0 || cost > budget {
 			continue
 		}
 		for _, title := range newTitles {
 			kept[title] = struct{}{}
 		}
-		budget -= len(newTitles)
+		budget -= cost
 	}
 
-	backlinkTitles, backlinkEdges := backfillAroundTarget(g, targetID, targetTitle, guessTitle, kept, budget)
+	backlinkTitles, backlinkEdges := backfillAroundTarget(g, targetID, targetTitle, guessTitle, kept, budget, knownSet)
 
 	endVariant, endLabel := "hidden-end", ""
 	if lost {
@@ -236,6 +276,14 @@ func buildRevealGraphData(g *graph.WikipediaGraph, allPaths [][]string, lost boo
 		{ID: targetTitle, Variant: endVariant, Label: endLabel},
 	}
 	for title := range kept {
+		// Already on the caller's screen from an earlier guess: still kept
+		// (for link continuity below, and so backfillAroundTarget's caller
+		// can walk through it for free), but re-emitting it as a "new" node
+		// here would just waste this guess's own payload — see
+		// backfillAroundTarget's identical known-exclusion for backlinks.
+		if _, ok := knownSet[title]; ok {
+			continue
+		}
 		nodes = append(nodes, WikiNode{ID: title, Variant: "path", Label: title})
 	}
 	for title := range backlinkTitles {
@@ -290,6 +338,17 @@ type graphEdge struct{ src, dst string }
 // anchor a link there. targetTitle is the target's possibly-masked display
 // title (so its edges are correctly keyed to the placeholder id / real
 // answer title, whichever the caller substituted into allPaths).
+//
+// known (see buildRevealGraphData's doc) gets a similar free walk-through as
+// kept, but unlike kept it is never added to the backlinks/edges this call
+// returns — the caller already has that node and its edges from an earlier
+// guess, so re-emitting it here would just be dead weight. It is still
+// walked through (at no budget cost) so a still-unseen node past it remains
+// reachable. This is what lets the BFS blow straight through an entire
+// already-exhausted hop-layer (e.g. every one of the target's direct
+// backlinks, once a prior guess already revealed all of them) for free and
+// spend this guess's whole budget on the next, still-unseen layer instead of
+// stopping cold at budget-already-spent-here.
 func backfillAroundTarget(
 	g *graph.WikipediaGraph,
 	targetID uint32,
@@ -297,6 +356,7 @@ func backfillAroundTarget(
 	guessTitle string,
 	kept map[string]struct{},
 	budget int,
+	known map[string]struct{},
 ) (map[string]struct{}, []graphEdge) {
 	backlinks := make(map[string]struct{})
 	var edges []graphEdge
@@ -335,6 +395,14 @@ func backfillAroundTarget(
 				continue
 			}
 			if _, ok := kept[c.title]; ok {
+				nextFrontier = append(nextFrontier, frontierNode{c.id, c.title})
+				continue
+			}
+			if _, isKnown := known[c.title]; isKnown {
+				// Already on the caller's screen from an earlier guess: walk
+				// through it for free (so a still-unseen node past it can
+				// still be reached), but don't re-add it to this guess's
+				// own backlinks/edges output — see doc above.
 				nextFrontier = append(nextFrontier, frontierNode{c.id, c.title})
 				continue
 			}

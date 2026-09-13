@@ -14,6 +14,15 @@ import (
 // distinct, additive route; it never modifies or reuses Classic's response
 // shape, and never reveals the real hidden-end article's identity prior to a
 // correct or losing guess.
+//
+// Optional repeated `known` query params list every article title the
+// caller's accumulated Reveal graph already has a node for (see
+// revealGraph.ts) — every prior guess's response folded together. Passing
+// these lets SubmitReveal fill this guess's up-to-50-node cap with articles
+// the player hasn't seen yet instead of re-revealing ones already on screen
+// (see service.Guess.SubmitReveal's doc). Omitting it (or the empty set, on
+// the player's very first guess) just means nothing is treated as
+// already-known.
 type RevealGuess struct {
 	svc *service.Guess
 }
@@ -43,7 +52,9 @@ func (c *RevealGuess) revealGuess(w http.ResponseWriter, r *http.Request) {
 		guessNumber = n
 	}
 
-	result, err := c.svc.SubmitReveal(guess, guessNumber)
+	known := r.URL.Query()["known"]
+
+	result, err := c.svc.SubmitReveal(guess, guessNumber, known)
 	if err != nil {
 		var notFound service.ErrTitleNotFound
 		var noPuzzle service.ErrNoPuzzleToday

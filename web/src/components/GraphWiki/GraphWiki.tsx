@@ -198,10 +198,12 @@ function computeBfsDepthsFromEnd(nodes: WikiNode[], links: WikiLink[], endId: st
     const rd = reverseDepths.get(node.id);
     // Invert so the end node (rd = 0) lands at maxDepth — the rightmost
     // column — and everything else is placed by how far it is from that
-    // column. Nodes with no discovered path back to the end yet (an
-    // unconnected guess, a dead-end neighbor reveal) sort one column
-    // further out than the farthest connected node.
-    depths.set(node.id, rd !== undefined ? maxDepth - rd : maxDepth + 1);
+    // column (roots/guesses land near column 0, the left side). Nodes with
+    // no discovered path back to the end (an unconnected guess, a dead-end
+    // neighbor reveal) sort one column further out than the *root* side
+    // (depth -1), not past the target — placing them past the target would
+    // draw them as floating, unconnected dots beyond the goal.
+    depths.set(node.id, rd !== undefined ? maxDepth - rd : -1);
   }
   return depths;
 }

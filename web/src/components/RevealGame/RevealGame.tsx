@@ -134,8 +134,12 @@ export function RevealGame() {
     setIsSubmitting(true);
     setError(null);
     const guessNumber = guesses.length + 1;
+    // Every node already on screen from a prior guess — the hidden node's
+    // placeholder id is never a real title the server would recognize, so
+    // it's excluded (see `submitRevealGuess`'s doc).
+    const known = graphData.nodes.map((n) => n.id).filter((id) => id !== hiddenId);
     try {
-      const result = await submitRevealGuess(guess, guessNumber);
+      const result = await submitRevealGuess(guess, guessNumber, known);
       setGuesses((prev) => [...prev, result]);
       setGraphData((prev) => {
         const merged = mergeRevealGuess(prev, result, hiddenId, guessNumber);
@@ -156,7 +160,7 @@ export function RevealGame() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [guessValue, isSubmitting, finished, guesses, hiddenId]);
+  }, [guessValue, isSubmitting, finished, guesses, hiddenId, graphData]);
 
   return (
     <div className={styles.page}>

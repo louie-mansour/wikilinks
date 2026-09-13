@@ -310,6 +310,56 @@ describe('mergeRevealGuess', () => {
       false,
     );
   });
+
+  it('remaps a losing guess\'s links from the unmasked answer title back to hiddenId, so the target node stays connected', () => {
+    // Regression test: on the losing (5th) guess, the server unmasks the
+    // hidden node's id to the real answer title everywhere in that guess's
+    // own graphData — nodes *and* links (see `reveal.go`'s `SubmitReveal`:
+    // `path[j] = answerTitle` when `lost`). The node loop above already
+    // matches on `response.answer` to avoid inserting a duplicate target
+    // node, but the accumulated target node itself keeps id === hiddenId
+    // forever (`revealNode` only ever changes its label). Left unmapped,
+    // this guess's final edge into the target would reference an id no node
+    // in the graph has, stranding this guess's whole connected cluster from
+    // the target on canvas — the bug reported as "the guess and the nodes
+    // around it congregate together but aren't connected to the rest of the
+    // graph".
+    let graph = createInitialRevealGraph(HIDDEN_ID);
+
+    const losingGuess = response({
+      guess: 'Guess Five',
+      lost: true,
+      answer: 'World War II',
+      graphData: {
+        nodes: [
+          { id: 'Guess Five', variant: 'guess' },
+          { id: 'Hop A', variant: 'path' },
+          { id: 'World War II', variant: 'end', label: 'World War II' },
+        ],
+        links: [
+          { source: 'Guess Five', target: 'Hop A' },
+          { source: 'Hop A', target: 'World War II' },
+        ],
+      },
+    });
+
+    graph = mergeRevealGuess(graph, losingGuess, HIDDEN_ID, 5);
+
+    // No node was created under the real answer title — the target stays
+    // the single, stable hiddenId node.
+    expect(graph.nodes.some((n) => n.id === 'World War II')).toBe(false);
+    expect(graph.nodes.filter((n) => n.id === HIDDEN_ID)).toHaveLength(1);
+
+    // The final hop's link is remapped to hiddenId, keeping this guess's
+    // cluster connected to the target node.
+    expect(graph.links).toEqual(
+      expect.arrayContaining([
+        { source: 'Guess Five', target: 'Hop A' },
+        { source: 'Hop A', target: HIDDEN_ID },
+      ]),
+    );
+    expect(graph.links.some((l) => l.target === 'World War II')).toBe(false);
+  });
 });
 
 describe('revealNode', () => {

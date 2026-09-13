@@ -112,7 +112,7 @@ func TestBuildRevealGraphData_capsAndOrdersByHopDistance(t *testing.T) {
 		allPaths = append(allPaths, []string{"Guess", "D1", fmt.Sprintf("D2_%02d", i), "hidden-placeholder"})
 	}
 
-	graphData := buildRevealGraphData(g, allPaths, false, targetID)
+	graphData := buildRevealGraphData(g, allPaths, false, targetID, nil)
 
 	pathNodes := 0
 	byTitle := make(map[string]string)
@@ -187,7 +187,7 @@ func TestBuildRevealGraphData_backfillsFromTargetBacklinksWhenBudgetLeftover(t *
 	g := buildTestGraph(t, titles, edges)
 
 	allPaths := [][]string{{"Guess", "D1", "hidden-placeholder"}}
-	graphData := buildRevealGraphData(g, allPaths, false, targetID)
+	graphData := buildRevealGraphData(g, allPaths, false, targetID, nil)
 
 	byTitle := make(map[string]string)
 	revealedNodes := 0
@@ -232,6 +232,157 @@ func TestBuildRevealGraphData_backfillsFromTargetBacklinksWhenBudgetLeftover(t *
 	}
 }
 
+// Guess --(1 edge)--> Target, with 80 unrelated backlink nodes
+// (X_00..X_79) also linking straight into Target. The guess is directly
+// linked to Target (no interior path nodes at all), so every one of the 50
+// nodes this guess can reveal comes purely from backfillAroundTarget.
+//
+// This pins down the fix for the "same 50 backlinks every guess" bug: a
+// second call passing the first call's revealed titles back in as `known`
+// must reveal a disjoint batch of previously-unseen backlinks (the
+// alphabetically-next 30, since only 80 exist total) rather than
+// re-surfacing the same alphabetically-first 50 — mirroring what a player
+// making two separate one-hop-from-the-answer guesses should see: each
+// guess exposes new ground until every connecting article has been shown.
+func TestBuildRevealGraphData_knownExcludesAlreadyRevealedBacklinks(t *testing.T) {
+	const totalBacklinks = 80
+	titles := []string{"Guess"}
+	for i := 0; i < totalBacklinks; i++ {
+		titles = append(titles, fmt.Sprintf("X_%02d", i))
+	}
+	titles = append(titles, "Target")
+	targetID := uint32(len(titles) - 1)
+
+	var edges [][2]uint32
+	edges = append(edges, [2]uint32{0, targetID}) // Guess -> Target
+	for i := 0; i < totalBacklinks; i++ {
+		xID := uint32(1 + i)
+		edges = append(edges, [2]uint32{xID, targetID}) // X_i -> Target
+	}
+
+	g := buildTestGraph(t, titles, edges)
+	allPaths := [][]string{{"Guess", "hidden-placeholder"}}
+
+	first := buildRevealGraphData(g, allPaths, false, targetID, nil)
+	firstBacklinks := make(map[string]struct{})
+	var known []string
+	for _, n := range first.Nodes {
+		if n.Variant == "backlink" {
+			firstBacklinks[n.ID] = struct{}{}
+			known = append(known, n.ID)
+		}
+	}
+	if len(firstBacklinks) != revealPathNodeCap {
+		t.Fatalf("first guess backlink count = %d, want %d", len(firstBacklinks), revealPathNodeCap)
+	}
+	for i := 0; i < revealPathNodeCap; i++ {
+		title := fmt.Sprintf("X_%02d", i)
+		if _, ok := firstBacklinks[title]; !ok {
+			t.Fatalf("expected first guess to reveal alphabetically-first %s, it did not", title)
+		}
+	}
+
+	second := buildRevealGraphData(g, allPaths, false, targetID, known)
+	secondBacklinks := make(map[string]struct{})
+	for _, n := range second.Nodes {
+		if n.Variant == "backlink" {
+			secondBacklinks[n.ID] = struct{}{}
+		}
+	}
+
+	wantSecondCount := totalBacklinks - revealPathNodeCap // 30 remaining, all new
+	if len(secondBacklinks) != wantSecondCount {
+		t.Fatalf("second guess backlink count = %d, want %d", len(secondBacklinks), wantSecondCount)
+	}
+	for title := range secondBacklinks {
+		if _, alreadyKnown := firstBacklinks[title]; alreadyKnown {
+			t.Fatalf("second guess re-revealed %s, which the first guess already surfaced", title)
+		}
+	}
+	for i := revealPathNodeCap; i < totalBacklinks; i++ {
+		title := fmt.Sprintf("X_%02d", i)
+		if _, ok := secondBacklinks[title]; !ok {
+			t.Fatalf("expected second guess to reveal remaining backlink %s, it did not", title)
+		}
+	}
+}
+
+// Guess --(1 edge)--> D1 --(1 edge)--> D2 --(1 edge)--> Target, plus 80
+// unrelated backlink nodes (X_00..X_79) also linking straight into Target.
+//
+// D1 and D2 are the guess's own guaranteed backbone — already fully known
+// from a prior guess before this one is submitted. This pins down the fix
+// for the "second guess barely reveals anything new" bug: charging the
+// backbone's node count against the 50-node budget regardless of knownSet
+// membership (and re-emitting already-known backbone nodes as "new" path
+// nodes) starved backfillAroundTarget of budget for genuinely new backlinks
+// even though the backbone itself contributed nothing new. A guess whose
+// own shortest path is entirely already-known must still surface a full
+// 50-node batch of fresh backlinks, and must not re-list D1/D2 as nodes in
+// its own response.
+func TestBuildRevealGraphData_knownExcludesAlreadyRevealedBackbone(t *testing.T) {
+	const extraBacklinks = 80
+	titles := []string{"Guess", "D1", "D2"}
+	for i := 0; i < extraBacklinks; i++ {
+		titles = append(titles, fmt.Sprintf("X_%02d", i))
+	}
+	titles = append(titles, "Target")
+	targetID := uint32(len(titles) - 1)
+
+	var edges [][2]uint32
+	edges = append(edges, [2]uint32{0, 1})        // Guess -> D1
+	edges = append(edges, [2]uint32{1, 2})        // D1 -> D2
+	edges = append(edges, [2]uint32{2, targetID}) // D2 -> Target
+	for i := 0; i < extraBacklinks; i++ {
+		xID := uint32(3 + i)
+		edges = append(edges, [2]uint32{xID, targetID}) // X_i -> Target
+	}
+
+	g := buildTestGraph(t, titles, edges)
+	allPaths := [][]string{{"Guess", "D1", "D2", "hidden-placeholder"}}
+
+	known := []string{"D1", "D2"}
+	graphData := buildRevealGraphData(g, allPaths, false, targetID, known)
+
+	byTitle := make(map[string]string)
+	backlinks := 0
+	for _, n := range graphData.Nodes {
+		byTitle[n.ID] = n.Variant
+		if n.Variant == "backlink" {
+			backlinks++
+		}
+		if n.Variant == "path" {
+			t.Fatalf("expected no path-variant nodes (D1/D2 are already known), got %s", n.ID)
+		}
+	}
+	if _, present := byTitle["D1"]; present {
+		t.Fatal("already-known backbone node D1 should not be re-emitted in this guess's own response")
+	}
+	if _, present := byTitle["D2"]; present {
+		t.Fatal("already-known backbone node D2 should not be re-emitted in this guess's own response")
+	}
+	if backlinks != revealPathNodeCap {
+		t.Fatalf("backlink count = %d, want %d (backbone being fully known must free the entire budget for new backlinks)", backlinks, revealPathNodeCap)
+	}
+
+	hasGuessToD1 := false
+	hasD2ToTarget := false
+	for _, l := range graphData.Links {
+		if l.Source == "Guess" && l.Target == "D1" {
+			hasGuessToD1 = true
+		}
+		if l.Source == "D2" && l.Target == "hidden-placeholder" {
+			hasD2ToTarget = true
+		}
+	}
+	if !hasGuessToD1 {
+		t.Fatal("expected a Guess->D1 link even though D1 isn't re-emitted as a node, for connectivity on the caller's side")
+	}
+	if !hasD2ToTarget {
+		t.Fatal("expected a D2->hidden-placeholder link even though D2 isn't re-emitted as a node, for connectivity on the caller's side")
+	}
+}
+
 // Guess --(1 edge each)--> D1_00..D1_59 --(1 edge each)--> D2 --(1 edge)--> Target
 //
 // 60 distinct first-hop nodes (distFromGuess=1) all funnel through a single
@@ -268,7 +419,7 @@ func TestBuildRevealGraphData_capNeverSeversTargetConnection(t *testing.T) {
 		allPaths = append(allPaths, []string{"Guess", fmt.Sprintf("D1_%02d", i), "D2", "hidden-placeholder"})
 	}
 
-	graphData := buildRevealGraphData(g, allPaths, false, targetID)
+	graphData := buildRevealGraphData(g, allPaths, false, targetID, nil)
 
 	byTitle := make(map[string]string)
 	for _, n := range graphData.Nodes {
@@ -333,7 +484,7 @@ func TestBuildRevealGraphData_neverStrandsOneHopNodesAsDeadEnds(t *testing.T) {
 		})
 	}
 
-	graphData := buildRevealGraphData(g, allPaths, false, targetID)
+	graphData := buildRevealGraphData(g, allPaths, false, targetID, nil)
 
 	kept := make(map[string]struct{})
 	for _, n := range graphData.Nodes {
