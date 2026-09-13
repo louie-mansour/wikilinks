@@ -142,6 +142,7 @@ export function mergeRevealGuess(
   accumulated: RevealGraphData,
   response: RevealGuessResponse,
   hiddenId: string,
+  guessNumber?: number,
 ): RevealGraphData {
   const nodes = [...accumulated.nodes];
   const indexById = new Map(nodes.map((n, i) => [n.id, i]));
@@ -160,14 +161,27 @@ export function mergeRevealGuess(
     }
   }
 
+  // This guess's own node — always the article the player just typed. If it's
+  // brand new, add it as `blank` (see module doc). If it happens to match a
+  // node already in the graph (e.g. a title surfaced earlier as some other
+  // guess's neighbor/path reveal), convert that node to `variant: 'guess'` so
+  // it's visually marked as guessed too, tagged with this guess's number —
+  // except the hidden/target node, which is never converted (guarded by the
+  // `state === 'unknown'` check; the caller also never routes the hidden
+  // node's placeholder id or the revealed answer title through here, see the
+  // loop below).
   function upsertBlank(id: string, variant?: WikiNodeVariant) {
     const existingIndex = indexById.get(id);
     if (existingIndex === undefined) {
       indexById.set(id, nodes.length);
-      nodes.push({ id, variant, state: 'blank' }); // deliberately no label — see module doc
+      nodes.push({ id, variant, guessNumber, state: 'blank' }); // deliberately no label — see module doc
       return;
     }
-    // Node already known (named, blank, or unknown) — never downgrade or overwrite.
+    const existing = nodes[existingIndex];
+    if (existing.state === 'unknown') return; // never convert the hidden/target node
+    if (existing.variant !== 'guess') {
+      nodes[existingIndex] = { ...existing, variant: 'guess', guessNumber };
+    }
   }
 
   // 1. Neighbor reveal: always named.
@@ -292,17 +306,54 @@ export function revealNode(
  *   path nodes were named immediately (`mergeRevealGuess` no longer
  *   produces this combination itself): mapped to `hidden-end` so
  *   `GraphWiki` renders it as an unlabeled masked node.
+ *
+ * One filter runs before any of the above: a plain (`variant: 'default'` or
+ * unset), non-guess `named` node with zero incident links — a neighbor
+ * reveal (`upsertNamed(..., 'default')` in `mergeRevealGuess`) that never
+ * turned out to be part of any guess's connected path reveal, so
+ * `mergeRevealGuess` deliberately drew no edge for it (see its "dead-end
+ * neighbor" comment above) — is dropped from the canvas graph entirely
+ * rather than passed through. `GraphWiki`'s layout still has to place every
+ * node it's given somewhere, and for a node with no edges that "somewhere"
+ * is one column past the farthest connected node (see
+ * `computeBfsDepthsFromEnd` in `GraphWiki.tsx`) — every dead-end neighbor
+ * from every guess piles into that same stray column, rendering as a
+ * cluster of floating, unconnected dots (the bug this filter exists to
+ * fix). The node stays `named` in `graph.nodes` untouched — still counted
+ * by `buildRevealShareSummary` and still available to a future
+ * revealed-neighbors side panel — this filter only affects what reaches the
+ * canvas.
+ *
+ * Every other variant is exempt even when linkless, because each is already
+ * a meaningful anchor on its own rather than incidental clutter: `guess`
+ * (a guess with `noPathFound` stays linkless by design, per
+ * `service/internal/service/reveal.go`'s `SubmitReveal`), `end`/`hidden-end`
+ * (the target — linkless before any guess as `unknown`, and, after a full
+ * reveal with no path ever having been drawn to it, still linkless as
+ * `named`), and `path`/`backlink` (always linked in practice, per
+ * `buildRevealGraphData`, but not this filter's concern either way).
  */
 export function toWikiGraphData(graph: RevealGraphData): GraphData {
-  const nodes: WikiNode[] = graph.nodes.map((n): WikiNode => {
+  const connectedIds = new Set<string>();
+  for (const link of graph.links) {
+    connectedIds.add(link.source);
+    connectedIds.add(link.target);
+  }
+
+  const visibleNodes = graph.nodes.filter((n) => {
+    const isDeadEndNeighbor = n.state === 'named' && (n.variant === 'default' || n.variant === undefined);
+    return !isDeadEndNeighbor || connectedIds.has(n.id);
+  });
+
+  const nodes: WikiNode[] = visibleNodes.map((n): WikiNode => {
     if (n.state === 'named') {
-      return { id: n.id, label: n.label, variant: n.variant };
+      return { id: n.id, label: n.label, variant: n.variant, guessNumber: n.guessNumber };
     }
     if (n.state === 'unknown') {
       return { id: n.id, label: n.label, variant: 'end' };
     }
     if (n.variant === 'guess') {
-      return { id: n.id, variant: 'guess' };
+      return { id: n.id, variant: 'guess', guessNumber: n.guessNumber };
     }
     return { id: n.id, variant: 'hidden-end' };
   });

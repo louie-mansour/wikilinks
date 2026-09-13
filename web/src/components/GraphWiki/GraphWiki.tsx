@@ -48,6 +48,8 @@ export interface WikiNode {
   edgeCountToEnd?: number;
   /** Daily-mode direct-connections annotation — this article's own inbound-link count, an obscurity proxy. See dailyGraph.ts. */
   inDegree?: number;
+  /** Reveal-mode only — the 1-based order this article was guessed in. Drawn inside `variant: 'guess'` nodes. See revealGraph.ts. */
+  guessNumber?: number;
 }
 
 /** Force-graph mutates nodes with simulation coordinates at runtime. */
@@ -1094,6 +1096,15 @@ export function GraphWiki({ graphData, onReady, focusNodeId, mode = 'classic' }:
           ctx.strokeStyle = colors.ink;
           ctx.lineWidth = BORDER_STD / globalScale;
           ctx.stroke();
+
+          if (node.variant === 'guess' && node.guessNumber != null) {
+            const fontSize = 10 / globalScale;
+            ctx.fillStyle = colors.white;
+            ctx.font = `700 ${fontSize}px ${FONT_UI}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(node.guessNumber), node.x!, node.y!);
+          }
 
           const isHovered =
             hoveredNodeId === node.id

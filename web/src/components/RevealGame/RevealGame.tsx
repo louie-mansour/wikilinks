@@ -133,11 +133,12 @@ export function RevealGame() {
 
     setIsSubmitting(true);
     setError(null);
+    const guessNumber = guesses.length + 1;
     try {
-      const result = await submitRevealGuess(guess, guesses.length + 1);
+      const result = await submitRevealGuess(guess, guessNumber);
       setGuesses((prev) => [...prev, result]);
       setGraphData((prev) => {
-        const merged = mergeRevealGuess(prev, result, hiddenId);
+        const merged = mergeRevealGuess(prev, result, hiddenId, guessNumber);
         // Full reveal on either ending — shared primitive, same payload
         // shape for `correct` and `lost` (see `applyFullReveal`'s doc).
         // Loss is this issue's job in full (issue 06); on a *win* this only

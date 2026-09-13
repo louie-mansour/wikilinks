@@ -195,6 +195,78 @@ describe('mergeRevealGuess', () => {
     );
   });
 
+  it('tags the guess\'s own node with its 1-based guess number', () => {
+    let graph = createInitialRevealGraph(HIDDEN_ID);
+
+    graph = mergeRevealGuess(
+      graph,
+      response({ guess: 'Guess One', graphData: { nodes: [{ id: 'Guess One', variant: 'guess' }], links: [] } }),
+      HIDDEN_ID,
+      1,
+    );
+    graph = mergeRevealGuess(
+      graph,
+      response({ guess: 'Guess Two', graphData: { nodes: [{ id: 'Guess Two', variant: 'guess' }], links: [] } }),
+      HIDDEN_ID,
+      2,
+    );
+
+    expect(graph.nodes.find((n) => n.id === 'Guess One')?.guessNumber).toBe(1);
+    expect(graph.nodes.find((n) => n.id === 'Guess Two')?.guessNumber).toBe(2);
+  });
+
+  it('converts an already-named node into a guess node when it is later guessed directly', () => {
+    let graph = createInitialRevealGraph(HIDDEN_ID);
+
+    // Guess 1 names "Hop A" as a plain connecting article via neighbor reveal.
+    graph = mergeRevealGuess(
+      graph,
+      response({
+        guess: 'Guess One',
+        neighbors: [{ id: 1, title: 'Hop A' }],
+        graphData: { nodes: [{ id: 'Guess One', variant: 'guess' }], links: [] },
+      }),
+      HIDDEN_ID,
+      1,
+    );
+    expect(graph.nodes.find((n) => n.id === 'Hop A')).toMatchObject({ variant: 'default', state: 'named' });
+
+    // Guess 2 is literally "Hop A" — the existing node should flip to a guess
+    // node (tagged with guess #2) rather than staying a plain connecting node.
+    graph = mergeRevealGuess(
+      graph,
+      response({
+        guess: 'Hop A',
+        graphData: { nodes: [{ id: 'Hop A', variant: 'guess' }], links: [] },
+      }),
+      HIDDEN_ID,
+      2,
+    );
+
+    const hopA = graph.nodes.find((n) => n.id === 'Hop A');
+    expect(hopA?.variant).toBe('guess');
+    expect(hopA?.guessNumber).toBe(2);
+    expect(hopA?.state).toBe('named'); // stays named — already-revealed title isn't downgraded
+    expect(hopA?.label).toBe('Hop A');
+  });
+
+  it('never converts the hidden/target node into a guess node', () => {
+    let graph = createInitialRevealGraph(HIDDEN_ID);
+
+    // A malformed/defensive case: the hidden placeholder id appears tagged as
+    // this guess's own node. It must stay unknown, never become a guess node.
+    graph = mergeRevealGuess(
+      graph,
+      response({ guess: 'Guess One', graphData: { nodes: [{ id: HIDDEN_ID, variant: 'guess' }], links: [] } }),
+      HIDDEN_ID,
+      1,
+    );
+
+    const hidden = graph.nodes.find((n) => n.id === HIDDEN_ID);
+    expect(hidden?.state).toBe('unknown');
+    expect(hidden?.variant).toBe('hidden-end');
+  });
+
   it('synthesizes a guess->neighbor edge only when the neighbor is also part of this guess\'s connected path reveal', () => {
     // Regression test: `RevealNeighbors` (server-side) is deliberately
     // uncapped — it returns every index-1 node across every shortest path,
@@ -381,10 +453,81 @@ describe('toWikiGraphData', () => {
     expect(hop?.variant).toBe('path');
     expect(hop?.label).toBe('Hop A');
 
-    // Named nodes pass through untouched.
-    const neighbor = wiki.nodes.find((n) => n.id === 'Neighbor A');
-    expect(neighbor?.variant).toBe('default');
-    expect(neighbor?.label).toBe('Neighbor A');
+    // "Neighbor A" is a dead-end neighbor reveal — named (see the panel-count
+    // assertions elsewhere) but never wired into this guess's connected path
+    // reveal, so it stays linkless in `graph.links` and is filtered out of
+    // the canvas graph (see `toWikiGraphData`'s dead-end-neighbor filter).
+    expect(wiki.nodes.some((n) => n.id === 'Neighbor A')).toBe(false);
+  });
+
+  it('drops linkless neighbor nodes from the canvas graph while keeping them named in the accumulated graph', () => {
+    // Regression test for the floating-dot-cluster bug: a guess's neighbor
+    // reveal can name several nodes that never end up part of any guess's
+    // connected path reveal, so they stay linkless in `RevealGraphData`.
+    // Passed straight through to `GraphWiki`, every one of them lands in the
+    // same stray "past the farthest connected node" column and renders as an
+    // unconnected cluster of dots. `toWikiGraphData` should filter them out
+    // of the canvas graph while `mergeRevealGuess` still keeps them named.
+    let graph = createInitialRevealGraph(HIDDEN_ID);
+    graph = mergeRevealGuess(
+      graph,
+      response({
+        guess: 'Guess One',
+        neighbors: [
+          { id: 1, title: 'Connected Neighbor' },
+          { id: 2, title: 'Orphaned Neighbor A' },
+          { id: 3, title: 'Orphaned Neighbor B' },
+        ],
+        graphData: {
+          nodes: [
+            { id: 'Guess One', variant: 'guess' },
+            { id: 'Connected Neighbor', variant: 'path' },
+            { id: HIDDEN_ID, variant: 'hidden-end' },
+          ],
+          links: [
+            { source: 'Guess One', target: 'Connected Neighbor' },
+            { source: 'Connected Neighbor', target: HIDDEN_ID },
+          ],
+        },
+      }),
+      HIDDEN_ID,
+      1,
+    );
+
+    // Still named/counted in the accumulated graph (revealed-neighbors panel, share summary).
+    expect(graph.nodes.find((n) => n.id === 'Orphaned Neighbor A')?.state).toBe('named');
+    expect(graph.nodes.find((n) => n.id === 'Orphaned Neighbor B')?.state).toBe('named');
+
+    const wiki = toWikiGraphData(graph);
+    const wikiIds = wiki.nodes.map((n) => n.id);
+
+    expect(wikiIds).not.toContain('Orphaned Neighbor A');
+    expect(wikiIds).not.toContain('Orphaned Neighbor B');
+    expect(wikiIds).toContain('Connected Neighbor');
+    expect(wikiIds).toContain('Guess One');
+  });
+
+  it('keeps a linkless guess node (no path found) and the pre-guess unknown node on the canvas', () => {
+    // Both are meaningful anchors on their own, not incidental dead-end
+    // clutter, so the linkless filter must not drop them.
+    let graph = createInitialRevealGraph(HIDDEN_ID);
+
+    const initialWiki = toWikiGraphData(graph);
+    expect(initialWiki.nodes.map((n) => n.id)).toContain(HIDDEN_ID);
+
+    graph = mergeRevealGuess(
+      graph,
+      response({
+        guess: 'No Path Guess',
+        noPathFound: true,
+        graphData: { nodes: [{ id: 'No Path Guess', variant: 'guess' }], links: [] },
+      }),
+      HIDDEN_ID,
+      1,
+    );
+
+    const wiki = toWikiGraphData(graph);
+    expect(wiki.nodes.map((n) => n.id)).toContain('No Path Guess');
   });
 
   it('passes through the revealed hidden node as a named end node after a full reveal', () => {
