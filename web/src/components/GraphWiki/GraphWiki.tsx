@@ -707,8 +707,8 @@ interface GraphWikiProps {
    *  Bump this on every click, even to the same id — see the effect below. */
   focusNodeId?: string | null;
   /** 'classic' (default): Daily/sandbox legend (New discovery / Connecting article).
-   *  'reveal': Reveal mode's legend (Start / Guess / Target / Unknown) — always
-   *  shows all four, even before any guess exists, since Reveal's graph doesn't
+   *  'reveal': Reveal mode's legend (Guess / Target / Unknown) — always
+   *  shows all three, even before any guess exists, since Reveal's graph doesn't
    *  reliably carry a 'guess' node from the first render (see revealGraph.ts). */
   mode?: 'classic' | 'reveal';
 }
@@ -966,10 +966,6 @@ export function GraphWiki({ graphData, onReady, focusNodeId, mode = 'classic' }:
         <div className={styles.legendTitle}>Legend</div>
         {mode === 'reveal' ? (
           <>
-            <div className={styles.legendRow}>
-              <span className={`${styles.legendDot} ${styles.legendDotStart}`} />
-              Start
-            </div>
             <div className={styles.legendRow}>
               <span className={`${styles.legendDot} ${styles.legendDotStart}`} />
               Guess
