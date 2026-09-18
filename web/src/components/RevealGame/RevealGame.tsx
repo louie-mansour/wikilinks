@@ -208,6 +208,7 @@ export function RevealGame() {
               />
               <Button
                 variant="primary"
+                className={styles.guessButton}
                 onClick={handleSubmit}
                 loading={isSubmitting}
                 disabled={!guessValue.trim()}

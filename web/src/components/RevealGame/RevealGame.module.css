@@ -86,6 +86,12 @@
   flex: 1;
 }
 
+.guessButton {
+  flex-shrink: 0;
+  width: auto;
+  white-space: nowrap;
+}
+
 .guessesRemaining {
   font-size: var(--text-label);
   color: var(--ink-muted);
