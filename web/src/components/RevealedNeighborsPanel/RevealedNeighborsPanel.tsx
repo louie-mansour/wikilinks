@@ -20,13 +20,13 @@ export interface RevealedNeighborsPanelProps {
 }
 
 /**
- * `RevealedNeighborsPanel` — Reveal mode's sibling of Classic's
- * `DirectConnectionsPanel`, for the persistent list of every `named`-state
- * node revealed so far (see `docs/grill-reveal-mode/issues/05-revealed-neighbors-panel.md`).
+ * `RevealedNeighborsPanel` — Reveal mode's persistent list of every
+ * `named`-state node revealed so far (see
+ * `docs/grill-reveal-mode/issues/05-revealed-neighbors-panel.md`).
  *
- * Unlike `DirectConnectionsPanel`, this list is **not** filtered to
- * backlinks of a specific answer and carries no relevance scoring — it is
- * every outbound neighbor named by any guess so far, in reveal order.
+ * This list is **not** filtered to backlinks of a specific answer and
+ * carries no relevance scoring — it is every outbound neighbor named by any
+ * guess so far, in reveal order.
  * `RevealNode`/`RevealGraphData` (see `revealGraph.ts`) don't currently tag
  * a node with "which guess revealed this", so grouping per guess isn't
  * available without changing that module (out of scope here per the

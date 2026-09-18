@@ -18,7 +18,7 @@ import (
 //
 // It also implements Reroll (see guess.go's Rerollable), which Guess calls
 // automatically once a puzzle finishes — so a dev server moves on to a fresh
-// random answer as soon as a Reveal/Classic round ends, without a restart.
+// random answer as soon as a round ends, without a restart.
 // Reroll mutates puzzle in place under mu, so it's safe to call concurrently
 // with ArticleForDate/CategoryForDate/Article from in-flight requests.
 type RandomAnswerSource struct {

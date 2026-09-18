@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { trackSearchClicked, trackShareLinkOpened, trackLoadMoreClicked } from './analytics';
 import { Header } from './components/Header/Header';
-import { DailyGame } from './components/DailyGame/DailyGame';
 import { RevealGame } from './components/RevealGame/RevealGame';
 import { GraphWiki } from './components/GraphWiki/GraphWiki';
 import { BentoBox } from './components/BentoBox/BentoBox';
@@ -373,12 +372,8 @@ export function App() {
   const visiblePaths = sortedPaths.slice(0, visibleCount);
   const remainingCount = sortedPaths.length - visibleCount;
 
-  if (window.location.pathname === '/daily/reveal') {
+  if (window.location.pathname === '/daily' || window.location.pathname === '/daily/reveal') {
     return <RevealGame />;
-  }
-
-  if (window.location.pathname === '/daily') {
-    return <DailyGame />;
   }
 
   return (

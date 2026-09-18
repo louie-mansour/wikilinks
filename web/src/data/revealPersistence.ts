@@ -3,20 +3,14 @@ import type { RevealGraphData, RevealGuessResponse } from './revealGraph';
 /**
  * === Grill: Reveal — client-side persistence (issue 08) ===
  *
- * Reveal mode's `localStorage` layer. Classic (`DailyGame.tsx`) does not
- * currently persist any state across reloads — there is no existing
- * `dailyGraph.ts` key scheme to mirror. This module gives Reveal its own,
- * so a page reload mid-puzzle restores guesses and graph state, without ever
- * touching or being affected by whatever Classic does or doesn't store for
- * the same calendar date.
+ * Reveal mode's `localStorage` layer, so a page reload mid-puzzle restores
+ * guesses and graph state.
  *
  * Key scheme: `grill-reveal:{date}`, where `{date}` is the puzzle's UTC
  * calendar date (`YYYY-MM-DD`, matching `config.PlaceholderID`'s date
- * format server-side — see `dateKeyUTC`/`revealHiddenId` below). This is a
- * different prefix from any Classic key (`grill-classic:{date}` per the
- * issue's suggested scheme, should one land later), so the two families of
- * keys never collide for the same date even though they share a date
- * segment.
+ * format server-side — see `dateKeyUTC`/`revealHiddenId` below). The
+ * `grill-reveal:` prefix keeps this mode's keys isolated from any other
+ * localStorage key scheme that might share a date segment.
  */
 
 const REVEAL_KEY_PREFIX = 'grill-reveal:';
@@ -93,10 +87,7 @@ export function saveRevealState(
 
 /**
  * Remove any Reveal-mode state left over from a previous calendar day, on
- * date rollover. Only ever touches `grill-reveal:*` keys — Classic's keys
- * (whatever its scheme turns out to be) are never enumerated or removed
- * here; each mode is responsible for garbage-collecting only its own stale
- * state (see issue 08's "independently for each mode" requirement).
+ * date rollover. Only ever touches `grill-reveal:*` keys.
  */
 export function clearStaleRevealState(
   currentDateKey: string,

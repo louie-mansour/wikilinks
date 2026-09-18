@@ -15,11 +15,8 @@ export interface RevealResultBannerProps {
  *
  * Renders the two end states with distinct, non-generic copy (per
  * `docs/grill-reveal-mode/issues/06-guess-limit-loss-state.md`'s "distinct
- * from win state's messaging" requirement, and `07`'s "distinct from
- * Classic's" requirement): different wording/emoji from Classic's
- * `DailyGame` win/lose banners (`src/components/DailyGame/DailyGame.tsx`),
- * and different wording between `won` and `lost` here too, so the two
- * outcomes are never confusable at a glance.
+ * from win state's messaging" requirement): different wording/emoji between
+ * `won` and `lost`, so the two outcomes are never confusable at a glance.
  *
  * This issue (06) only drives the `lost` path end-to-end (via
  * `applyFullReveal` in `revealGraph.ts`); `won` is included here as the

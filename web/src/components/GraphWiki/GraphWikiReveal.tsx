@@ -15,8 +15,7 @@ import type { WikiLink } from './GraphWiki';
  * It reuses `GraphWiki`'s BFS-layered force-layout approach (depth-anchored
  * `forceX`/`forceY`, springy link force, light charge repulsion) but is a
  * separate component free to add the hover-to-reveal-title interaction that
- * `GraphWiki` deliberately excludes for its own (Classic) minimalism
- * contract.
+ * `GraphWiki` deliberately excludes for its own minimalism contract.
  *
  * Rendering rules per node `state` (see `revealGraph.ts`):
  *  - `named`  — normal filled circle, hoverable tooltip shows the title.

@@ -3,8 +3,8 @@ import type { GraphData, WikiLink, WikiNode, WikiNodeVariant } from '../componen
 /**
  * === Grill: Reveal — client-side graph accumulation ===
  *
- * This module is the Reveal-mode sibling of `dailyGraph.ts` (Classic). It
- * folds each `/api/reveal-guess` response (see `RevealGuessResponse` below,
+ * This module folds each `/api/reveal-guess` response (see
+ * `RevealGuessResponse` below,
  * mirroring `service.RevealGuessResult` in
  * `service/internal/service/reveal.go`) into one running, deduped graph and
  * tracks a **per-node reveal state** in addition to the existing
@@ -50,14 +50,16 @@ import type { GraphData, WikiLink, WikiNode, WikiNodeVariant } from '../componen
  *
  * ## Node identity
  *
- * Every non-hidden node's id is its real Wikipedia article title, exactly
- * like Classic's path/guess nodes (`buildGuessGraphData` in
- * `service/internal/service/guess.go` sets `WikiNode.ID` to the title
- * string). The hidden node's id is the stable per-day placeholder id
+ * Every non-hidden node's id is its real Wikipedia article title (see
+ * `WikiNode.ID` in `service/internal/service/reveal.go`). The hidden node's
+ * id is the stable per-day placeholder id
  * (`config.PlaceholderID` server-side) — pass the same string in as
  * `hiddenId` on every call so the "Unknown" node's identity never drifts
  * across guesses or across a page reload.
  */
+/** Incorrect guesses allowed before the puzzle is lost and the answer is revealed. */
+export const MAX_DAILY_GUESSES = 5;
+
 export type RevealNodeState = 'named' | 'blank' | 'unknown';
 
 /** A `WikiNode` (see `GraphWiki.tsx`) plus this module's reveal-state tag. */
@@ -88,8 +90,8 @@ export interface RevealNeighbor {
  * for field. Read that file for authoritative field semantics; summarized:
  *
  * - `neighbors` — this guess's neighbor reveal (→ `named` nodes).
- * - `graphData` — this guess's path reveal, same shape Classic uses, with
- *   the hidden article masked behind the stable per-day placeholder id
+ * - `graphData` — this guess's path reveal, with the hidden article masked
+ *   behind the stable per-day placeholder id
  *   (`hiddenId`) unless `correct`/`lost` is true (→ `named`/unknown nodes).
  * - `answer` — only populated on `correct`/`lost`; the real hidden title.
  */
@@ -134,8 +136,7 @@ function linkKey(link: WikiLink): string {
  * Neighbor-reveal nodes are folded in first, then path-reveal nodes second —
  * both via `upsertNamed`, so either can name a node first and neither can
  * ever downgrade it afterward (see module doc above). Edges accumulate
- * without duplication, keyed by `source→target`, same convention as
- * `dailyGraph.ts`'s `mergeGraphData`.
+ * without duplication, keyed by `source→target`.
  */
 export function mergeRevealGuess(
   accumulated: RevealGraphData,
@@ -289,7 +290,7 @@ export function revealNode(
 
 /**
  * Adapt a `RevealGraphData` to the plain `GraphData` shape `GraphWiki` (the
- * sandbox/Classic canvas) expects, reusing `GraphWiki`'s own BFS-layered
+ * sandbox canvas) expects, reusing `GraphWiki`'s own BFS-layered
  * layout unmodified (see `.claude/rules/graphwiki-node-connections.md`) —
  * this module does the adapting, not `GraphWiki` itself.
  *
@@ -307,7 +308,7 @@ export function revealNode(
  *   revealed via `revealNode`/`applyFullReveal`, already carrying `variant:
  *   'end'`).
  * - `unknown` — the hidden node pre-reveal: mapped to `variant: 'end'` (so
- *   `GraphWiki` treats it as the layout's terminal end, same as Classic's
+ *   `GraphWiki` treats it as the layout's terminal end, same as a normal
  *   revealed answer) with its `label` ("Unknown") passed through so it never
  *   renders its placeholder `id` as text.
  * - `blank`, `variant: 'guess'` — the article the player actually typed;
@@ -374,13 +375,9 @@ export function toWikiGraphData(graph: RevealGraphData): GraphData {
 }
 
 /**
- * Client-side repeat-guess prevention for Reveal mode — the Reveal sibling
- * of Classic's `hasAlreadyGuessed` (`dailyGraph.ts`). Same case-insensitive,
+ * Client-side repeat-guess prevention for Reveal mode. Case-insensitive,
  * trimmed match against the day's guesses made so far, checked purely
  * client-side (no network round-trip) before a guess is even submitted.
- * Kept as its own copy here (rather than importing from `dailyGraph.ts`) so
- * this module stays self-contained per its module doc above; the logic is
- * intentionally identical.
  */
 export function hasAlreadyGuessedReveal(guessedTitles: string[], candidate: string): boolean {
   const normalized = candidate.trim().toLowerCase();

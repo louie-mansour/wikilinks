@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/louiemansour/wikilinks/service/internal/config"
 	"github.com/louiemansour/wikilinks/service/internal/graph"
 )
 
@@ -50,28 +49,7 @@ func (e ErrNoPuzzleToday) Unwrap() error { return e.Err }
 // puzzle is lost and the real answer is revealed.
 const MaxDailyGuesses = 5
 
-// GuessResult is the response payload for a single daily-mode guess.
-//
-// Prior to a correct guess (or the final, losing guess), the hidden end
-// article's real id/title never appears anywhere in this struct — it is
-// replaced everywhere by a stable, per-day placeholder id (see
-// config.PlaceholderID) so the client can merge multiple guesses' graphs
-// without learning the answer early.
-type GuessResult struct {
-	Guess       string     `json:"guess"`
-	Correct     bool       `json:"correct"`
-	Lost        bool       `json:"lost,omitempty"`
-	Answer      string     `json:"answer,omitempty"`
-	NoPathFound bool       `json:"noPathFound,omitempty"`
-	PathsFound  int        `json:"pathsFound"`
-	MinHops     int        `json:"minHops"`
-	Paths       [][]string `json:"paths"`
-	GraphData   GraphData  `json:"graphData"`
-	MaxHops     int        `json:"maxHops"`
-	MaxPaths    int        `json:"maxPaths"`
-}
-
-// Guess is the service backing the daily-mode guess endpoint.
+// Guess is the service backing the daily-mode guess endpoints.
 type Guess struct {
 	g     *graph.WikipediaGraph
 	sched AnswerSource
@@ -90,110 +68,6 @@ func (s *Guess) Category() (string, error) {
 		return "", ErrNoPuzzleToday{err}
 	}
 	return category, nil
-}
-
-// Submit resolves guessTitle against today's hidden puzzle article and
-// returns all shortest paths between them via BidirectionalBFS, with the
-// real answer masked behind a stable per-day placeholder id unless the guess
-// is correct or is the puzzle-losing guess.
-//
-// guessNumber is the 1-indexed attempt number for this guess, as tracked by
-// the client for the current puzzle-day (see .claude rules on daily-mode
-// scope: guess-count enforcement is client-tracked, not session-backed).
-// Once guessNumber reaches MaxDailyGuesses without a correct guess, the real
-// answer is revealed and the result is marked Lost.
-func (s *Guess) Submit(guessTitle string, guessNumber int) (*GuessResult, error) {
-	now := time.Now()
-
-	answerTitle, err := s.sched.ArticleForDate(now)
-	if err != nil {
-		return nil, ErrNoPuzzleToday{err}
-	}
-
-	guessID, ok := s.g.ResolveTitle(guessTitle)
-	if !ok {
-		return nil, ErrTitleNotFound{guessTitle}
-	}
-	answerID, ok := s.g.ResolveTitle(answerTitle)
-	if !ok {
-		return nil, fmt.Errorf("scheduled answer %q not found in graph", answerTitle)
-	}
-	guess := s.g.Title(guessID)
-
-	if guessID == answerID {
-		s.maybeReroll(true)
-		return &GuessResult{
-			Guess:      guess,
-			Correct:    true,
-			Answer:     answerTitle,
-			PathsFound: 1,
-			Paths:      [][]string{{guess}},
-			GraphData: GraphData{
-				Nodes: []WikiNode{{ID: guess, Variant: "end", Label: guess}},
-				Links: []WikiLink{},
-			},
-			MaxHops:  graph.MaxDepth,
-			MaxPaths: graph.MaxPaths,
-		}, nil
-	}
-
-	lost := guessNumber >= MaxDailyGuesses
-	placeholderID := config.PlaceholderID(now)
-
-	result, found := graph.BidirectionalBFS(s.g, guessID, answerID)
-	if !found {
-		graphData := GraphData{
-			Nodes: []WikiNode{{ID: guess, Variant: "guess", Label: guess}},
-			Links: []WikiLink{},
-		}
-		if lost {
-			graphData.Nodes = append(graphData.Nodes, WikiNode{ID: answerTitle, Variant: "end", Label: answerTitle})
-		}
-		graphData = annotateDirectConnections(s.g, graphData, answerID)
-		s.maybeReroll(lost)
-		return &GuessResult{
-			Guess:       guess,
-			Lost:        lost,
-			Answer:      lostAnswer(lost, answerTitle),
-			NoPathFound: true,
-			Paths:       [][]string{},
-			GraphData:   graphData,
-			MaxHops:     graph.MaxDepth,
-			MaxPaths:    graph.MaxPaths,
-		}, nil
-	}
-
-	allPaths := make([][]string, len(result.Paths))
-	for i, ids := range result.Paths {
-		path := make([]string, len(ids))
-		for j, id := range ids {
-			if id == answerID {
-				if lost {
-					path[j] = answerTitle
-				} else {
-					path[j] = placeholderID
-				}
-			} else {
-				path[j] = s.g.Title(id)
-			}
-		}
-		allPaths[i] = path
-	}
-
-	graphData := annotateDirectConnections(s.g, buildGuessGraphData(allPaths, lost), answerID)
-
-	s.maybeReroll(lost)
-	return &GuessResult{
-		Guess:      guess,
-		Lost:       lost,
-		Answer:     lostAnswer(lost, answerTitle),
-		PathsFound: len(allPaths),
-		MinHops:    len(allPaths[0]) - 1,
-		Paths:      allPaths,
-		GraphData:  graphData,
-		MaxHops:    graph.MaxDepth,
-		MaxPaths:   graph.MaxPaths,
-	}, nil
 }
 
 // annotateDirectConnections sets OutDegree/EdgeCountToEnd/InDegree on every
@@ -245,50 +119,4 @@ func lostAnswer(lost bool, answerTitle string) string {
 		return answerTitle
 	}
 	return ""
-}
-
-// buildGuessGraphData mirrors buildGraphData but uses the 'guess'/'hidden-end'
-// node variants. It never assigns a Label to the placeholder node so the
-// masked node carries no identity beyond its stable placeholder id — unless
-// lost is true, in which case the path's final node is the real answer
-// (already substituted by the caller) and is revealed as a normal 'end' node.
-func buildGuessGraphData(allPaths [][]string, lost bool) GraphData {
-	nodeVariant := make(map[string]string)
-	type edge struct{ src, dst string }
-	linkSet := make(map[edge]struct{})
-
-	for _, path := range allPaths {
-		for i, title := range path {
-			variant := "path"
-			if i == 0 {
-				variant = "guess"
-			} else if i == len(path)-1 {
-				variant = "hidden-end"
-				if lost {
-					variant = "end"
-				}
-			}
-			// Don't downgrade guess/hidden-end/end to path if already set.
-			if existing, ok := nodeVariant[title]; !ok || existing == "path" {
-				nodeVariant[title] = variant
-			}
-		}
-		for i := 0; i < len(path)-1; i++ {
-			linkSet[edge{path[i], path[i+1]}] = struct{}{}
-		}
-	}
-
-	nodes := make([]WikiNode, 0, len(nodeVariant))
-	for title, variant := range nodeVariant {
-		label := title
-		if variant == "hidden-end" {
-			label = ""
-		}
-		nodes = append(nodes, WikiNode{ID: title, Variant: variant, Label: label})
-	}
-	links := make([]WikiLink, 0, len(linkSet))
-	for e := range linkSet {
-		links = append(links, WikiLink{Source: e.src, Target: e.dst})
-	}
-	return GraphData{Nodes: nodes, Links: links}
 }

@@ -7,7 +7,6 @@ import {
   mergeRevealGuess,
   revealNode,
   toWikiGraphData,
-  type RevealGraphData,
   type RevealGuessResponse,
 } from './revealGraph';
 

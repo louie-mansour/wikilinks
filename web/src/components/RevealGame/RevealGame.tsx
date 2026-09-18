@@ -4,16 +4,15 @@ import { Button } from '../Button/Button';
 import { GraphWiki } from '../GraphWiki/GraphWiki';
 import { RevealResultBanner } from '../RevealResultBanner/RevealResultBanner';
 import { DailyShareSummary } from '../DailyShareSummary/DailyShareSummary';
-import { ModePicker } from '../ModePicker/ModePicker';
 import { useDebouncedSuggestions } from '../../hooks/useDebouncedSuggestions';
 import { submitRevealGuess } from '../../api/revealGuess';
 import { fetchDailyInfo } from '../../api/dailyInfo';
-import { MAX_DAILY_GUESSES } from '../../data/dailyGraph';
 import {
   applyFullReveal,
   buildRevealShareSummary,
   createInitialRevealGraph,
   hasAlreadyGuessedReveal,
+  MAX_DAILY_GUESSES,
   mergeRevealGuess,
   toWikiGraphData,
   type RevealGraphData,
@@ -48,8 +47,8 @@ function guessesRemainingLabel(guessCount: number): string {
 export function RevealGame() {
   // Both the puzzle date key and the stable per-day hidden-node id are
   // derived once per mount from "now" — the puzzle boundary is the UTC
-  // calendar day (see `revealPersistence.ts`), and the schedule/answer is
-  // shared with Classic via the same `DailySchedule` (no new schedule file).
+  // calendar day (see `revealPersistence.ts`), and the schedule/answer comes
+  // from the server's `DailySchedule` config.
   const dateKey = useMemo(() => dateKeyUTC(new Date()), []);
   const hiddenId = useMemo(() => revealHiddenId(dateKey), [dateKey]);
 
@@ -62,8 +61,8 @@ export function RevealGame() {
   const [category, setCategory] = useState<string | null>(null);
 
   // Restore this mode's persisted state for today, and garbage-collect any
-  // leftover Reveal state from a previous calendar day (date rollover).
-  // Never touches Classic's storage — see `clearStaleRevealState`.
+  // leftover Reveal state from a previous calendar day (date rollover) — see
+  // `clearStaleRevealState`.
   useEffect(() => {
     clearStaleRevealState(dateKey);
     const persisted = loadRevealState(dateKey);
@@ -186,8 +185,6 @@ export function RevealGame() {
         </p>
 
         {category && <span className={styles.categoryPill}>{category}</span>}
-
-        <ModePicker active="reveal" />
 
         {finished ? (
           <>

@@ -8,12 +8,10 @@ import (
 	"github.com/louiemansour/wikilinks/service/internal/service"
 )
 
-// RevealGuess handles GET /api/reveal-guess?guess=X — the Reveal-mode
-// counterpart to Classic's /api/guess. Its response shape differs (it adds
-// the guess's outbound-neighbor reveal alongside the path reveal) so it is a
-// distinct, additive route; it never modifies or reuses Classic's response
-// shape, and never reveals the real hidden-end article's identity prior to a
-// correct or losing guess.
+// RevealGuess handles GET /api/reveal-guess?guess=X — the daily-mode "Grill"
+// guess endpoint. Its response includes the guess's outbound-neighbor reveal
+// alongside the path reveal, and it never reveals the real hidden-end
+// article's identity prior to a correct or losing guess.
 //
 // Optional repeated `known` query params list every article title the
 // caller's accumulated Reveal graph already has a node for (see

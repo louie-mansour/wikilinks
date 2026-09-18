@@ -43,16 +43,16 @@ type RevealGuessResult struct {
 }
 
 // SubmitReveal resolves guessTitle against today's hidden puzzle article and
-// returns the Reveal-mode payload: the same shortest-path reveal Classic's
-// Submit computes via BidirectionalBFS, masked behind the stable per-day
-// placeholder id unless the guess is correct or is the puzzle-losing guess,
-// plus the guess's shortest-path-only neighbor reveal (see
-// graph.RevealNeighbors) — never the guess's full outbound-link list.
+// returns the Reveal-mode payload: the shortest-path reveal computed via
+// BidirectionalBFS, masked behind the stable per-day placeholder id unless
+// the guess is correct or is the puzzle-losing guess, plus the guess's
+// shortest-path-only neighbor reveal (see graph.RevealNeighbors) — never the
+// guess's full outbound-link list.
 //
-// guessNumber is the 1-indexed attempt number for this guess, exactly as
-// Classic's Submit expects it. Once guessNumber reaches MaxDailyGuesses
-// without a correct guess, the real answer is revealed and the result is
-// marked Lost — same cap, same constant, as Classic.
+// guessNumber is the 1-indexed attempt number for this guess, as tracked by
+// the client for the current puzzle-day. Once guessNumber reaches
+// MaxDailyGuesses without a correct guess, the real answer is revealed and
+// the result is marked Lost.
 // known is the set of article titles already present in the caller's
 // accumulated Reveal graph (every node from every prior guess this puzzle,
 // however it was revealed — see revealGraph.ts's module doc for the client's

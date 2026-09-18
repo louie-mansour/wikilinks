@@ -42,12 +42,6 @@ export interface WikiNode {
   label?: string;
   /** Number of times this article has been hit across searches; 1 means first discovery. */
   hitCount?: number;
-  /** Daily-mode direct-connections annotation — outbound-link count (D). See dailyGraph.ts. */
-  outDegree?: number;
-  /** Daily-mode direct-connections annotation — of those D edges, how many point at the answer (N). */
-  edgeCountToEnd?: number;
-  /** Daily-mode direct-connections annotation — this article's own inbound-link count, an obscurity proxy. See dailyGraph.ts. */
-  inDegree?: number;
   /** Reveal-mode only — the 1-based order this article was guessed in. Drawn inside `variant: 'guess'` nodes. See revealGraph.ts. */
   guessNumber?: number;
 }
@@ -703,10 +697,10 @@ interface GraphWikiProps {
   graphData: GraphData;
   /** Fires once after the graph has fitted to its container. */
   onReady?: () => void;
-  /** Node id to center/highlight on the canvas (e.g. a direct-connections panel row click).
+  /** Node id to center/highlight on the canvas (e.g. a revealed-neighbors panel row click).
    *  Bump this on every click, even to the same id — see the effect below. */
   focusNodeId?: string | null;
-  /** 'classic' (default): Daily/sandbox legend (New discovery / Connecting article).
+  /** 'classic' (default): sandbox legend (New discovery / Connecting article).
    *  'reveal': Reveal mode's legend (Guess / Target / Unknown) — always
    *  shows all three, even before any guess exists, since Reveal's graph doesn't
    *  reliably carry a 'guess' node from the first render (see revealGraph.ts). */

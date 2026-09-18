@@ -2,9 +2,8 @@ import type { RevealGuessResponse } from '../data/revealGraph';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? (import.meta.env.PROD ? '' : 'http://localhost:8080');
 
-/** Reveal mode's sibling of `submitGuess` (`api/guess.ts`) — hits
- *  `GET /api/reveal-guess` instead of `/api/guess`; same query params, plus
- *  `known` (see below).
+/** Calls the daily-mode "Grill" guess endpoint, `GET /api/reveal-guess`,
+ *  with the article being guessed plus `known` (see below).
  *
  * `known` is every article title already present in the caller's
  * accumulated Reveal graph (every node from every prior guess this puzzle —
